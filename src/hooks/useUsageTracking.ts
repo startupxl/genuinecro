@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useSubscription } from "./useSubscription";
+import { recordAnalysis, countAnalysesSince } from "@/lib/firebase/analyses";
 
 const ANON_STORAGE_KEY = "genuinecro_anon_usage";
 const ANON_RESET_KEY = "genuinecro_anon_reset";
@@ -25,10 +25,10 @@ interface UsageInfo {
   periodEnd: string | null;
 }
 
-function getRolling30DayStart(): string {
+function getRolling30DayStart(): Date {
   const d = new Date();
   d.setDate(d.getDate() - 30);
-  return d.toISOString();
+  return d;
 }
 
 export function useUsageTracking() {
@@ -46,7 +46,6 @@ export function useUsageTracking() {
 
   const getAnonUsage = useCallback((): number => {
     try {
-      // Check if we need to reset (rolling 30-day window)
       const resetAt = localStorage.getItem(ANON_RESET_KEY);
       if (resetAt && new Date(resetAt) <= new Date()) {
         localStorage.setItem(ANON_STORAGE_KEY, "0");
@@ -76,31 +75,24 @@ export function useUsageTracking() {
       const planKey = currentPlan.toLowerCase();
       const limit = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.free;
 
-      // Determine period start: use subscription billing period or rolling 30 days
-      let periodStart: string;
+      let periodStartDate: Date;
       let periodEnd: string | null = null;
 
       if (subscription?.current_period_start) {
-        periodStart = subscription.current_period_start;
+        periodStartDate = new Date(subscription.current_period_start);
         periodEnd = subscription.current_period_end ?? null;
       } else {
-        periodStart = getRolling30DayStart();
+        periodStartDate = getRolling30DayStart();
       }
 
-      const { count, error } = await supabase
-        .from("analyses")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .gte("created_at", periodStart);
-
-      const used = error ? 0 : (count ?? 0);
+      const used = await countAnalysesSince(user.uid, periodStartDate);
       setUsage({
         used,
         limit,
         canAnalyze: used < limit,
         requiresAuth: false,
         requiresPaid: used >= limit,
-        periodStart,
+        periodStart: periodStartDate.toISOString(),
         periodEnd,
       });
     } else {
@@ -124,12 +116,7 @@ export function useUsageTracking() {
 
   const trackAnalysis = useCallback(async (url: string, analysisType: string, device: string) => {
     if (user) {
-      await supabase.from("analyses").insert({
-        user_id: user.id,
-        url,
-        analysis_type: analysisType,
-        device,
-      });
+      await recordAnalysis({ userId: user.uid, url, analysisType, device });
     } else {
       incrementAnonUsage();
     }
