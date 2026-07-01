@@ -14,7 +14,7 @@ import { toast } from "sonner";
 const ContactUs = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [name, setName] = useState(user?.user_metadata?.full_name || "");
+  const [name, setName] = useState(user?.displayName || "");
   const [email, setEmail] = useState(user?.email || "");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");

@@ -27,8 +27,7 @@ const AppHeader = ({ onGoHome, onSignIn, compact = false }: AppHeaderProps) => {
     : "U";
 
   const displayName =
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
+    user?.displayName ||
     user?.email ||
     "User";
 

@@ -5,7 +5,7 @@ import AppHeader from "@/components/AppHeader";
 import type { AnalysisType } from "@/lib/mockData";
 import logoImg from "@/assets/logo.png";
 import { analysisTypeLabels, detectPageType } from "@/lib/mockData";
-import type { User } from "@supabase/supabase-js";
+import type { User } from "firebase/auth";
 import { usePlanCapabilities, getUpgradeMessage } from "@/hooks/usePlanCapabilities";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
