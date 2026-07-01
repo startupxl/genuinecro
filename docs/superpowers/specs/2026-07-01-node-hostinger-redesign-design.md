@@ -49,6 +49,13 @@ Supabase is removed entirely. Replacements:
 | Edge Function `analyze-url` (Firecrawl scrape + AI call orchestration) | **Express route** | Same two-step flow (scrape → analyze), same heuristic fallback logic when AI is unavailable. |
 | Edge Functions `paypal-create-subscription`, `paypal-webhook`, `paypal-subscription-status` | **Express routes** | Same PayPal flows, reading/writing Firestore instead of Postgres. |
 | Firecrawl (scraping) | **Unchanged** | Already an external API, unaffected. |
+
+**Revision (2026-07-01, post-implementation):** the Firebase Admin SDK approach originally planned for the Express server (a downloadable service-account key) turned out to be blocked — the project's `iam.disableServiceAccountKeyCreation` Organization Policy is locked at a parent level the project owner doesn't control, and this was confirmed on a second project too, so it isn't project-specific. The server-side PayPal routes and `verifyIdToken` now use a **keyless** approach instead:
+- A dedicated Firebase Auth "service user" (e.g. `server@internal.genuinecro.app`, credentials in `FIREBASE_SERVICE_EMAIL`/`FIREBASE_SERVICE_PASSWORD`) that the Express server signs into using the same public Firebase **client** SDK already used in the browser — no service-account key, no GCP IAM setup.
+- Firestore Security Rules grant that one email address (via `request.auth.token.email`) read/write access to the `subscriptions` collection — the only collection the server needs privileged access to.
+- Incoming user ID tokens are verified via a plain REST call to Firebase's public `accounts:lookup` endpoint (`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=<web API key>`) instead of `admin.auth().verifyIdToken()` — no credentials beyond the already-public Web API key.
+
+`firebase-admin` is no longer a dependency. This changes §5 and §8 below.
 | *(new)* Contact form, notification/alert emails, weekly digest | **Kit (ConvertKit) API** | See §6.2 — these features exist in the source UI today but have no real backend anywhere (Contact form simulates success; Settings toggles only write to `localStorage`). Phase 1 makes them real via Kit. |
 
 **Note on Kit's fit**: Kit is a subscriber/sequence/broadcast-oriented email platform (marketing emails, weekly digest are a natural fit). It is not a classic one-off transactional API like Resend/Postmark. For the Contact form (a single ad-hoc "user submitted this" notification) and any immediate analysis-alert email, implementation should confirm Kit's API supports a direct one-off send to an arbitrary address — if it only supports subscriber-based sequences/broadcasts, the Contact form notification may need a minimal fallback path (e.g., tagging/subscribing the support inbox address to a triggered sequence). Flag and resolve this during implementation.
@@ -127,8 +134,9 @@ These three existed in the source as non-functional stubs; Phase 1 makes all of 
 ## 8. Security Notes
 
 - The classic PAT shared during this session (scopes: `repo`, `write:packages`) should be rotated after initial repo setup, since it's now recorded in conversation history. Implementation will use a fine-grained token scoped only to `startupxl/genuinecro` with `Contents: Read and write`.
-- Firebase service account credentials and all third-party API keys are Hostinger environment variables, never committed to the repo.
-- Firestore Security Rules enforce per-user read/write scoping (equivalent to today's Postgres RLS policies) for any data read directly by the client SDK.
+- No Firebase service-account key exists or is needed (see §4 revision) — `FIREBASE_SERVICE_EMAIL`/`FIREBASE_SERVICE_PASSWORD` (the dedicated service user's credentials) and all third-party API keys are Hostinger environment variables, never committed to the repo.
+- Firestore Security Rules enforce per-user read/write scoping (equivalent to today's Postgres RLS policies) for any data read directly by the client SDK, plus one explicit exception: the service user's email is granted access to the server-only `subscriptions` collection.
+- The dedicated service Firebase Auth user should have a long, randomly-generated password (not reused anywhere), since anyone who obtains those credentials gets the same `subscriptions`-collection access the server has.
 
 ## 9. Out of Scope (this spec)
 
