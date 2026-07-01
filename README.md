@@ -39,10 +39,16 @@ npm start        # serves dist/ via server.js on $PORT (default 3000)
 4. **Storage** → Get started (accept the default bucket).
 5. **Project settings → General** → under "Your apps", add a Web app and copy
    the config values into `VITE_FIREBASE_*` in your `.env`.
-6. **Project settings → Service accounts** → Generate new private key. Convert
-   the downloaded JSON to a single line (e.g. `jq -c . service-account.json`)
-   and set it as `FIREBASE_SERVICE_ACCOUNT_JSON` — in `.env` locally, and as a
-   Hostinger environment variable in production. Never commit the JSON file.
+6. **Authentication → Users → Add user** — create a dedicated user for the
+   server (e.g. `server@internal.genuinecro.app`) with a long, randomly
+   generated password used nowhere else. Set `FIREBASE_SERVICE_EMAIL` and
+   `FIREBASE_SERVICE_PASSWORD` to those values — in `.env` locally, and as
+   Hostinger environment variables in production. This account only ever
+   needs Firestore access to the `subscriptions` collection, granted via
+   `firestore.rules`, not any GCP IAM role — no service-account key is
+   created or needed. (If your organization's `iam.disableServiceAccountKeyCreation`
+   policy blocks key creation and you can't get it overridden, this is why
+   we use this approach instead.)
 7. Log in and link the CLI to this project, then deploy the security rules:
 
 ```sh
