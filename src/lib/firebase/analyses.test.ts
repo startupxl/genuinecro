@@ -28,7 +28,7 @@ describe("firebase analyses module", () => {
 
   it("records an analysis with a server timestamp", async () => {
     addDocMock.mockResolvedValue(undefined);
-    await recordAnalysis({ userId: "uid-1", url: "https://example.com", analysisType: "homepage", device: "desktop" });
+    await recordAnalysis({ userId: "uid-1", url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 72 });
     expect(addDocMock).toHaveBeenCalledWith(
       { __collection: true },
       expect.objectContaining({
@@ -36,6 +36,7 @@ describe("firebase analyses module", () => {
         url: "https://example.com",
         analysisType: "homepage",
         device: "desktop",
+        conversionScore: 72,
         createdAt: "server-timestamp",
       })
     );

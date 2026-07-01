@@ -114,9 +114,9 @@ export function useUsageTracking() {
     fetchUsage();
   }, [fetchUsage]);
 
-  const trackAnalysis = useCallback(async (url: string, analysisType: string, device: string) => {
+  const trackAnalysis = useCallback(async (url: string, analysisType: string, device: string, conversionScore: number) => {
     if (user) {
-      await recordAnalysis({ userId: user.uid, url, analysisType, device });
+      await recordAnalysis({ userId: user.uid, url, analysisType, device, conversionScore });
     } else {
       incrementAnonUsage();
     }

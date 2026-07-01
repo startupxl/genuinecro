@@ -123,7 +123,7 @@ const BulkAnalysis = () => {
 
       try {
         const result = await analyzeUrl(url, type, "desktop");
-        await trackAnalysis(url, type, "desktop");
+        await trackAnalysis(url, type, "desktop", result.conversionScore ?? result.benchmark.overallScore);
         const avgScore = result.frictionPoints.length > 0
           ? Math.round(result.frictionPoints.reduce((s, p) => s + p.impactScore, 0) / result.frictionPoints.length)
           : 0;

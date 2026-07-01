@@ -58,7 +58,7 @@ const Index = () => {
           analyzeUrl(formatted, type, "mobile"),
         ]);
         setComparisonResults({ desktop: desktopData, mobile: mobileData });
-        await trackAnalysis(formatted, type, "desktop");
+        await trackAnalysis(formatted, type, "desktop", desktopData.conversionScore ?? desktopData.benchmark.overallScore);
         toast.success(`Found ${desktopData.frictionPoints.length} desktop + ${mobileData.frictionPoints.length} mobile friction points`);
       } catch (err) {
         console.error("Comparison analysis failed, falling back to mock:", err);
@@ -66,7 +66,7 @@ const Index = () => {
         const mockDesktop = generateMockAnalysis(formatted, type);
         const mockMobile = { ...generateMockAnalysis(formatted, type), device: "mobile" as const };
         setComparisonResults({ desktop: mockDesktop, mobile: mockMobile });
-        await trackAnalysis(formatted, type, "desktop");
+        await trackAnalysis(formatted, type, "desktop", mockDesktop.conversionScore ?? mockDesktop.benchmark.overallScore);
       }
     } else {
       setProgress(`Analyzing ${device} experience…`);
@@ -74,7 +74,7 @@ const Index = () => {
         setProgress(`Analyzing ${device} view for conversion friction…`);
         const data = await analyzeUrl(formatted, type, device);
         setResult(data);
-        await trackAnalysis(formatted, type, device);
+        await trackAnalysis(formatted, type, device, data.conversionScore ?? data.benchmark.overallScore);
         toast.success(`Found ${data.frictionPoints.length} friction points (${device})`);
       } catch (err) {
         console.error("Real analysis failed, falling back to mock:", err);
@@ -83,7 +83,7 @@ const Index = () => {
         });
         const mockResult = generateMockAnalysis(formatted, type);
         setResult(mockResult);
-        await trackAnalysis(formatted, type, device);
+        await trackAnalysis(formatted, type, device, mockResult.conversionScore ?? mockResult.benchmark.overallScore);
       }
     }
 

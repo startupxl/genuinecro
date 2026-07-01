@@ -6,6 +6,7 @@ export interface AnalysisEntry {
   url: string;
   analysisType: string;
   device: string;
+  conversionScore: number;
 }
 
 export async function recordAnalysis(entry: AnalysisEntry): Promise<void> {

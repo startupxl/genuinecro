@@ -43,13 +43,14 @@ describe("useUsageTracking", () => {
     const { result } = renderHook(() => useUsageTracking());
 
     await waitFor(() => expect(result.current.usage).toBeDefined());
-    await result.current.trackAnalysis("https://example.com", "homepage", "desktop");
+    await result.current.trackAnalysis("https://example.com", "homepage", "desktop", 72);
 
     expect(recordAnalysisMock).toHaveBeenCalledWith({
       userId: "uid-1",
       url: "https://example.com",
       analysisType: "homepage",
       device: "desktop",
+      conversionScore: 72,
     });
   });
 });
