@@ -1,24 +1,31 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Lock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { confirmPasswordReset } from "firebase/auth";
+import { auth } from "@/integrations/firebase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const oobCode = searchParams.get("oobCode");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!oobCode) {
+      toast.error("This reset link is invalid or has expired.");
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) {
-      toast.error(error.message);
-    } else {
+    try {
+      await confirmPasswordReset(auth, oobCode, password);
       toast.success("Password updated successfully!");
       navigate("/");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update password");
     }
     setLoading(false);
   };
