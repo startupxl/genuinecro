@@ -10,7 +10,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
-import { supabase } from "@/integrations/supabase/client";
+import { updateEmail } from "firebase/auth";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/integrations/firebase/client";
+import { getUserProfile, updateUserProfile } from "@/lib/firebase/users";
 import AppHeader from "@/components/AppHeader";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -29,18 +32,12 @@ const Account = () => {
   useEffect(() => {
     if (!user) return;
     setEmail(user.email || "");
-    // Fetch profile
-    supabase
-      .from("profiles")
-      .select("display_name, avatar_url, email")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setDisplayName(data.display_name || "");
-          setAvatarUrl(data.avatar_url || "");
-        }
-      });
+    getUserProfile(user.uid).then((profile) => {
+      if (profile) {
+        setDisplayName(profile.displayName || "");
+        setAvatarUrl(profile.avatarUrl || "");
+      }
+    });
   }, [user]);
 
   const initials = displayName
@@ -53,18 +50,11 @@ const Account = () => {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ display_name: displayName, avatar_url: avatarUrl })
-        .eq("id", user.id);
+      await updateUserProfile(user.uid, { displayName, avatarUrl });
 
-      if (error) throw error;
-
-      // Update email if changed
       if (email !== user.email) {
-        const { error: emailError } = await supabase.auth.updateUser({ email });
-        if (emailError) throw emailError;
-        toast.success("A confirmation email has been sent to your new address");
+        await updateEmail(user, email);
+        toast.success("Email updated. You may need to sign in again.");
       } else {
         toast.success("Profile updated");
       }
@@ -81,24 +71,13 @@ const Account = () => {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${user.id}/avatar.${ext}`;
+      const storageRef = ref(storage, `avatars/${user.uid}/avatar.${ext}`);
 
-      // Ensure bucket exists — upload will create if policy allows
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true });
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
 
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(path);
-
-      setAvatarUrl(urlData.publicUrl);
-      await supabase
-        .from("profiles")
-        .update({ avatar_url: urlData.publicUrl })
-        .eq("id", user.id);
+      setAvatarUrl(url);
+      await updateUserProfile(user.uid, { avatarUrl: url });
 
       toast.success("Avatar updated");
     } catch (err: any) {
@@ -129,14 +108,12 @@ const Account = () => {
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
         <h1 className="text-xl font-semibold text-foreground">Account Settings</h1>
 
-        {/* Profile Section */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Profile</CardTitle>
             <CardDescription>Manage your personal information</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Avatar */}
             <div className="flex items-center gap-4">
               <div className="relative group">
                 <Avatar className="h-16 w-16">
@@ -168,7 +145,6 @@ const Account = () => {
 
             <Separator />
 
-            {/* Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Display Name</Label>
               <Input
@@ -179,7 +155,6 @@ const Account = () => {
               />
             </div>
 
-            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -190,7 +165,7 @@ const Account = () => {
                 placeholder="you@example.com"
               />
               <p className="text-[11px] text-muted-foreground">
-                Changing your email will require confirmation at the new address.
+                Changing your email may require you to sign in again.
               </p>
             </div>
 
@@ -201,7 +176,6 @@ const Account = () => {
           </CardContent>
         </Card>
 
-        {/* Subscription Section */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Subscription</CardTitle>
