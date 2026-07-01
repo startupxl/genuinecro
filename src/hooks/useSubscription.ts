@@ -1,16 +1,28 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
 interface Subscription {
-  id: string;
-  user_id: string;
   paypal_subscription_id: string | null;
   plan_name: string;
   status: string;
   current_period_start: string | null;
   current_period_end: string | null;
+}
+
+interface AuthorizedUser {
+  getIdToken: () => Promise<string>;
+}
+
+async function authorizedFetch(path: string, options: RequestInit, user: AuthorizedUser) {
+  const token = await user.getIdToken();
+  return fetch(path, {
+    ...options,
+    headers: {
+      ...options.headers,
+      Authorization: `Bearer ${token}`,
+    },
+  });
 }
 
 export function useSubscription() {
@@ -27,10 +39,9 @@ export function useSubscription() {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "paypal-subscription-status"
-      );
-      if (error) throw error;
+      const res = await authorizedFetch("/api/paypal/subscription-status", { method: "GET" }, user);
+      if (!res.ok) throw new Error("Failed to fetch subscription status");
+      const data = await res.json();
       setSubscription(data.subscription);
       setCurrentPlan(
         data.plan && data.plan !== "free"
@@ -55,19 +66,23 @@ export function useSubscription() {
 
       setLoading(true);
       try {
-        const { data, error } = await supabase.functions.invoke(
-          "paypal-create-subscription",
+        const res = await authorizedFetch(
+          "/api/paypal/create-subscription",
           {
-            body: {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
               plan_id: paypalPlanId,
               plan_name: planName,
               return_url: `${window.location.origin}/subscription?success=true`,
               cancel_url: `${window.location.origin}/subscription?canceled=true`,
-            },
-          }
+            }),
+          },
+          user
         );
 
-        if (error) throw error;
+        if (!res.ok) throw new Error("Failed to create subscription");
+        const data = await res.json();
 
         if (data.approve_url) {
           window.location.href = data.approve_url;

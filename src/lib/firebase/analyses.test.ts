@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const collectionMock = vi.fn(() => ({ __collection: true }));
+const collectionMock = vi.fn((..._args: unknown[]) => ({ __collection: true }));
 const addDocMock = vi.fn();
 const queryMock = vi.fn((...args: unknown[]) => ({ __query: args }));
 const whereMock = vi.fn((...args: unknown[]) => ({ __where: args }));
