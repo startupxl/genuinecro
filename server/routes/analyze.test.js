@@ -1,0 +1,97 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import express from "express";
+import request from "supertest";
+
+const buildAnalysisPromptMock = vi.fn(() => "built-prompt");
+const generateHeuristicAnalysisMock = vi.fn();
+const callOpenAIMock = vi.fn();
+
+vi.mock("../lib/analysisPrompt.js", () => ({
+  buildAnalysisPrompt: (...args) => buildAnalysisPromptMock(...args),
+}));
+vi.mock("../lib/heuristicAnalysis.js", () => ({
+  generateHeuristicAnalysis: (...args) => generateHeuristicAnalysisMock(...args),
+}));
+vi.mock("../lib/openai.js", () => ({
+  callOpenAI: (...args) => callOpenAIMock(...args),
+}));
+
+const fetchMock = vi.fn();
+global.fetch = fetchMock;
+
+const { default: analyzeRouter } = await import("./analyze.js");
+
+function buildApp() {
+  const app = express();
+  app.use(express.json());
+  app.use("/api/analyze", analyzeRouter);
+  return app;
+}
+
+describe("POST /api/analyze/analyze-url", () => {
+  beforeEach(() => {
+    buildAnalysisPromptMock.mockClear();
+    generateHeuristicAnalysisMock.mockReset();
+    callOpenAIMock.mockReset();
+    fetchMock.mockReset();
+    process.env.FIRECRAWL_API_KEY = "test-firecrawl-key";
+  });
+
+  it("returns 400 when the URL is missing", async () => {
+    const res = await request(buildApp()).post("/api/analyze/analyze-url").send({});
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, error: "URL is required" });
+  });
+
+  it("returns the scrape error when Firecrawl fails", async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 422, json: async () => ({ error: "Scrape blocked" }) });
+
+    const res = await request(buildApp())
+      .post("/api/analyze/analyze-url")
+      .send({ url: "example.com" });
+
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({ success: false, error: "Scrape blocked" });
+  });
+
+  it("returns AI-analyzed results on the happy path", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { markdown: "# Page content", screenshot: "https://shot.example/a.png" } }),
+    });
+    callOpenAIMock.mockResolvedValue({
+      conversionScore: 72,
+      grade: "Strong",
+      topIssues: ["Issue A"],
+      insightSummary: {},
+      categoryScores: {},
+      frictionPoints: [{ category: "ux-clarity", severity: "high", title: "Test issue", impactScore: 80 }],
+    });
+
+    const res = await request(buildApp())
+      .post("/api/analyze/analyze-url")
+      .send({ url: "example.com", analysisType: "homepage", device: "desktop" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.conversionScore).toBe(72);
+    expect(res.body.data.frictionPoints[0].screenshotUrl).toBe("https://shot.example/a.png");
+    expect(generateHeuristicAnalysisMock).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the heuristic analysis when the AI call fails", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { markdown: "# Page content", screenshot: null } }),
+    });
+    callOpenAIMock.mockRejectedValue(new Error("AI unavailable"));
+    generateHeuristicAnalysisMock.mockReturnValue({ conversionScore: 40, frictionPoints: [] });
+
+    const res = await request(buildApp())
+      .post("/api/analyze/analyze-url")
+      .send({ url: "example.com", analysisType: "homepage", device: "desktop" });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true, data: { conversionScore: 40, frictionPoints: [] } });
+  });
+});
