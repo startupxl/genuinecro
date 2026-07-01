@@ -3,26 +3,33 @@ import express from "express";
 import request from "supertest";
 
 const verifyIdTokenMock = vi.fn();
-const docSetMock = vi.fn();
-const docGetMock = vi.fn();
-const whereGetMock = vi.fn();
-const updateMock = vi.fn();
+const ensureServerSignedInMock = vi.fn().mockResolvedValue(undefined);
+const docMock = vi.fn((..._args) => ({ __doc: true }));
+const getDocMock = vi.fn();
+const setDocMock = vi.fn();
+const collectionMock = vi.fn((..._args) => ({ __collection: true }));
+const queryMock = vi.fn((..._args) => ({ __query: true }));
+const whereMock = vi.fn((..._args) => ({ __where: true }));
+const limitMock = vi.fn((..._args) => ({ __limit: true }));
+const getDocsMock = vi.fn();
+const updateDocMock = vi.fn();
 
-vi.mock("../firebaseAdmin.js", () => ({
+vi.mock("../firebaseServerAuth.js", () => ({
   verifyIdToken: (...args) => verifyIdTokenMock(...args),
-  adminDb: {
-    collection: () => ({
-      doc: () => ({
-        set: docSetMock,
-        get: docGetMock,
-      }),
-      where: () => ({
-        limit: () => ({
-          get: whereGetMock,
-        }),
-      }),
-    }),
-  },
+  ensureServerSignedIn: (...args) => ensureServerSignedInMock(...args),
+  serverDb: {},
+}));
+
+vi.mock("firebase/firestore", () => ({
+  doc: (...args) => docMock(...args),
+  getDoc: (...args) => getDocMock(...args),
+  setDoc: (...args) => setDocMock(...args),
+  collection: (...args) => collectionMock(...args),
+  query: (...args) => queryMock(...args),
+  where: (...args) => whereMock(...args),
+  limit: (...args) => limitMock(...args),
+  getDocs: (...args) => getDocsMock(...args),
+  updateDoc: (...args) => updateDocMock(...args),
 }));
 
 const fetchMock = vi.fn();
@@ -40,9 +47,10 @@ function buildApp() {
 describe("PayPal Express routes", () => {
   beforeEach(() => {
     verifyIdTokenMock.mockReset();
-    docSetMock.mockReset();
-    docGetMock.mockReset();
-    whereGetMock.mockReset();
+    getDocMock.mockReset();
+    setDocMock.mockReset();
+    getDocsMock.mockReset();
+    updateDocMock.mockReset();
     fetchMock.mockReset();
     process.env.PAYPAL_CLIENT_ID = "test-client-id";
     process.env.PAYPAL_CLIENT_SECRET = "test-secret";
@@ -56,7 +64,7 @@ describe("PayPal Express routes", () => {
 
   it("returns free plan when no subscription document exists", async () => {
     verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
-    docGetMock.mockResolvedValue({ exists: false });
+    getDocMock.mockResolvedValue({ exists: () => false });
 
     const res = await request(buildApp())
       .get("/api/paypal/subscription-status")
@@ -78,7 +86,7 @@ describe("PayPal Express routes", () => {
           links: [{ rel: "approve", href: "https://paypal.example/approve" }],
         }),
       });
-    docSetMock.mockResolvedValue(undefined);
+    setDocMock.mockResolvedValue(undefined);
 
     const res = await request(buildApp())
       .post("/api/paypal/create-subscription")
@@ -88,22 +96,22 @@ describe("PayPal Express routes", () => {
     expect(res.status).toBe(200);
     expect(res.body.subscription_id).toBe("sub-123");
     expect(res.body.approve_url).toBe("https://paypal.example/approve");
-    expect(docSetMock).toHaveBeenCalledWith(
+    expect(setDocMock).toHaveBeenCalledWith(
+      { __doc: true },
       expect.objectContaining({ paypal_subscription_id: "sub-123", plan_name: "growth" }),
       { merge: true }
     );
   });
 
   it("updates subscription status from a webhook event", async () => {
-    const docRef = { update: updateMock };
-    whereGetMock.mockResolvedValue({ empty: false, docs: [{ ref: docRef }] });
-    updateMock.mockResolvedValue(undefined);
+    getDocsMock.mockResolvedValue({ empty: false, docs: [{ ref: { __ref: true } }] });
+    updateDocMock.mockResolvedValue(undefined);
 
     const res = await request(buildApp())
       .post("/api/paypal/webhook")
       .send({ event_type: "BILLING.SUBSCRIPTION.ACTIVATED", resource: { id: "sub-123" } });
 
     expect(res.status).toBe(200);
-    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: "active" }));
+    expect(updateDocMock).toHaveBeenCalledWith({ __ref: true }, expect.objectContaining({ status: "active" }));
   });
 });

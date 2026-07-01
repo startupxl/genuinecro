@@ -1,5 +1,6 @@
 import express from "express";
-import { adminDb, verifyIdToken } from "../firebaseAdmin.js";
+import { doc, getDoc, setDoc, collection, query, where, limit, getDocs, updateDoc } from "firebase/firestore";
+import { serverDb, ensureServerSignedIn, verifyIdToken } from "../firebaseServerAuth.js";
 
 const router = express.Router();
 const PAYPAL_BASE = "https://api-m.sandbox.paypal.com";
@@ -64,7 +65,9 @@ router.post("/create-subscription", async (req, res) => {
 
     const subscription = await subRes.json();
 
-    await adminDb.collection("subscriptions").doc(decoded.uid).set(
+    await ensureServerSignedIn();
+    await setDoc(
+      doc(serverDb, "subscriptions", decoded.uid),
       {
         paypal_subscription_id: subscription.id,
         plan_name,
@@ -82,7 +85,7 @@ router.post("/create-subscription", async (req, res) => {
     });
   } catch (err) {
     console.error("PayPal create subscription error:", err);
-    if (err.message === "Missing Authorization header") {
+    if (err.message === "Missing Authorization header" || err.message === "Invalid or expired token") {
       return res.status(401).json({ error: "Unauthorized" });
     }
     res.status(500).json({ error: err.message || "Unknown error" });
@@ -93,8 +96,9 @@ router.get("/subscription-status", async (req, res) => {
   try {
     const decoded = await verifyIdToken(req.headers.authorization);
 
-    const snap = await adminDb.collection("subscriptions").doc(decoded.uid).get();
-    const data = snap.exists ? snap.data() : null;
+    await ensureServerSignedIn();
+    const snap = await getDoc(doc(serverDb, "subscriptions", decoded.uid));
+    const data = snap.exists() ? snap.data() : null;
 
     res.json({
       subscription: data || null,
@@ -102,7 +106,7 @@ router.get("/subscription-status", async (req, res) => {
     });
   } catch (err) {
     console.error("Status check error:", err);
-    if (err.message === "Missing Authorization header") {
+    if (err.message === "Missing Authorization header" || err.message === "Invalid or expired token") {
       return res.status(401).json({ error: "Unauthorized" });
     }
     res.status(500).json({ error: err.message || "Unknown error" });
@@ -141,14 +145,13 @@ router.post("/webhook", async (req, res) => {
         return res.status(200).json({ received: true });
     }
 
-    const matches = await adminDb
-      .collection("subscriptions")
-      .where("paypal_subscription_id", "==", subscriptionId)
-      .limit(1)
-      .get();
+    await ensureServerSignedIn();
+    const matches = await getDocs(
+      query(collection(serverDb, "subscriptions"), where("paypal_subscription_id", "==", subscriptionId), limit(1))
+    );
 
     if (!matches.empty) {
-      await matches.docs[0].ref.update({
+      await updateDoc(matches.docs[0].ref, {
         status,
         updated_at: new Date().toISOString(),
         current_period_start: resource.billing_info?.last_payment?.time || null,
