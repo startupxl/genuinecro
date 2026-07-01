@@ -2,13 +2,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const verifyIdTokenMock = vi.fn();
 
-vi.mock("firebase-admin", () => ({
-  default: {
-    initializeApp: vi.fn(() => ({})),
-    credential: { cert: vi.fn((sa) => sa) },
-    auth: vi.fn(() => ({ verifyIdToken: verifyIdTokenMock })),
-    firestore: vi.fn(() => ({})),
-  },
+vi.mock("firebase-admin/app", () => ({
+  initializeApp: vi.fn(() => ({})),
+  cert: vi.fn((sa) => sa),
+}));
+
+vi.mock("firebase-admin/auth", () => ({
+  getAuth: vi.fn(() => ({ verifyIdToken: verifyIdTokenMock })),
+}));
+
+vi.mock("firebase-admin/firestore", () => ({
+  getFirestore: vi.fn(() => ({})),
 }));
 
 process.env.FIREBASE_SERVICE_ACCOUNT_JSON = JSON.stringify({ project_id: "test-project" });

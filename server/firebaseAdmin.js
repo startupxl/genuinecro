@@ -1,13 +1,15 @@
-import admin from "firebase-admin";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
 
-const adminApp = admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+const adminApp = initializeApp({
+  credential: cert(serviceAccount),
 });
 
-export const adminAuth = admin.auth(adminApp);
-export const adminDb = admin.firestore(adminApp);
+export const adminAuth = getAuth(adminApp);
+export const adminDb = getFirestore(adminApp);
 
 export async function verifyIdToken(authHeader) {
   if (!authHeader?.startsWith("Bearer ")) {
