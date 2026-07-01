@@ -33,7 +33,8 @@ Design implication: Dashboard, bulk/multi-client analysis, and white-label repor
   - Runs same-origin with the frontend — no CORS configuration needed for first-party requests (a simplification vs. today's cross-origin Supabase Edge Function calls).
 - **Hosting plan assumption**: Hostinger shared/Business hosting with the Node.js App panel. No root/SSH access assumed; no ability to install arbitrary system services (e.g., self-hosted Postgres) — this is why Firebase (managed) was chosen over self-hosting a database.
 - **Deployment flow**: hPanel's Node.js App Git integration connects directly to `github.com/startupxl/genuinecro` (public repo). Pushes to `main` are pulled by Hostinger and the app is restarted. No GitHub Actions/CI pipeline required for Phase 1.
-- **Environment variables** (configured in hPanel, never committed): `FIREBASE_*` (service account credentials), `OPENAI_API_KEY`, `FIRECRAWL_API_KEY`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`.
+- **Environment variables** (configured in hPanel, never committed): `FIREBASE_*` (service account credentials), `OPENAI_API_KEY`, `FIRECRAWL_API_KEY`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, `KIT_API_KEY` (email).
+- **Scheduled jobs**: the weekly digest (§6.2) is triggered via an hPanel cron job hitting an authenticated Express endpoint on a weekly schedule — no persistent background worker needed, consistent with shared-hosting constraints.
 
 ## 4. Backend Migration
 
@@ -48,6 +49,9 @@ Supabase is removed entirely. Replacements:
 | Edge Function `analyze-url` (Firecrawl scrape + AI call orchestration) | **Express route** | Same two-step flow (scrape → analyze), same heuristic fallback logic when AI is unavailable. |
 | Edge Functions `paypal-create-subscription`, `paypal-webhook`, `paypal-subscription-status` | **Express routes** | Same PayPal flows, reading/writing Firestore instead of Postgres. |
 | Firecrawl (scraping) | **Unchanged** | Already an external API, unaffected. |
+| *(new)* Contact form, notification/alert emails, weekly digest | **Kit (ConvertKit) API** | See §6.2 — these features exist in the source UI today but have no real backend anywhere (Contact form simulates success; Settings toggles only write to `localStorage`). Phase 1 makes them real via Kit. |
+
+**Note on Kit's fit**: Kit is a subscriber/sequence/broadcast-oriented email platform (marketing emails, weekly digest are a natural fit). It is not a classic one-off transactional API like Resend/Postmark. For the Contact form (a single ad-hoc "user submitted this" notification) and any immediate analysis-alert email, implementation should confirm Kit's API supports a direct one-off send to an arbitrary address — if it only supports subscriber-based sequences/broadcasts, the Contact form notification may need a minimal fallback path (e.g., tagging/subscribing the support inbox address to a triggered sequence). Flag and resolve this during implementation.
 
 ## 5. Data Model (Firestore)
 
@@ -55,6 +59,8 @@ Supabase is removed entirely. Replacements:
 - **`analyses/{id}`** — mirrors the `analyses` table: `userId` (nullable for anon), `url`, `analysisType`, `device`, `conversionScore`, `grade`, `createdAt`. Powers usage tracking, Dashboard history, and Monitoring trends.
 - **`subscriptions/{userId}`** — mirrors the `subscriptions` table: `paypalSubscriptionId`, `planName`, `status`, `currentPeriodStart`, `currentPeriodEnd`, `updatedAt`.
 - **`actionItems/{id}`** (new, backs the Action Center) — derived/synced from friction points across a user's analyses: `userId`, `analysisId`, `title`, `category`, `severity`, `impactScore`, `status` (`open` | `resolved`), `createdAt`. Lightweight single-user status tracking for Phase 1; multi-user assignment is a Phase 2+ concern (needs team accounts).
+- **`userSettings/{uid}`** (new) — replaces the current `localStorage`-only `Settings` page state: `emailNotifications`, `analysisAlerts`, `weeklyDigest`, `marketingEmails` (booleans, synced to Kit subscriber tags on change), `defaultDevice`, `autoDetectPageType`, `reportLanguage` (`en` | `es` | `fr` | `de`).
+- **`contactSubmissions/{id}`** (new) — backs the now-real Contact Us form: `name`, `email`, `subject`, `message`, `userId` (nullable), `createdAt`, `emailSent` (bool). Written by the Express route handling the form, which also triggers the Kit send.
 
 Anonymous usage tracking (the 3-free-audit limit) stays client-side (localStorage), unchanged from today.
 
@@ -73,11 +79,34 @@ Nav sections and Phase 1 status:
 | Monitoring | **Real** | Scan history + score trend per site (built from existing `analyses` data — no new data source needed) |
 | Analysis (Competitor) | Coming soon | Placeholder |
 | Action Center | **Real (lightweight)** | Aggregated open friction points across all of a user's analyses, mark resolved. No cross-user assignment yet. |
-| Reports | **Real** | Existing CSV export and Jira-ticket copy, **plus new**: PDF export and a shareable read-only report link |
+| Reports | **Real** | Existing CSV export and Jira-ticket copy, **plus new**: PDF export, a shareable read-only report link, and **white-label branding** (swap logo/colors) for Agency-plan users |
 
 "Coming soon" sections are visible in the nav (to convey the full platform vision) but show a clear placeholder state when opened — never fabricated data.
 
 Bulk Analysis (existing agency multi-client feature) is retained and surfaced from the Dashboard.
+
+### 6.1 Full feature-parity audit — everything from the current source carries forward
+
+A line-by-line audit of the existing codebase confirmed the following real, working features must be explicitly preserved (not just implied by "Conversion is real"):
+
+- **Evidence Panel**: A/B test recommendations per friction point (test name, hypothesis, control, variant, primary metric, duration), industry benchmark comparison (% of sites affected vs. top-quartile %), page screenshot evidence (from Firecrawl), copy-fix-to-clipboard.
+- **Sidebar/Dashboard analytics**: conversion score with industry-avg/top-quartile markers, top issues by revenue impact, insight-cluster gap summaries (Trust/Clarity/Effort/Motivation/Speed Gap), category score breakdown with pass/total counts.
+- **Auto-detect page type** from URL patterns (checkout/lead-form/blog/product/landing heuristics) — carries forward unchanged.
+- **Upgrade wall** — usage-limit modal with plan-tier-aware messaging (anon vs. free vs. paid).
+- **Tiered usage tracking** — 3 free (anonymous, 30-day rolling localStorage reset) → 10 free (signed-in) → plan-based limits (Starter 20 / Growth 75 / Pro 250 / Agency 800).
+- **Filtering & sorting** friction points by category, severity, and impact score (Comparison and Conversion views).
+- **MetadataBar's "Share" button** — currently a dead stub with no handler; becomes the real Reports share-link feature.
+- **Help Center** — searchable, categorized FAQ. Retained as a static utility page (linked from account menu, not primary nav).
+- **Legal pages** — Privacy Policy, Terms & Conditions, Cancellation & Refunds, Delivery Policy. Retained as static footer-linked pages, unchanged.
+- **404 page**. Retained, unchanged.
+
+### 6.2 Contact Us, Notifications, and Localization — made fully real (no placeholders)
+
+These three existed in the source as non-functional stubs; Phase 1 makes all of them real:
+
+- **Contact Us form**: currently simulates success with a `setTimeout` and sends nothing. Becomes a real Express route that stores the submission in Firestore (`contactSubmissions`) and sends a real notification email via Kit.
+- **Settings notification toggles** (email notifications, analysis alerts, weekly digest, marketing emails): currently `localStorage`-only with zero backend effect. Becomes real: preferences move to Firestore (`userSettings`), analysis-alert and weekly-digest emails are actually sent via Kit. The weekly digest is triggered by a Hostinger hPanel cron job hitting an authenticated Express endpoint (the same cron-hits-endpoint mechanism the roadmap's Monitoring phase relies on — this pulls that plumbing forward into Phase 1).
+- **Report language selector** (en/es/fr/de): currently has no effect anywhere. Becomes real via two parts: (1) the OpenAI analysis prompt is instructed to return friction-point content in the selected language, and (2) static UI chrome (labels, buttons, nav) is translated using an i18n library (e.g. `react-i18next`) for the four supported languages.
 
 ## 7. Visual Design System
 
@@ -103,4 +132,6 @@ Bulk Analysis (existing agency multi-client feature) is retained and surfaced fr
 
 ## 9. Out of Scope (this spec)
 
-Technical SEO, Performance/Core Web Vitals, Accessibility, Security auditing, scheduled/recurring monitoring with alerts, competitor comparison, and full team-based Action Center assignment are **not** built in Phase 1. They appear as "Coming soon" placeholders in the nav and are mapped as future phases in the companion roadmap doc: `2026-07-01-genuinecro-platform-roadmap.md`.
+Technical SEO, Performance/Core Web Vitals, Accessibility, Security auditing, competitor comparison, and full team-based Action Center assignment are **not** built in Phase 1. They appear as "Coming soon" placeholders in the nav and are mapped as future phases in the companion roadmap doc: `2026-07-01-genuinecro-platform-roadmap.md`.
+
+Also confirmed out of scope for Phase 1 (found during the source-code feature audit, marketed on the Subscription page but never actually built or enforced anywhere today): **multi-page funnel diagnostics** (true multi-step funnel tracking, distinct from the existing single-page "funnel-health" score category), **public API access**, and **team accounts/seats/collaboration** beyond the single-user Action Center. These are mapped as new roadmap phases — see the roadmap doc.
