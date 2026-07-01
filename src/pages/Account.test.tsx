@@ -9,19 +9,8 @@ vi.mock("@/lib/firebase/users", () => ({
   updateUserProfile: vi.fn(),
 }));
 
-vi.mock("@/integrations/firebase/client", () => ({
-  auth: {},
-  storage: {},
-}));
-
 vi.mock("firebase/auth", () => ({
   updateEmail: vi.fn(),
-}));
-
-vi.mock("firebase/storage", () => ({
-  ref: vi.fn(),
-  uploadBytes: vi.fn(),
-  getDownloadURL: vi.fn(),
 }));
 
 vi.mock("@/hooks/useAuth", () => ({

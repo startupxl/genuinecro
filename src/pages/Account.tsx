@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Camera, Save, Loader2 } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,6 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { updateEmail } from "firebase/auth";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "@/integrations/firebase/client";
 import { getUserProfile, updateUserProfile } from "@/lib/firebase/users";
 import AppHeader from "@/components/AppHeader";
 import { useNavigate } from "react-router-dom";
@@ -27,7 +25,6 @@ const Account = () => {
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -65,28 +62,6 @@ const Account = () => {
     }
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    setUploading(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const storageRef = ref(storage, `avatars/${user.uid}/avatar.${ext}`);
-
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-
-      setAvatarUrl(url);
-      await updateUserProfile(user.uid, { avatarUrl: url });
-
-      toast.success("Avatar updated");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to upload avatar");
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const currentPlan = "Free";
   const usagePercent = usage.limit > 0 ? Math.round((usage.used / usage.limit) * 100) : 0;
 
@@ -115,28 +90,12 @@ const Account = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-4">
-              <div className="relative group">
-                <Avatar className="h-16 w-16">
-                  {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-                  <AvatarFallback className="text-lg bg-primary/10 text-primary font-medium">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 text-white animate-spin" />
-                  ) : (
-                    <Camera className="h-4 w-4 text-white" />
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="sr-only"
-                    disabled={uploading}
-                  />
-                </label>
-              </div>
+              <Avatar className="h-16 w-16">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+                <AvatarFallback className="text-lg bg-primary/10 text-primary font-medium">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
               <div>
                 <p className="text-sm font-medium text-foreground">{displayName || "Your Name"}</p>
                 <p className="text-xs text-muted-foreground">{email}</p>
@@ -153,6 +112,20 @@ const Account = () => {
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Your name"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="avatarUrl">Avatar URL</Label>
+              <Input
+                id="avatarUrl"
+                type="url"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                placeholder="https://example.com/your-photo.jpg"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Paste a direct link to an image.
+              </p>
             </div>
 
             <div className="space-y-2">

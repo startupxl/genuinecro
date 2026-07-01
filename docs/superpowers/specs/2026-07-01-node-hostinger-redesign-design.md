@@ -44,7 +44,7 @@ Supabase is removed entirely. Replacements:
 |---|---|---|
 | Supabase Auth (email/password + Google via Lovable's OAuth wrapper) | **Firebase Auth** | Email/password + native Google provider. Removes the Lovable OAuth dependency too. |
 | Postgres (`profiles`, `analyses`, `subscriptions` tables + RLS) | **Firestore** | Collections mirror existing tables (see §5). RLS-equivalent authorization is enforced by Firestore Security Rules for direct client reads, and by server-side checks in Express for anything written through the API. |
-| Storage (`avatars` bucket) | **Firebase Storage** | Same bucket purpose, same upload/read pattern. |
+| Storage (`avatars` bucket) | **Dropped — pasted avatar URL instead** | Firebase Storage is intentionally not used in this project (decision made 2026-07-01). Account settings' avatar field is a plain URL input stored as a string on the Firestore `users/{uid}` doc, not a file upload — no storage bucket, no upload/read pattern needed. |
 | Edge Function `ai-analyze` (calls `ai.gateway.lovable.dev`) | **Express route calling OpenAI directly** | Same prompt/scoring engine (100+ rule reference, category weighting, JSON contract) ported as-is; only the model call target changes. |
 | Edge Function `analyze-url` (Firecrawl scrape + AI call orchestration) | **Express route** | Same two-step flow (scrape → analyze), same heuristic fallback logic when AI is unavailable. |
 | Edge Functions `paypal-create-subscription`, `paypal-webhook`, `paypal-subscription-status` | **Express routes** | Same PayPal flows, reading/writing Firestore instead of Postgres. |

@@ -36,10 +36,9 @@ npm start        # serves dist/ via server.js on $PORT (default 3000)
 1. Create a project at https://console.firebase.google.com.
 2. **Authentication** → Sign-in method → enable **Email/Password** and **Google**.
 3. **Firestore Database** → Create database (production mode, choose a region).
-4. **Storage** → Get started (accept the default bucket).
-5. **Project settings → General** → under "Your apps", add a Web app and copy
+4. **Project settings → General** → under "Your apps", add a Web app and copy
    the config values into `VITE_FIREBASE_*` in your `.env`.
-6. **Authentication → Users → Add user** — create a dedicated user for the
+5. **Authentication → Users → Add user** — create a dedicated user for the
    server (e.g. `server@internal.genuinecro.app`) with a long, randomly
    generated password used nowhere else. Set `FIREBASE_SERVICE_EMAIL` and
    `FIREBASE_SERVICE_PASSWORD` to those values — in `.env` locally, and as
@@ -49,10 +48,11 @@ npm start        # serves dist/ via server.js on $PORT (default 3000)
    created or needed. (If your organization's `iam.disableServiceAccountKeyCreation`
    policy blocks key creation and you can't get it overridden, this is why
    we use this approach instead.)
-7. Log in and link the CLI to this project, then deploy the security rules:
+6. Log in and link the CLI to this project, then deploy the security rules
+   (Firebase Storage isn't used in this project, so only Firestore rules apply):
 
 ```sh
 firebase login
 firebase use --add   # select the project you just created
-firebase deploy --only firestore:rules,firestore:indexes,storage:rules
+firebase deploy --only firestore:rules,firestore:indexes
 ```
