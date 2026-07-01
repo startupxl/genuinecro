@@ -17,12 +17,18 @@ const categoryIconMap: Record<string, React.ElementType> = {
   "speed-performance": Clock, "intent-match": Target, "funnel-health": BarChart3,
 };
 
-const severityClass: Record<FrictionSeverity, string> = {
-  high: "badge-high", med: "badge-med", low: "badge-low",
+const severityBorderClass: Record<FrictionSeverity, string> = {
+  high: "border-l-4 border-l-friction-high",
+  med: "border-l-4 border-l-friction-med",
+  low: "border-l-4 border-l-friction-low",
 };
 
-const severityDot: Record<FrictionSeverity, string> = {
-  high: "bg-friction-high", med: "bg-friction-med", low: "bg-friction-low",
+const severityTextClass: Record<FrictionSeverity, string> = {
+  high: "text-friction-high", med: "text-friction-med", low: "text-friction-low",
+};
+
+const severityLabel: Record<FrictionSeverity, string> = {
+  high: "Critical", med: "Warning", low: "Info",
 };
 
 interface FrictionCardProps {
@@ -50,7 +56,7 @@ const FrictionCard = ({ point, index, isSelected, onClick }: FrictionCardProps) 
       transition={{ duration: 0.25, delay: index * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
       whileHover={{ y: -1 }}
       onClick={onClick}
-      className={`group relative bg-surface p-4 shadow-card rounded-lg transition-shadow cursor-pointer ${
+      className={`group relative bg-surface p-4 shadow-card rounded-lg transition-shadow cursor-pointer ${severityBorderClass[point.severity]} ${
         isSelected ? "shadow-card-hover ring-1 ring-primary/20" : "hover:shadow-card-hover"
       }`}
     >
@@ -66,15 +72,9 @@ const FrictionCard = ({ point, index, isSelected, onClick }: FrictionCardProps) 
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <span
-            className={`px-2 py-0.5 rounded-full text-xs font-medium ${severityClass[point.severity]}`}
-            style={{ fontSize: "11px" }}
-          >
-            {point.severity === "high" ? "Critical" : point.severity === "med" ? "Warning" : "Info"}
-          </span>
-          <span className={`h-2 w-2 rounded-full ${severityDot[point.severity]}`} />
-        </div>
+        <span className={`text-[11px] font-medium ${severityTextClass[point.severity]}`}>
+          {severityLabel[point.severity]}
+        </span>
       </div>
 
       <h3 className="text-sm font-medium text-foreground mb-1">{point.title}</h3>
