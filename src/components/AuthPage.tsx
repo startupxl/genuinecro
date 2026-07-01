@@ -1,14 +1,24 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendEmailVerification,
+  signInWithPopup,
+  GoogleAuthProvider,
+  sendPasswordResetEmail,
+} from "firebase/auth";
+import { auth } from "@/integrations/firebase/client";
 import { toast } from "sonner";
 
 interface AuthPageProps {
   onBack: () => void;
   message?: string;
 }
+
+const googleProvider = new GoogleAuthProvider();
 
 const AuthPage = ({ onBack, message }: AuthPageProps) => {
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
@@ -20,11 +30,11 @@ const AuthPage = ({ onBack, message }: AuthPageProps) => {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error(error.message);
-    } else {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       toast.success("Welcome back!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign in failed");
     }
     setLoading(false);
   };
@@ -32,18 +42,13 @@ const AuthPage = ({ onBack, message }: AuthPageProps) => {
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: name },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Check your email to confirm your account.");
+    try {
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(credential.user, { displayName: name });
+      await sendEmailVerification(credential.user);
+      toast.success("Account created! Check your email to verify your address.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign up failed");
     }
     setLoading(false);
   };
@@ -51,16 +56,9 @@ const AuthPage = ({ onBack, message }: AuthPageProps) => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      console.log("Google OAuth result:", JSON.stringify(result, null, 2));
-      if (result.error) {
-        toast.error(result.error instanceof Error ? result.error.message : "Google sign-in failed");
-      }
+      await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      console.error("Google OAuth error:", err);
-      toast.error("Google sign-in failed. Please try again.");
+      toast.error(err instanceof Error ? err.message : "Google sign-in failed");
     }
     setLoading(false);
   };
@@ -68,13 +66,14 @@ const AuthPage = ({ onBack, message }: AuthPageProps) => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
+    try {
+      await sendPasswordResetEmail(auth, email, {
+        url: `${window.location.origin}/reset-password`,
+        handleCodeInApp: true,
+      });
       toast.success("Password reset link sent to your email.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send reset link");
     }
     setLoading(false);
   };
@@ -141,7 +140,6 @@ const AuthPage = ({ onBack, message }: AuthPageProps) => {
               {mode === "login" ? "Sign in to your account." : "Create your account."}
             </p>
 
-            {/* Google */}
             <button
               onClick={handleGoogleLogin}
               disabled={loading}
