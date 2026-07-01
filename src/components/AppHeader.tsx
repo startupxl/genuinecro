@@ -1,4 +1,4 @@
-import { Home, LogIn, LogOut, User, ChevronDown, CreditCard, UserCog, HelpCircle, Settings, FileSpreadsheet } from "lucide-react";
+import { Home, LogIn, LogOut, User, ChevronDown, CreditCard, UserCog, HelpCircle, Settings, FileSpreadsheet, LayoutDashboard } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -33,6 +33,7 @@ const AppHeader = ({ onGoHome, onSignIn, compact = false }: AppHeaderProps) => {
 
   const navLinks = [
     { label: "Home", icon: Home, action: onGoHome || (() => navigate("/")), path: "/" },
+    { label: "Dashboard", icon: LayoutDashboard, action: () => navigate("/dashboard"), path: "/dashboard" },
     { label: "Bulk", icon: FileSpreadsheet, action: () => navigate("/bulk"), path: "/bulk" },
     { label: "Account", icon: UserCog, action: () => navigate("/account"), path: "/account" },
     { label: "Subscription", icon: CreditCard, action: () => navigate("/subscription"), path: "/subscription" },

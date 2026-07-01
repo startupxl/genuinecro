@@ -17,6 +17,9 @@ import DeliveryPolicy from "./pages/DeliveryPolicy.tsx";
 import ContactUs from "./pages/ContactUs.tsx";
 import BulkAnalysis from "./pages/BulkAnalysis.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Dashboard from "./pages/Dashboard.tsx";
+import DashboardLayout from "@/components/DashboardLayout";
+import ComingSoon from "@/components/ComingSoon";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +43,13 @@ const App = () => (
             <Route path="/delivery" element={<DeliveryPolicy />} />
             <Route path="/bulk" element={<BulkAnalysis />} />
             <Route path="/contact" element={<ContactUs />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/technical" element={<DashboardLayout><ComingSoon title="Technical" /></DashboardLayout>} />
+            <Route path="/content" element={<DashboardLayout><ComingSoon title="Content" /></DashboardLayout>} />
+            <Route path="/monitoring" element={<DashboardLayout><ComingSoon title="Monitoring" /></DashboardLayout>} />
+            <Route path="/competitor-analysis" element={<DashboardLayout><ComingSoon title="Analysis" /></DashboardLayout>} />
+            <Route path="/action-center" element={<DashboardLayout><ComingSoon title="Action Center" /></DashboardLayout>} />
+            <Route path="/reports" element={<DashboardLayout><ComingSoon title="Reports" /></DashboardLayout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
