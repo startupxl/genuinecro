@@ -1,0 +1,7 @@
+project_id = "yueszxbzduqjvpjxvfxd"
+
+[functions.analyze-url]
+verify_jwt = false
+
+[functions.ai-analyze]
+verify_jwt = false

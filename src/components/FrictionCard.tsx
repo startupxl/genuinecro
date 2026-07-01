@@ -1,0 +1,112 @@
+import { motion } from "framer-motion";
+import { Clock, Eye, MousePointer, Code, ScanLine, Copy, Check, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter as FilterIcon, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, Zap, TrendingUp, BarChart3 } from "lucide-react";
+import { useState } from "react";
+import type { FrictionPoint, FrictionSeverity } from "@/lib/mockData";
+import { categoryLabels } from "@/lib/mockData";
+
+const categoryIconMap: Record<string, React.ElementType> = {
+  visual: Eye, technical: Code, ux: MousePointer, accessibility: ScanLine, performance: Clock,
+  "value-proposition": Sparkles, "feature-presentation": LayoutGrid, "onboarding-friction": DoorOpen,
+  "message-match": MessageSquareDiff, "conversion-funnel": FilterIcon, "bounce-risk": ArrowUpFromLine,
+  navigation: Compass, "content-hierarchy": Layers, readability: BookOpen, "content-structure": ListTree,
+  seo: Search, engagement: Heart, "cart-friction": ShoppingCart, "payment-ux": CreditCard,
+  "trust-security": ShieldCheck, "abandonment-risk": LogOut, "form-ux": TextCursorInput,
+  "trust-signals": BadgeCheck, "conversion-clarity": Target,
+  // New scoring categories
+  "ux-clarity": Eye, "trust-credibility": ShieldCheck, "friction-effort": Zap,
+  "speed-performance": Clock, "intent-match": Target, "funnel-health": BarChart3,
+};
+
+const severityClass: Record<FrictionSeverity, string> = {
+  high: "badge-high", med: "badge-med", low: "badge-low",
+};
+
+const severityDot: Record<FrictionSeverity, string> = {
+  high: "bg-friction-high", med: "bg-friction-med", low: "bg-friction-low",
+};
+
+interface FrictionCardProps {
+  point: FrictionPoint;
+  index: number;
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+const FrictionCard = ({ point, index, isSelected, onClick }: FrictionCardProps) => {
+  const [copied, setCopied] = useState(false);
+  const Icon = categoryIconMap[point.category] || Eye;
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(point.fix);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay: index * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+      whileHover={{ y: -1 }}
+      onClick={onClick}
+      className={`group relative bg-surface p-4 shadow-card rounded-lg transition-shadow cursor-pointer ${
+        isSelected ? "shadow-card-hover ring-1 ring-primary/20" : "hover:shadow-card-hover"
+      }`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Icon className="h-3 w-3 text-muted-foreground" />
+          <span className="text-label text-muted-foreground" style={{ fontSize: "10px" }}>
+            {categoryLabels[point.category] || point.category}
+          </span>
+          {point.insightCluster && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">
+              {point.insightCluster}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className={`px-2 py-0.5 rounded-full text-xs font-medium ${severityClass[point.severity]}`}
+            style={{ fontSize: "11px" }}
+          >
+            {point.severity === "high" ? "Critical" : point.severity === "med" ? "Warning" : "Info"}
+          </span>
+          <span className={`h-2 w-2 rounded-full ${severityDot[point.severity]}`} />
+        </div>
+      </div>
+
+      <h3 className="text-sm font-medium text-foreground mb-1">{point.title}</h3>
+      <p className="text-xs text-muted-foreground leading-relaxed mb-2 line-clamp-2">
+        {point.description}
+      </p>
+
+      {/* ROI Estimate */}
+      {point.roiEstimate && (
+        <div className="flex items-center gap-1.5 mb-3 px-2 py-1 rounded-md bg-primary/5 w-fit">
+          <TrendingUp className="h-3 w-3 text-primary" />
+          <span className="text-[11px] text-primary font-medium">{point.roiEstimate}</span>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <code className="text-[10px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-mono">
+          {point.selector}
+        </code>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded hover:bg-secondary"
+        >
+          {copied ? (
+            <><Check className="h-3 w-3" /> Copied</>
+          ) : (
+            <><Copy className="h-3 w-3" /> Copy Fix</>
+          )}
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+export default FrictionCard;

@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 210 20% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 20% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 20% 12%;
+
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 10% 94%;
+    --secondary-foreground: 210 20% 12%;
+
+    --muted: 210 10% 94%;
+    --muted-foreground: 210 10% 40%;
+
+    --accent: 210 10% 94%;
+    --accent-foreground: 210 20% 12%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 10% 90%;
+    --input: 210 10% 90%;
+    --ring: 210 100% 50%;
+
+    --radius: 0.5rem;
+
+    --friction-high: 0 84% 60%;
+    --friction-med: 38 92% 50%;
+    --friction-low: 210 100% 50%;
+
+    --surface: 0 0% 100%;
+
+    --shadow-card: 0 0 0 1px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.02);
+    --shadow-card-hover: 0 0 0 1px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05);
+    --shadow-input: inset 0 1px 2px rgba(0,0,0,0.05);
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 20% 12%;
+    --sidebar-primary: 210 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 10% 94%;
+    --sidebar-accent-foreground: 210 20% 12%;
+    --sidebar-border: 210 10% 90%;
+    --sidebar-ring: 210 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  code, .font-mono {
+    font-family: 'Geist Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+}
+
+@layer components {
+  .text-display {
+    @apply text-xl leading-tight tracking-tight;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .text-body {
+    @apply text-sm leading-relaxed tracking-normal;
+  }
+
+  .text-label {
+    @apply text-xs leading-tight tracking-widest uppercase font-bold;
+  }
+
+  .text-small {
+    @apply text-xs leading-tight;
+    letter-spacing: 0.04em;
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .shadow-input {
+    box-shadow: var(--shadow-input);
+  }
+
+  .badge-high {
+    @apply bg-destructive/10 text-destructive;
+  }
+
+  .badge-med {
+    background: hsl(var(--friction-med) / 0.1);
+    color: hsl(var(--friction-med));
+  }
+
+  .badge-low {
+    @apply bg-primary/10 text-primary;
+  }
+}
