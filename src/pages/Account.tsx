@@ -81,7 +81,7 @@ const Account = () => {
       <AppHeader onGoHome={() => navigate("/")} onSignIn={() => navigate("/")} />
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
-        <h1 className="text-xl font-semibold text-foreground">Account Settings</h1>
+        <h1 className="text-xl font-semibold text-foreground font-display">Account Settings</h1>
 
         <Card>
           <CardHeader>

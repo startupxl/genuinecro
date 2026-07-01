@@ -148,7 +148,7 @@ const HelpCenter = () => {
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Help Center</h1>
+          <h1 className="text-xl font-semibold text-foreground font-display">Help Center</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Find answers to common questions about GenuineCRO
           </p>

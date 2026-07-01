@@ -219,7 +219,7 @@ const Subscription = () => {
 
         {/* Pricing header */}
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-foreground">
+          <h2 className="text-2xl font-bold text-foreground font-display">
             All features included. No hidden limitations.
           </h2>
           <p className="text-sm text-muted-foreground max-w-lg mx-auto">

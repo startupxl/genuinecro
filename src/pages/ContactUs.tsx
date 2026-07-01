@@ -40,7 +40,7 @@ const ContactUs = () => {
       <AppHeader onGoHome={() => navigate("/")} onSignIn={() => navigate("/")} />
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Contact Us</h1>
+          <h1 className="text-xl font-semibold text-foreground font-display">Contact Us</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Help us improve GenuineCRO by reporting bugs, suggesting features, or sharing your thoughts.
           </p>

@@ -93,7 +93,7 @@ const AuthPage = ({ onBack, message }: AuthPageProps) => {
           Back
         </button>
 
-        <h1 className="text-xl font-semibold text-foreground mb-1">
+        <h1 className="text-xl font-semibold text-foreground mb-1 font-display">
           GenuineCRO
         </h1>
 

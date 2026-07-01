@@ -37,7 +37,7 @@ const ResetPassword = () => {
       className="flex min-h-svh items-center justify-center bg-background px-4"
     >
       <div className="w-full max-w-sm">
-        <h1 className="text-xl font-semibold text-foreground mb-1">GenuineCRO</h1>
+        <h1 className="text-xl font-semibold text-foreground mb-1 font-display">GenuineCRO</h1>
         <p className="text-sm text-muted-foreground mb-6">Set your new password.</p>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="relative">

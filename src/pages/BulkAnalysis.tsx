@@ -205,7 +205,7 @@ const BulkAnalysis = () => {
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Bulk Analysis</h1>
+          <h1 className="text-2xl font-bold text-foreground font-display">Bulk Analysis</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Upload a CSV or Excel file with URLs to analyze them sequentially.
             You have <span className="font-medium text-foreground">{Math.max(0, usage.limit - usage.used)}</span> audits remaining.
