@@ -30,4 +30,10 @@ describe("AuthPage", () => {
     render(<AuthPage onBack={() => {}} />);
     expect(screen.getByTestId("auth-preview-panel")).toBeInTheDocument();
   });
+
+  it("renders a mini chart and a floating trend card in the preview panel", () => {
+    render(<AuthPage onBack={() => {}} />);
+    expect(screen.getByTestId("auth-preview-chart")).toBeInTheDocument();
+    expect(screen.getByText("+8 pts")).toBeInTheDocument();
+  });
 });
