@@ -10,7 +10,7 @@ interface NavSection {
 
 const sections: NavSection[] = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, real: true },
-  { label: "Technical", path: "/technical", icon: Wrench, real: false },
+  { label: "Technical", path: "/technical", icon: Wrench, real: true },
   { label: "Content", path: "/content", icon: FileText, real: false },
   { label: "Conversion", path: "/", icon: Search, real: true },
   { label: "Monitoring", path: "/monitoring", icon: Activity, real: false },

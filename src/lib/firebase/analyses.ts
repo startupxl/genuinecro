@@ -70,6 +70,7 @@ export function groupAnalysesByDomain(analyses: AnalysisRecord[]): SiteSummary[]
   const byDomain = new Map<string, AnalysisRecord[]>();
 
   for (const analysis of analyses) {
+    if (analysis.analysisType === "technical") continue;
     let domain: string;
     try {
       domain = new URL(analysis.url).hostname.replace(/^www\./, "");

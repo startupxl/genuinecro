@@ -127,4 +127,15 @@ describe("groupAnalysesByDomain", () => {
 
     expect(summaries.map((s) => s.domain)).toEqual(["newer.example.com", "older.example.com"]);
   });
+
+  it("excludes technical audits from the domain's score trend", () => {
+    const summaries = groupAnalysesByDomain([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 70, createdAt: "2026-06-01T00:00:00.000Z" },
+      { url: "https://example.com", analysisType: "technical", device: "desktop", conversionScore: 40, createdAt: "2026-06-02T00:00:00.000Z" },
+    ]);
+
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0].latestScore).toBe(70);
+    expect(summaries[0].analysisCount).toBe(1);
+  });
 });
