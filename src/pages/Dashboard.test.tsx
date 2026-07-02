@@ -25,6 +25,10 @@ vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: { uid: "uid-1" } }),
 }));
 
+vi.mock("@/hooks/useSubscription", () => ({
+  useSubscription: () => ({ currentPlan: "Free", subscription: null }),
+}));
+
 import Dashboard from "./Dashboard";
 
 describe("Dashboard", () => {

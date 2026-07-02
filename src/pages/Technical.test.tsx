@@ -25,6 +25,10 @@ vi.mock("@/hooks/useUsageTracking", () => ({
   }),
 }));
 
+vi.mock("@/hooks/useSubscription", () => ({
+  useSubscription: () => ({ currentPlan: "Free", subscription: null }),
+}));
+
 import Technical from "./Technical";
 
 describe("Technical", () => {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import DashboardLayout from "@/components/DashboardLayout";
+import AppShell from "@/components/AppShell";
 import { getOpenActionItems, resolveActionItem, type ActionItem } from "@/lib/firebase/actionItems";
 
 const severityBorderClass: Record<string, string> = {
@@ -33,14 +33,17 @@ const ActionCenter = () => {
 
   if (!user) {
     return (
-      <DashboardLayout>
-        <p className="text-muted-foreground">Please sign in to view your action center.</p>
-      </DashboardLayout>
+      <AppShell>
+        <div className="p-6">
+          <p className="text-muted-foreground">Please sign in to view your action center.</p>
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <DashboardLayout>
+    <AppShell>
+      <div className="p-6">
       <h1 className="text-xl font-semibold text-foreground font-display mb-6">Action Center</h1>
 
       {loading ? (
@@ -73,7 +76,8 @@ const ActionCenter = () => {
           ))}
         </div>
       )}
-    </DashboardLayout>
+      </div>
+    </AppShell>
   );
 };
 

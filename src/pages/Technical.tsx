@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { createActionItems } from "@/lib/firebase/actionItems";
 import { runTechnicalAudit, type TechnicalAuditResult } from "@/lib/api/technical";
-import DashboardLayout from "@/components/DashboardLayout";
+import AppShell from "@/components/AppShell";
 import AuthPage from "@/components/AuthPage";
 import UpgradeWall from "@/components/UpgradeWall";
 import { toast } from "sonner";
@@ -63,7 +63,8 @@ const Technical = () => {
   }
 
   return (
-    <DashboardLayout>
+    <AppShell>
+      <div className="p-6">
       {showUpgradeWall && (
         <UpgradeWall
           used={usage.used}
@@ -129,7 +130,8 @@ const Technical = () => {
           )}
         </>
       )}
-    </DashboardLayout>
+      </div>
+    </AppShell>
   );
 };
 

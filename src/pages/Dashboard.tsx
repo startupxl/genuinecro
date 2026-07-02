@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Globe, TrendingUp, TrendingDown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import DashboardLayout from "@/components/DashboardLayout";
+import AppShell from "@/components/AppShell";
 import { getRecentAnalyses, groupAnalysesByDomain, type SiteSummary } from "@/lib/firebase/analyses";
 
 const Dashboard = () => {
@@ -29,14 +29,17 @@ const Dashboard = () => {
 
   if (!user) {
     return (
-      <DashboardLayout>
-        <p className="text-muted-foreground">Please sign in to view your dashboard.</p>
-      </DashboardLayout>
+      <AppShell>
+        <div className="p-6">
+          <p className="text-muted-foreground">Please sign in to view your dashboard.</p>
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <DashboardLayout>
+    <AppShell>
+      <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-foreground font-display">Dashboard</h1>
         <button
@@ -101,7 +104,8 @@ const Dashboard = () => {
           </div>
         </>
       )}
-    </DashboardLayout>
+      </div>
+    </AppShell>
   );
 };
 

@@ -20,7 +20,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import ActionCenter from "./pages/ActionCenter.tsx";
 import Technical from "./pages/Technical.tsx";
-import DashboardLayout from "@/components/DashboardLayout";
+import AppShell from "@/components/AppShell";
 import ComingSoon from "@/components/ComingSoon";
 
 const queryClient = new QueryClient();
@@ -47,11 +47,11 @@ const App = () => (
             <Route path="/contact" element={<ContactUs />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/technical" element={<Technical />} />
-            <Route path="/content" element={<DashboardLayout><ComingSoon title="Content" /></DashboardLayout>} />
-            <Route path="/monitoring" element={<DashboardLayout><ComingSoon title="Monitoring" /></DashboardLayout>} />
-            <Route path="/competitor-analysis" element={<DashboardLayout><ComingSoon title="Analysis" /></DashboardLayout>} />
+            <Route path="/content" element={<AppShell><ComingSoon title="Content" /></AppShell>} />
+            <Route path="/monitoring" element={<AppShell><ComingSoon title="Monitoring" /></AppShell>} />
+            <Route path="/competitor-analysis" element={<AppShell><ComingSoon title="Analysis" /></AppShell>} />
             <Route path="/action-center" element={<ActionCenter />} />
-            <Route path="/reports" element={<DashboardLayout><ComingSoon title="Reports" /></DashboardLayout>} />
+            <Route path="/reports" element={<AppShell><ComingSoon title="Reports" /></AppShell>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
