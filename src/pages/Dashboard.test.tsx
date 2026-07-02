@@ -65,4 +65,22 @@ describe("Dashboard", () => {
     });
     expect(screen.getByText("68")).toBeInTheDocument();
   });
+
+  it("gives the Sites Tracked card the highlighted hero treatment", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 68, createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Sites Tracked")).toBeInTheDocument();
+    });
+    const heroCard = screen.getByText("Sites Tracked").closest("div.bg-primary");
+    expect(heroCard).not.toBeNull();
+  });
 });
