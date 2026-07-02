@@ -21,6 +21,10 @@ vi.mock("@/hooks/useUsageTracking", () => ({
   useUsageTracking: () => ({ usage: { used: 2, limit: 10, canAnalyze: true, requiresAuth: false, requiresPaid: false, periodStart: null, periodEnd: null } }),
 }));
 
+vi.mock("@/hooks/useSubscription", () => ({
+  useSubscription: () => ({ currentPlan: "Free", subscription: null }),
+}));
+
 import Account from "./Account";
 
 describe("Account page", () => {

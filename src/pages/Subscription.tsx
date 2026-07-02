@@ -8,8 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { useSubscription } from "@/hooks/useSubscription";
-import AppHeader from "@/components/AppHeader";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import AppShell from "@/components/AppShell";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 const PAYPAL_PLAN_IDS: Record<string, string> = {
@@ -135,7 +135,6 @@ const Subscription = () => {
   const { user } = useAuth();
   const { usage } = useUsageTracking();
   const { currentPlan, loading, subscribe, refresh } = useSubscription();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const usagePercent = usage.limit > 0 ? Math.round((usage.used / usage.limit) * 100) : 0;
@@ -171,10 +170,8 @@ const Subscription = () => {
     currentPlan.toLowerCase() === planName.toLowerCase();
 
   return (
-    <div className="flex flex-col min-h-svh bg-background">
-      <AppHeader onGoHome={() => navigate("/")} onSignIn={() => navigate("/")} />
-
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8 space-y-8">
+    <AppShell>
+      <div className="max-w-6xl mx-auto w-full px-4 py-8 space-y-8">
         {/* Usage overview */}
         <Card>
           <CardHeader>
@@ -319,8 +316,8 @@ const Subscription = () => {
             </Card>
           ))}
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 };
 

@@ -7,8 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
-import AppHeader from "@/components/AppHeader";
-import { useNavigate } from "react-router-dom";
+import AppShell from "@/components/AppShell";
 import { toast } from "sonner";
 
 const SETTINGS_KEY = "genuinecro_settings";
@@ -35,7 +34,6 @@ const defaultSettings: UserSettings = {
 
 const Settings = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -63,10 +61,8 @@ const Settings = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-svh bg-background">
-      <AppHeader onGoHome={() => navigate("/")} onSignIn={() => navigate("/")} />
-
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
+    <AppShell>
+      <div className="max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-foreground font-display">Settings</h1>
@@ -199,8 +195,8 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 };
 

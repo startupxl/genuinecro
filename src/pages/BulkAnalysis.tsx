@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import AppHeader from "@/components/AppHeader";
+import AppShell from "@/components/AppShell";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
@@ -202,10 +202,8 @@ const BulkAnalysis = () => {
   const progressPercent = items.length > 0 ? Math.round(((completedCount + errorCount) / items.length) * 100) : 0;
 
   return (
-    <div className="flex flex-col min-h-svh bg-background">
-      <AppHeader onGoHome={() => navigate("/")} onSignIn={() => navigate("/")} />
-
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 space-y-6">
+    <AppShell>
+      <div className="max-w-5xl mx-auto w-full px-4 py-8 space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground font-display">Bulk Analysis</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -419,8 +417,8 @@ const BulkAnalysis = () => {
             <p className="text-xs mt-1">Each row should contain a URL to analyze</p>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 };
 

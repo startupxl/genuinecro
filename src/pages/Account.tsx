@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { updateEmail } from "firebase/auth";
 import { getUserProfile, updateUserProfile } from "@/lib/firebase/users";
-import AppHeader from "@/components/AppHeader";
+import AppShell from "@/components/AppShell";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -67,20 +67,17 @@ const Account = () => {
 
   if (!user) {
     return (
-      <div className="flex flex-col min-h-svh bg-background">
-        <AppHeader onGoHome={() => navigate("/")} onSignIn={() => navigate("/")} />
-        <main className="flex-1 flex items-center justify-center">
+      <AppShell>
+        <div className="flex-1 flex items-center justify-center p-6">
           <p className="text-muted-foreground">Please sign in to view your account.</p>
-        </main>
-      </div>
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-svh bg-background">
-      <AppHeader onGoHome={() => navigate("/")} onSignIn={() => navigate("/")} />
-
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
+    <AppShell>
+      <div className="max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
         <h1 className="text-xl font-semibold text-foreground font-display">Account Settings</h1>
 
         <Card>
@@ -193,8 +190,8 @@ const Account = () => {
             </div>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 };
 
