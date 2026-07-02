@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import LandingView from "@/components/LandingView";
@@ -24,6 +24,7 @@ const Index = () => {
   const [showAuth, setShowAuth] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [showUpgradeWall, setShowUpgradeWall] = useState(false);
+  const recordedResultRef = useRef<AnalysisResult | null>(null);
 
   useEffect(() => {
     if (location.state?.analysisResult) {
@@ -32,9 +33,19 @@ const Index = () => {
     }
   }, [location.state]);
 
+  useEffect(() => {
+    const pending = result ?? comparisonResults?.desktop ?? null;
+    if (!user || !pending || recordedResultRef.current === pending) return;
+    recordedResultRef.current = pending;
+    (async () => {
+      await trackAnalysis(pending.url, pending.analysisType, pending.device, pending.conversionScore ?? pending.benchmark.overallScore);
+      await createActionItems(user.uid, pending.url, pending.analysisType, pending.frictionPoints);
+    })();
+  }, [user, result, comparisonResults, trackAnalysis]);
+
   const handleAnalyze = useCallback(async (url: string, type: AnalysisType = "homepage", device: "desktop" | "mobile" | "both" = "desktop") => {
     if (usage.requiresAuth) {
-      setAuthMessage("You've used your 3 free audits. Create an account to get more!");
+      setAuthMessage("You've used your free scan. Create an account to keep going!");
       setShowAuth(true);
       return;
     }
@@ -59,6 +70,7 @@ const Index = () => {
           analyzeUrl(formatted, type, "mobile"),
         ]);
         setComparisonResults({ desktop: desktopData, mobile: mobileData });
+        if (user) recordedResultRef.current = desktopData;
         await trackAnalysis(formatted, type, "desktop", desktopData.conversionScore ?? desktopData.benchmark.overallScore);
         if (user) await createActionItems(user.uid, formatted, type, desktopData.frictionPoints);
         toast.success(`Found ${desktopData.frictionPoints.length} desktop + ${mobileData.frictionPoints.length} mobile friction points`);
@@ -68,6 +80,7 @@ const Index = () => {
         const mockDesktop = generateMockAnalysis(formatted, type);
         const mockMobile = { ...generateMockAnalysis(formatted, type), device: "mobile" as const };
         setComparisonResults({ desktop: mockDesktop, mobile: mockMobile });
+        if (user) recordedResultRef.current = mockDesktop;
         await trackAnalysis(formatted, type, "desktop", mockDesktop.conversionScore ?? mockDesktop.benchmark.overallScore);
         if (user) await createActionItems(user.uid, formatted, type, mockDesktop.frictionPoints);
       }
@@ -77,6 +90,7 @@ const Index = () => {
         setProgress(`Analyzing ${device} view for conversion friction…`);
         const data = await analyzeUrl(formatted, type, device);
         setResult(data);
+        if (user) recordedResultRef.current = data;
         await trackAnalysis(formatted, type, device, data.conversionScore ?? data.benchmark.overallScore);
         if (user) await createActionItems(user.uid, formatted, type, data.frictionPoints);
         toast.success(`Found ${data.frictionPoints.length} friction points (${device})`);
@@ -87,6 +101,7 @@ const Index = () => {
         });
         const mockResult = generateMockAnalysis(formatted, type);
         setResult(mockResult);
+        if (user) recordedResultRef.current = mockResult;
         await trackAnalysis(formatted, type, device, mockResult.conversionScore ?? mockResult.benchmark.overallScore);
         if (user) await createActionItems(user.uid, formatted, type, mockResult.frictionPoints);
       }
@@ -111,6 +126,15 @@ const Index = () => {
   }
 
   if (comparisonResults && !isAnalyzing) {
+    if (!user) {
+      return (
+        <AuthPage
+          onBack={goHome}
+          message="Your results are ready — sign in to view them."
+          initialMode="signup"
+        />
+      );
+    }
     return (
       <ComparisonView
         desktopResult={comparisonResults.desktop}
@@ -123,6 +147,15 @@ const Index = () => {
   }
 
   if (result && !isAnalyzing) {
+    if (!user) {
+      return (
+        <AuthPage
+          onBack={goHome}
+          message="Your results are ready — sign in to view them."
+          initialMode="signup"
+        />
+      );
+    }
     return (
       <AnalysisView
         result={result}
