@@ -9,7 +9,7 @@ import Sidebar from "./Sidebar";
 import MetadataBar from "./MetadataBar";
 import FrictionCard from "./FrictionCard";
 import EvidencePanel from "./EvidencePanel";
-import AppHeader from "./AppHeader";
+import AppShell from "./AppShell";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { usePlanCapabilities, getUpgradeMessage } from "@/hooks/usePlanCapabilities";
@@ -31,10 +31,9 @@ interface AnalysisViewProps {
   result: AnalysisResult;
   onNewAnalysis: (url: string) => void;
   onGoHome?: () => void;
-  onSignIn?: () => void;
 }
 
-const AnalysisView = ({ result, onNewAnalysis, onGoHome, onSignIn }: AnalysisViewProps) => {
+const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) => {
   const capabilities = usePlanCapabilities();
   const navigate = useNavigate();
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -93,13 +92,13 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome, onSignIn }: AnalysisVie
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-      className="flex flex-col h-svh bg-background"
-    >
-      <AppHeader onGoHome={onGoHome} onSignIn={onSignIn} compact />
+    <AppShell onLogoClick={onGoHome}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+        className="flex flex-col h-full bg-background"
+      >
       <div className="flex flex-1 min-h-0">
       {/* Left Sidebar - Desktop only */}
       {showSidebarInline && (
@@ -276,7 +275,8 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome, onSignIn }: AnalysisVie
         </Sheet>
       )}
       </div>
-    </motion.div>
+      </motion.div>
+    </AppShell>
   );
 };
 

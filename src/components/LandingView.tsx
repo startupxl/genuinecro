@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Search, Monitor, Smartphone, ChevronDown, Lock } from "lucide-react";
-import AppHeader from "@/components/AppHeader";
+import AppShell from "@/components/AppShell";
 import type { AnalysisType } from "@/lib/mockData";
 import logoImg from "@/assets/logo.png";
 import { analysisTypeLabels, detectPageType } from "@/lib/mockData";
@@ -15,7 +15,6 @@ interface LandingViewProps {
   usage: { used: number; limit: number; canAnalyze: boolean; requiresAuth: boolean; requiresPaid: boolean };
   user: User | null;
   onSignIn: () => void;
-  onSignOut: () => void;
 }
 
 const typeDescriptions: Record<AnalysisType, string> = {
@@ -38,7 +37,7 @@ const allTypes: AnalysisType[] = [
   "landing-paid-media",
 ];
 
-const LandingView = ({ onAnalyze, usage, user, onSignIn, onSignOut }: LandingViewProps) => {
+const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => {
   const [url, setUrl] = useState("");
   const [analysisType, setAnalysisType] = useState<AnalysisType>("homepage");
   const [device, setDevice] = useState<"desktop" | "mobile" | "both">("desktop");
@@ -101,12 +100,10 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn, onSignOut }: LandingVie
 
   return (
     <motion.div
-      className="flex flex-col min-h-svh bg-background"
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
     >
-      <AppHeader onGoHome={() => {}} onSignIn={onSignIn} />
-
+      <AppShell onSignIn={onSignIn}>
       <div className="flex-1 flex items-center justify-center px-4">
       <div className="w-full max-w-xl text-center">
         <motion.div
@@ -241,6 +238,7 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn, onSignOut }: LandingVie
           <a href="/contact" className="hover:text-foreground transition-colors">Contact Us</a>
         </nav>
       </div>
+      </AppShell>
     </motion.div>
   );
 };

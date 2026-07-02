@@ -14,7 +14,7 @@ import { createActionItems } from "@/lib/firebase/actionItems";
 import { toast } from "sonner";
 
 const Index = () => {
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { usage, trackAnalysis } = useUsageTracking();
   const location = useLocation();
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -141,7 +141,6 @@ const Index = () => {
         mobileResult={comparisonResults.mobile}
         onBack={goHome}
         onGoHome={goHome}
-        onSignIn={openSignIn}
       />
     );
   }
@@ -161,7 +160,6 @@ const Index = () => {
         result={result}
         onNewAnalysis={(url) => handleAnalyze(url, result.analysisType, result.device)}
         onGoHome={goHome}
-        onSignIn={openSignIn}
       />
     );
   }
@@ -202,7 +200,6 @@ const Index = () => {
           usage={usage}
           user={user}
           onSignIn={openSignIn}
-          onSignOut={signOut}
         />
       </AnimatePresence>
     </>

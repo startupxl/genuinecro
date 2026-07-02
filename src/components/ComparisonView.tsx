@@ -7,7 +7,7 @@ import { exportCSV, copyAsJiraTickets } from "@/lib/exportUtils";
 import { toast } from "sonner";
 import FrictionCard from "./FrictionCard";
 import EvidencePanel from "./EvidencePanel";
-import AppHeader from "./AppHeader";
+import AppShell from "./AppShell";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -25,7 +25,6 @@ interface ComparisonViewProps {
   mobileResult: AnalysisResult;
   onBack: () => void;
   onGoHome?: () => void;
-  onSignIn?: () => void;
 }
 
 function useFilteredPoints(result: AnalysisResult, categoryFilter: FrictionCategory | "all", severityFilter: FrictionSeverity | "all", sortBy: SortOption) {
@@ -41,7 +40,7 @@ function useFilteredPoints(result: AnalysisResult, categoryFilter: FrictionCateg
   }, [result.frictionPoints, categoryFilter, severityFilter, sortBy]);
 }
 
-const ComparisonView = ({ desktopResult, mobileResult, onBack, onGoHome, onSignIn }: ComparisonViewProps) => {
+const ComparisonView = ({ desktopResult, mobileResult, onBack, onGoHome }: ComparisonViewProps) => {
   const isMobile = useIsMobile();
   const [categoryFilter, setCategoryFilter] = useState<FrictionCategory | "all">("all");
   const [severityFilter, setSeverityFilter] = useState<FrictionSeverity | "all">("all");
@@ -118,13 +117,13 @@ const ComparisonView = ({ desktopResult, mobileResult, onBack, onGoHome, onSignI
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-      className="flex flex-col h-svh bg-background"
-    >
-      <AppHeader onGoHome={onGoHome} onSignIn={onSignIn} compact />
+    <AppShell onLogoClick={onGoHome}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+        className="flex flex-col h-full bg-background"
+      >
       {/* Secondary bar */}
       <div className="flex items-center gap-2 px-3 md:px-4 py-2 bg-surface border-b border-border/50">
         <button
@@ -246,6 +245,7 @@ const ComparisonView = ({ desktopResult, mobileResult, onBack, onGoHome, onSignI
         </Sheet>
       )}
     </motion.div>
+    </AppShell>
   );
 };
 
