@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import paypalRouter from "./server/routes/paypal.js";
 import analyzeRouter from "./server/routes/analyze.js";
+import technicalRouter from "./server/routes/technical.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -17,6 +18,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/paypal", paypalRouter);
 app.use("/api/analyze", analyzeRouter);
+app.use("/api/technical", technicalRouter);
 
 app.use(express.static(DIST_DIR));
 
