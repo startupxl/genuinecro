@@ -10,6 +10,7 @@ import { generateMockAnalysis, type AnalysisResult, type AnalysisType } from "@/
 import { analyzeUrl } from "@/lib/api/analyze";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
+import { createActionItems } from "@/lib/firebase/actionItems";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -59,6 +60,7 @@ const Index = () => {
         ]);
         setComparisonResults({ desktop: desktopData, mobile: mobileData });
         await trackAnalysis(formatted, type, "desktop", desktopData.conversionScore ?? desktopData.benchmark.overallScore);
+        if (user) await createActionItems(user.uid, formatted, type, desktopData.frictionPoints);
         toast.success(`Found ${desktopData.frictionPoints.length} desktop + ${mobileData.frictionPoints.length} mobile friction points`);
       } catch (err) {
         console.error("Comparison analysis failed, falling back to mock:", err);
@@ -67,6 +69,7 @@ const Index = () => {
         const mockMobile = { ...generateMockAnalysis(formatted, type), device: "mobile" as const };
         setComparisonResults({ desktop: mockDesktop, mobile: mockMobile });
         await trackAnalysis(formatted, type, "desktop", mockDesktop.conversionScore ?? mockDesktop.benchmark.overallScore);
+        if (user) await createActionItems(user.uid, formatted, type, mockDesktop.frictionPoints);
       }
     } else {
       setProgress(`Analyzing ${device} experience…`);
@@ -75,6 +78,7 @@ const Index = () => {
         const data = await analyzeUrl(formatted, type, device);
         setResult(data);
         await trackAnalysis(formatted, type, device, data.conversionScore ?? data.benchmark.overallScore);
+        if (user) await createActionItems(user.uid, formatted, type, data.frictionPoints);
         toast.success(`Found ${data.frictionPoints.length} friction points (${device})`);
       } catch (err) {
         console.error("Real analysis failed, falling back to mock:", err);
@@ -84,12 +88,13 @@ const Index = () => {
         const mockResult = generateMockAnalysis(formatted, type);
         setResult(mockResult);
         await trackAnalysis(formatted, type, device, mockResult.conversionScore ?? mockResult.benchmark.overallScore);
+        if (user) await createActionItems(user.uid, formatted, type, mockResult.frictionPoints);
       }
     }
 
     setIsAnalyzing(false);
     setProgress("");
-  }, [usage, trackAnalysis]);
+  }, [usage, trackAnalysis, user]);
 
   const goHome = () => {
     setResult(null);

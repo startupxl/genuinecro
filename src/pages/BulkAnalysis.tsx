@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { usePlanCapabilities } from "@/hooks/usePlanCapabilities";
 import { analyzeUrl } from "@/lib/api/analyze";
+import { createActionItems } from "@/lib/firebase/actionItems";
 import { toast } from "sonner";
 import type { AnalysisResult, AnalysisType } from "@/lib/mockData";
 import { detectPageType } from "@/lib/mockData";
@@ -124,6 +125,7 @@ const BulkAnalysis = () => {
       try {
         const result = await analyzeUrl(url, type, "desktop");
         await trackAnalysis(url, type, "desktop", result.conversionScore ?? result.benchmark.overallScore);
+        if (user) await createActionItems(user.uid, url, type, result.frictionPoints);
         const avgScore = result.frictionPoints.length > 0
           ? Math.round(result.frictionPoints.reduce((s, p) => s + p.impactScore, 0) / result.frictionPoints.length)
           : 0;
@@ -149,7 +151,7 @@ const BulkAnalysis = () => {
     setIsRunning(false);
     setCurrentIndex(-1);
     toast.success("Bulk analysis complete");
-  }, [items, autoDetectType, analysisType, trackAnalysis]);
+  }, [items, autoDetectType, analysisType, trackAnalysis, user]);
 
   const downloadResults = useCallback(() => {
     const completed = items.filter((i) => i.status === "done" && i.result);

@@ -15,7 +15,7 @@ const sections: NavSection[] = [
   { label: "Conversion", path: "/", icon: Search, real: true },
   { label: "Monitoring", path: "/monitoring", icon: Activity, real: false },
   { label: "Analysis", path: "/competitor-analysis", icon: Swords, real: false },
-  { label: "Action Center", path: "/action-center", icon: CheckSquare, real: false },
+  { label: "Action Center", path: "/action-center", icon: CheckSquare, real: true },
   { label: "Reports", path: "/reports", icon: FileBarChart, real: false },
 ];
 
