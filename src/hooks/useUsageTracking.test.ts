@@ -9,12 +9,14 @@ vi.mock("@/lib/firebase/analyses", () => ({
   recordAnalysis: (...args: unknown[]) => recordAnalysisMock(...args),
 }));
 
+const useAuthMock = vi.fn(() => ({ user: { uid: "uid-1" } }));
 vi.mock("./useAuth", () => ({
-  useAuth: () => ({ user: { uid: "uid-1" } }),
+  useAuth: () => useAuthMock(),
 }));
 
+const useSubscriptionMock = vi.fn(() => ({ currentPlan: "Growth", subscription: null }));
 vi.mock("./useSubscription", () => ({
-  useSubscription: () => ({ currentPlan: "Growth", subscription: null }),
+  useSubscription: () => useSubscriptionMock(),
 }));
 
 import { useUsageTracking } from "./useUsageTracking";
@@ -23,6 +25,8 @@ describe("useUsageTracking", () => {
   beforeEach(() => {
     countAnalysesSinceMock.mockReset();
     recordAnalysisMock.mockReset();
+    useAuthMock.mockReturnValue({ user: { uid: "uid-1" } });
+    useSubscriptionMock.mockReturnValue({ currentPlan: "Growth", subscription: null });
     localStorage.clear();
   });
 
@@ -51,6 +55,34 @@ describe("useUsageTracking", () => {
       analysisType: "homepage",
       device: "desktop",
       conversionScore: 72,
+    });
+  });
+
+  it("limits the free signed-in plan to 3 audits", async () => {
+    useSubscriptionMock.mockReturnValue({ currentPlan: "Free", subscription: null });
+    countAnalysesSinceMock.mockResolvedValue(0);
+    const { result } = renderHook(() => useUsageTracking());
+
+    await waitFor(() => {
+      expect(countAnalysesSinceMock).toHaveBeenCalled();
+    });
+    expect(result.current.usage.limit).toBe(3);
+  });
+
+  it("limits anonymous visitors to 1 free scan before requiring auth", async () => {
+    useAuthMock.mockReturnValue({ user: null });
+    const { result } = renderHook(() => useUsageTracking());
+
+    await waitFor(() => {
+      expect(result.current.usage.limit).toBe(1);
+      expect(result.current.usage.requiresAuth).toBe(false);
+    });
+
+    await result.current.trackAnalysis("https://example.com", "homepage", "desktop", 72);
+
+    await waitFor(() => {
+      expect(result.current.usage.used).toBe(1);
+      expect(result.current.usage.requiresAuth).toBe(true);
     });
   });
 });

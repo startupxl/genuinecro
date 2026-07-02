@@ -5,10 +5,10 @@ import { recordAnalysis, countAnalysesSince } from "@/lib/firebase/analyses";
 
 const ANON_STORAGE_KEY = "genuinecro_anon_usage";
 const ANON_RESET_KEY = "genuinecro_anon_reset";
-const FREE_LIMIT_ANON = 3;
+const FREE_LIMIT_ANON = 1;
 
 const PLAN_LIMITS: Record<string, number> = {
-  free: 10,
+  free: 3,
   starter: 20,
   growth: 75,
   pro: 250,
