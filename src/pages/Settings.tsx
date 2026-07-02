@@ -8,29 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
+import { getUserSettings, saveUserSettings, defaultSettings, type UserSettings } from "@/lib/userSettings";
+import { subscribeToKit } from "@/lib/api/kit";
 import { toast } from "sonner";
-
-const SETTINGS_KEY = "genuinecro_settings";
-
-interface UserSettings {
-  emailNotifications: boolean;
-  analysisAlerts: boolean;
-  weeklyDigest: boolean;
-  marketingEmails: boolean;
-  defaultDevice: "desktop" | "mobile" | "both";
-  autoDetectPageType: boolean;
-  language: string;
-}
-
-const defaultSettings: UserSettings = {
-  emailNotifications: true,
-  analysisAlerts: true,
-  weeklyDigest: false,
-  marketingEmails: false,
-  defaultDevice: "desktop",
-  autoDetectPageType: true,
-  language: "en",
-};
 
 const Settings = () => {
   const { user } = useAuth();
@@ -39,10 +19,7 @@ const Settings = () => {
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(SETTINGS_KEY);
-      if (stored) setSettings(JSON.parse(stored));
-    } catch {}
+    setSettings(getUserSettings());
   }, []);
 
   const update = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
@@ -50,14 +27,15 @@ const Settings = () => {
     setDirty(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      setSaving(false);
-      setDirty(false);
-      toast.success("Settings saved");
-    }, 400);
+    saveUserSettings(settings);
+    if ((settings.weeklyDigest || settings.marketingEmails) && user?.email) {
+      await subscribeToKit(user.email);
+    }
+    setSaving(false);
+    setDirty(false);
+    toast.success("Settings saved");
   };
 
   return (
@@ -92,6 +70,7 @@ const Settings = () => {
                 <p className="text-xs text-muted-foreground">Receive important updates via email</p>
               </div>
               <Switch
+                aria-label="Email Notifications"
                 checked={settings.emailNotifications}
                 onCheckedChange={(v) => update("emailNotifications", v)}
               />
@@ -103,6 +82,7 @@ const Settings = () => {
                 <p className="text-xs text-muted-foreground">Get notified when your analysis is ready</p>
               </div>
               <Switch
+                aria-label="Analysis Alerts"
                 checked={settings.analysisAlerts}
                 onCheckedChange={(v) => update("analysisAlerts", v)}
               />
@@ -114,6 +94,7 @@ const Settings = () => {
                 <p className="text-xs text-muted-foreground">Receive a weekly summary of your CRO insights</p>
               </div>
               <Switch
+                aria-label="Weekly Digest"
                 checked={settings.weeklyDigest}
                 onCheckedChange={(v) => update("weeklyDigest", v)}
               />
@@ -125,6 +106,7 @@ const Settings = () => {
                 <p className="text-xs text-muted-foreground">Product news, tips, and feature announcements</p>
               </div>
               <Switch
+                aria-label="Marketing Emails"
                 checked={settings.marketingEmails}
                 onCheckedChange={(v) => update("marketingEmails", v)}
               />
@@ -168,6 +150,7 @@ const Settings = () => {
                 <p className="text-xs text-muted-foreground">Automatically detect page type from URL patterns</p>
               </div>
               <Switch
+                aria-label="Auto-detect Page Type"
                 checked={settings.autoDetectPageType}
                 onCheckedChange={(v) => update("autoDetectPageType", v)}
               />
