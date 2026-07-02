@@ -7,6 +7,7 @@ import logoImg from "@/assets/logo.png";
 import { analysisTypeLabels, detectPageType } from "@/lib/mockData";
 import type { User } from "firebase/auth";
 import { usePlanCapabilities, getUpgradeMessage } from "@/hooks/usePlanCapabilities";
+import { getUserSettings } from "@/lib/userSettings";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -40,13 +41,14 @@ const allTypes: AnalysisType[] = [
 const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => {
   const [url, setUrl] = useState("");
   const [analysisType, setAnalysisType] = useState<AnalysisType>("homepage");
-  const [device, setDevice] = useState<"desktop" | "mobile" | "both">("desktop");
+  const [device, setDevice] = useState<"desktop" | "mobile" | "both">(() => getUserSettings().defaultDevice);
   const [userOverridden, setUserOverridden] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const capabilities = usePlanCapabilities();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!getUserSettings().autoDetectPageType) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!url.trim()) return;
     if (userOverridden) return;
