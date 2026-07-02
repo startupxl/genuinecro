@@ -25,12 +25,21 @@ const ContactUs = () => {
       return;
     }
     setSending(true);
-    // Simulate sending
-    await new Promise((r) => setTimeout(r, 1200));
-    toast.success("Message sent! We'll get back to you within 24–48 hours.");
-    setSubject("");
-    setMessage("");
-    setSending(false);
+    try {
+      const res = await fetch("https://formspree.io/f/mgojpydr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ name, email, subject, message }),
+      });
+      if (!res.ok) throw new Error("Formspree request failed");
+      toast.success("Message sent! We'll get back to you within 24–48 hours.");
+      setSubject("");
+      setMessage("");
+    } catch {
+      toast.error("Couldn't send your message. Please try again or email us directly.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
