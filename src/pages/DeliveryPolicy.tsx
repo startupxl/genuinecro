@@ -1,13 +1,9 @@
-import AppHeader from "@/components/AppHeader";
-import { useNavigate } from "react-router-dom";
+import AppShell from "@/components/AppShell";
 
 const DeliveryPolicy = () => {
-  const navigate = useNavigate();
-
   return (
-    <div className="flex flex-col min-h-svh bg-background">
-      <AppHeader onGoHome={() => navigate("/")} onSignIn={() => navigate("/")} />
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
+    <AppShell>
+      <div className="max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
         <h1 className="text-xl font-semibold text-foreground font-display">Delivery Policy</h1>
         <p className="text-xs text-muted-foreground">Last updated: March 22, 2026</p>
 
@@ -54,8 +50,8 @@ const DeliveryPolicy = () => {
             </p>
           </section>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 };
 

@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Search, ChevronDown, ChevronRight, HelpCircle, CreditCard, Zap, Shield, Monitor, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import AppHeader from "@/components/AppHeader";
-import { useNavigate } from "react-router-dom";
+import AppShell from "@/components/AppShell";
 
 interface FaqItem {
   question: string;
@@ -35,7 +34,7 @@ const faqData: FaqCategory[] = [
       },
       {
         question: "Do I need an account to use GenuineCRO?",
-        answer: "You can run up to 3 analyses without an account. Sign up for a free account to get 10 analyses. Upgrade to a paid plan for unlimited access.",
+        answer: "You get 1 free scan before you need to sign up. A free account includes 3 total analyses. Upgrade to a paid plan for more.",
       },
     ],
   },
@@ -118,7 +117,6 @@ const faqData: FaqCategory[] = [
 ];
 
 const HelpCenter = () => {
-  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [openItems, setOpenItems] = useState<Set<string>>(new Set());
 
@@ -143,10 +141,8 @@ const HelpCenter = () => {
     .filter((cat) => cat.items.length > 0);
 
   return (
-    <div className="flex flex-col min-h-svh bg-background">
-      <AppHeader onGoHome={() => navigate("/")} onSignIn={() => navigate("/")} />
-
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
+    <AppShell>
+      <div className="max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
         <div>
           <h1 className="text-xl font-semibold text-foreground font-display">Help Center</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -208,8 +204,8 @@ const HelpCenter = () => {
             </p>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 };
 

@@ -6,13 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import AppHeader from "@/components/AppHeader";
-import { useNavigate } from "react-router-dom";
+import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const ContactUs = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [name, setName] = useState(user?.displayName || "");
   const [email, setEmail] = useState(user?.email || "");
@@ -36,9 +34,8 @@ const ContactUs = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-svh bg-background">
-      <AppHeader onGoHome={() => navigate("/")} onSignIn={() => navigate("/")} />
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
+    <AppShell>
+      <div className="max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
         <div>
           <h1 className="text-xl font-semibold text-foreground font-display">Contact Us</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -128,8 +125,8 @@ const ContactUs = () => {
             </Card>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 };
 
