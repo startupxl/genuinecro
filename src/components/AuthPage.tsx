@@ -16,12 +16,13 @@ import { toast } from "sonner";
 interface AuthPageProps {
   onBack: () => void;
   message?: string;
+  initialMode?: "login" | "signup";
 }
 
 const googleProvider = new GoogleAuthProvider();
 
-const AuthPage = ({ onBack, message }: AuthPageProps) => {
-  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
+const AuthPage = ({ onBack, message, initialMode = "login" }: AuthPageProps) => {
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -82,8 +83,9 @@ const AuthPage = ({ onBack, message }: AuthPageProps) => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex min-h-svh items-center justify-center bg-background px-4"
+      className="flex min-h-svh bg-background"
     >
+      <div className="flex-1 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <button
           onClick={onBack}
@@ -239,6 +241,32 @@ const AuthPage = ({ onBack, message }: AuthPageProps) => {
             </p>
           </>
         )}
+      </div>
+      </div>
+
+      <div
+        data-testid="auth-preview-panel"
+        className="hidden md:flex flex-1 items-center justify-center bg-gradient-to-br from-primary to-primary/80 p-10"
+      >
+        <div className="max-w-sm text-center">
+          <p className="text-2xl font-semibold text-primary-foreground font-display mb-8">
+            See exactly where visitors drop off.
+          </p>
+          <div className="bg-surface rounded-lg shadow-lg p-4 text-left">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Conversion Score</span>
+              <span className="text-2xl font-semibold text-foreground">72</span>
+            </div>
+            <div className="space-y-2">
+              <div className="border-l-4 border-l-friction-high bg-background rounded p-2">
+                <p className="text-xs font-medium text-foreground">Weak call-to-action</p>
+              </div>
+              <div className="border-l-4 border-l-friction-med bg-background rounded p-2">
+                <p className="text-xs font-medium text-foreground">Slow page load</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </motion.div>
   );
