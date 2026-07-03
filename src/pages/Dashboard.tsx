@@ -1,31 +1,44 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Globe, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { Plus, Globe, TrendingUp, TrendingDown, AlertTriangle, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
-import { getRecentAnalyses, groupAnalysesByDomain, type SiteSummary } from "@/lib/firebase/analyses";
+import { getRecentAnalyses, groupAnalysesByDomain, type AnalysisRecord } from "@/lib/firebase/analyses";
+import { getAllActionItems, type ActionItem } from "@/lib/firebase/actionItems";
+import { buildScoreTrendData, buildCategoryBreakdown } from "@/lib/dashboardMetrics";
+import ScoreTrendChart from "@/components/ScoreTrendChart";
+import CategoryBreakdownChart from "@/components/CategoryBreakdownChart";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [sites, setSites] = useState<SiteSummary[]>([]);
+  const [records, setRecords] = useState<AnalysisRecord[]>([]);
+  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const [criticalOnly, setCriticalOnly] = useState(false);
 
   useEffect(() => {
     if (!user) {
       setLoading(false);
       return;
     }
-    getRecentAnalyses(user.uid).then((records) => {
-      setSites(groupAnalysesByDomain(records));
+    Promise.all([getRecentAnalyses(user.uid), getAllActionItems(user.uid)]).then(([analysisRecords, items]) => {
+      setRecords(analysisRecords);
+      setActionItems(items);
       setLoading(false);
     });
   }, [user]);
 
+  const sites = groupAnalysesByDomain(records);
   const criticalCount = sites.filter((s) => s.latestScore < 50).length;
   const avgDelta = sites.length > 0
     ? Math.round(sites.reduce((sum, s) => sum + (s.scoreDelta ?? 0), 0) / sites.length)
     : 0;
+  const displayedSites = criticalOnly ? sites.filter((s) => s.latestScore < 50) : sites;
+
+  const scoreTrendData = buildScoreTrendData(records, selectedDomain);
+  const categoryData = buildCategoryBreakdown(actionItems, selectedDomain);
 
   if (!user) {
     return (
@@ -70,7 +83,13 @@ const Dashboard = () => {
               </div>
               <p className="text-2xl font-semibold">{sites.length}</p>
             </div>
-            <div className="bg-surface border border-border rounded-lg p-4">
+            <button
+              type="button"
+              onClick={() => setCriticalOnly((v) => !v)}
+              className={`text-left bg-surface border rounded-lg p-4 transition-colors ${
+                criticalOnly ? "border-destructive ring-1 ring-destructive/30" : "border-border"
+              }`}
+            >
               <div className="flex items-center justify-between mb-1">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Critical (Score &lt; 50)</p>
                 <div className="h-7 w-7 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -78,7 +97,7 @@ const Dashboard = () => {
                 </div>
               </div>
               <p className="text-2xl font-semibold text-destructive">{criticalCount}</p>
-            </div>
+            </button>
             <div className="bg-surface border border-border rounded-lg p-4">
               <div className="flex items-center justify-between mb-1">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Avg Score Trend</p>
@@ -92,14 +111,26 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-surface border border-border rounded-lg overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-              Client Sites
+          <div className="bg-surface border border-border rounded-lg overflow-hidden mb-6">
+            <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Client Sites</span>
+              {criticalOnly && (
+                <button
+                  onClick={() => setCriticalOnly(false)}
+                  className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-3 w-3" /> Showing critical only
+                </button>
+              )}
             </div>
-            {sites.map((site) => (
+            {displayedSites.map((site) => (
               <div
                 key={site.domain}
-                className="flex items-center justify-between px-4 py-3 border-b border-border last:border-b-0"
+                data-testid="site-row"
+                onClick={() => setSelectedDomain((d) => (d === site.domain ? null : site.domain))}
+                className={`flex items-center justify-between px-4 py-3 border-b border-border last:border-b-0 cursor-pointer transition-colors hover:bg-secondary/50 ${
+                  selectedDomain === site.domain ? "bg-secondary" : ""
+                }`}
               >
                 <div>
                   <p className="text-sm font-medium text-foreground">{site.domain}</p>
@@ -116,6 +147,37 @@ const Dashboard = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {selectedDomain && (
+            <div className="flex items-center gap-1.5 mb-4 -mt-3">
+              <span className="text-xs text-muted-foreground">Filtered to {selectedDomain}</span>
+              <button
+                onClick={() => setSelectedDomain(null)}
+                className="flex items-center gap-0.5 text-xs text-primary hover:text-primary/80 transition-colors"
+              >
+                <X className="h-3 w-3" /> Clear
+              </button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="bg-surface border border-border rounded-lg overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+                Score Trend
+              </div>
+              <div className="p-4">
+                <ScoreTrendChart data={scoreTrendData} />
+              </div>
+            </div>
+            <div className="bg-surface border border-border rounded-lg overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+                Friction by Category
+              </div>
+              <div className="p-4">
+                <CategoryBreakdownChart data={categoryData} />
+              </div>
+            </div>
           </div>
         </>
       )}
