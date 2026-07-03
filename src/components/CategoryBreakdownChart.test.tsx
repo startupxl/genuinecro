@@ -36,4 +36,17 @@ describe("CategoryBreakdownChart", () => {
 
     expect(screen.getByText(/no friction found yet/i)).toBeInTheDocument();
   });
+
+  it("uses a per-entry bar color when provided, and defaults to primary otherwise", () => {
+    const data: CategoryBreakdownEntry[] = [
+      { category: "high", label: "Critical", count: 3, barColorClass: "bg-friction-high" },
+      { category: "ux-clarity", label: "UX Clarity", count: 1 },
+    ];
+
+    const { container } = render(<CategoryBreakdownChart data={data} />);
+    const bars = container.querySelectorAll("[data-testid='category-bar-fill']");
+
+    expect(bars[0]).toHaveClass("bg-friction-high");
+    expect(bars[1]).toHaveClass("bg-primary");
+  });
 });

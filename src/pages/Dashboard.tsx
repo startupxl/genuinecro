@@ -1,13 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Globe, TrendingUp, TrendingDown, AlertTriangle, X } from "lucide-react";
+import { Plus, Globe, TrendingUp, TrendingDown, AlertTriangle, X, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
 import { getRecentAnalyses, groupAnalysesByDomain, type AnalysisRecord } from "@/lib/firebase/analyses";
 import { getAllActionItems, type ActionItem } from "@/lib/firebase/actionItems";
-import { buildScoreTrendData, buildCategoryBreakdown } from "@/lib/dashboardMetrics";
+import {
+  buildScoreTrendData,
+  buildCategoryBreakdown,
+  buildSeverityBreakdown,
+  buildPageBreakdown,
+  buildHeroScoreSummary,
+  getDomain,
+} from "@/lib/dashboardMetrics";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
 import CategoryBreakdownChart from "@/components/CategoryBreakdownChart";
+import HeroScoreCard from "@/components/HeroScoreCard";
+import TopIssuesList from "@/components/TopIssuesList";
+import PageBreakdownTable from "@/components/PageBreakdownTable";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -32,13 +42,21 @@ const Dashboard = () => {
 
   const sites = groupAnalysesByDomain(records);
   const criticalCount = sites.filter((s) => s.latestScore < 50).length;
-  const avgDelta = sites.length > 0
-    ? Math.round(sites.reduce((sum, s) => sum + (s.scoreDelta ?? 0), 0) / sites.length)
-    : 0;
   const displayedSites = criticalOnly ? sites.filter((s) => s.latestScore < 50) : sites;
 
   const scoreTrendData = buildScoreTrendData(records, selectedDomain);
   const categoryData = buildCategoryBreakdown(actionItems, selectedDomain);
+  const severityData = buildSeverityBreakdown(actionItems, selectedDomain);
+  const heroSummary = buildHeroScoreSummary(sites, records);
+  const pageData = buildPageBreakdown(records, actionItems).filter(
+    (p) => !selectedDomain || p.domain === selectedDomain
+  );
+  const topIssues = actionItems
+    .filter((i) => i.status === "open")
+    .filter((i) => !selectedDomain || getDomain(i.url) === selectedDomain)
+    .slice()
+    .sort((a, b) => b.impactScore - a.impactScore)
+    .slice(0, 5);
 
   if (!user) {
     return (
@@ -73,15 +91,26 @@ const Dashboard = () => {
         </div>
       ) : (
         <>
+          <HeroScoreCard summary={heroSummary} />
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-            <div className="bg-primary rounded-lg p-4 text-primary-foreground">
+            <div className="bg-surface border border-border rounded-lg p-4">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] uppercase tracking-wider text-primary-foreground/70">Sites Tracked</p>
-                <div className="h-7 w-7 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                  <Globe className="h-3.5 w-3.5" />
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Sites Tracked</p>
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Globe className="h-3.5 w-3.5 text-primary" />
                 </div>
               </div>
-              <p className="text-2xl font-semibold">{sites.length}</p>
+              <p className="text-2xl font-semibold text-foreground">{sites.length}</p>
+            </div>
+            <div className="bg-surface border border-border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pages Audited</p>
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                  <FileText className="h-3.5 w-3.5 text-primary" />
+                </div>
+              </div>
+              <p className="text-2xl font-semibold text-foreground">{heroSummary.pagesAudited}</p>
             </div>
             <button
               type="button"
@@ -98,17 +127,6 @@ const Dashboard = () => {
               </div>
               <p className="text-2xl font-semibold text-destructive">{criticalCount}</p>
             </button>
-            <div className="bg-surface border border-border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Avg Score Trend</p>
-                <div className={`h-7 w-7 rounded-full flex items-center justify-center ${avgDelta >= 0 ? "bg-primary/10" : "bg-destructive/10"}`}>
-                  {avgDelta >= 0 ? <TrendingUp className="h-3.5 w-3.5 text-primary" /> : <TrendingDown className="h-3.5 w-3.5 text-destructive" />}
-                </div>
-              </div>
-              <p className={`text-2xl font-semibold ${avgDelta >= 0 ? "text-primary" : "text-destructive"}`}>
-                {avgDelta >= 0 ? "+" : ""}{avgDelta}
-              </p>
-            </div>
           </div>
 
           <div className="bg-surface border border-border rounded-lg overflow-hidden mb-6">
@@ -177,6 +195,34 @@ const Dashboard = () => {
               <div className="p-4">
                 <CategoryBreakdownChart data={categoryData} />
               </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3 mb-6">
+            <div className="bg-surface border border-border rounded-lg overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+                Issues by Severity
+              </div>
+              <div className="p-4">
+                <CategoryBreakdownChart data={severityData} />
+              </div>
+            </div>
+            <div className="bg-surface border border-border rounded-lg overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+                Top Issues
+              </div>
+              <div className="p-4">
+                <TopIssuesList items={topIssues} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-surface border border-border rounded-lg overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+              Page Breakdown
+            </div>
+            <div className="p-4 overflow-x-auto">
+              <PageBreakdownTable data={pageData} />
             </div>
           </div>
         </>

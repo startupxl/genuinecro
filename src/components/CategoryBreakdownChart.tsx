@@ -24,7 +24,7 @@ const CategoryBreakdownChart = ({ data }: CategoryBreakdownChartProps) => {
           <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
             <div
               data-testid="category-bar-fill"
-              className="h-full rounded-full bg-primary"
+              className={`h-full rounded-full ${entry.barColorClass ?? "bg-primary"}`}
               style={{ width: `${(entry.count / max) * 100}%` }}
             />
           </div>

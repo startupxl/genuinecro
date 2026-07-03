@@ -146,9 +146,9 @@ describe("buildSeverityBreakdown", () => {
     const result = buildSeverityBreakdown(items, null);
 
     expect(result).toEqual([
-      { category: "high", label: "Critical", count: 2 },
-      { category: "med", label: "Warning", count: 1 },
-      { category: "low", label: "Info", count: 1 },
+      { category: "high", label: "Critical", count: 2, barColorClass: "bg-friction-high" },
+      { category: "med", label: "Warning", count: 1, barColorClass: "bg-friction-med" },
+      { category: "low", label: "Info", count: 1, barColorClass: "bg-friction-low" },
     ]);
   });
 
@@ -157,7 +157,7 @@ describe("buildSeverityBreakdown", () => {
 
     const result = buildSeverityBreakdown(items, null);
 
-    expect(result).toEqual([{ category: "high", label: "Critical", count: 1 }]);
+    expect(result).toEqual([{ category: "high", label: "Critical", count: 1, barColorClass: "bg-friction-high" }]);
   });
 
   it("filters to a single domain when one is given", () => {
@@ -168,7 +168,7 @@ describe("buildSeverityBreakdown", () => {
 
     const result = buildSeverityBreakdown(items, "a.com");
 
-    expect(result).toEqual([{ category: "high", label: "Critical", count: 1 }]);
+    expect(result).toEqual([{ category: "high", label: "Critical", count: 1, barColorClass: "bg-friction-high" }]);
   });
 });
 

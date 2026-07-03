@@ -28,6 +28,7 @@ export interface CategoryBreakdownEntry {
   category: string;
   label: string;
   count: number;
+  barColorClass?: string;
 }
 
 export function buildCategoryBreakdown(items: ActionItem[], domain: string | null): CategoryBreakdownEntry[] {
@@ -53,6 +54,11 @@ export function getSeverityBand(score: number): SeverityBand {
 }
 
 const severityLabels: Record<string, string> = { high: "Critical", med: "Warning", low: "Info" };
+const severityBarColors: Record<string, string> = {
+  high: "bg-friction-high",
+  med: "bg-friction-med",
+  low: "bg-friction-low",
+};
 const severityOrder = ["high", "med", "low"];
 
 export function buildSeverityBreakdown(items: ActionItem[], domain: string | null): CategoryBreakdownEntry[] {
@@ -64,7 +70,12 @@ export function buildSeverityBreakdown(items: ActionItem[], domain: string | nul
   }
 
   return [...counts.entries()]
-    .map(([severity, count]) => ({ category: severity, label: severityLabels[severity] ?? severity, count }))
+    .map(([severity, count]) => ({
+      category: severity,
+      label: severityLabels[severity] ?? severity,
+      count,
+      barColorClass: severityBarColors[severity],
+    }))
     .sort((a, b) => severityOrder.indexOf(a.category) - severityOrder.indexOf(b.category));
 }
 

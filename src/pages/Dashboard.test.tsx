@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 const getRecentAnalysesMock = vi.fn();
@@ -73,10 +73,11 @@ describe("Dashboard", () => {
     await waitFor(() => {
       expect(screen.getByText("example.com")).toBeInTheDocument();
     });
-    expect(screen.getByText("68")).toBeInTheDocument();
+    const siteRow = screen.getByText("example.com").closest("[data-testid='site-row']")!;
+    expect(within(siteRow).getByText("68")).toBeInTheDocument();
   });
 
-  it("gives the Sites Tracked card the highlighted hero treatment", async () => {
+  it("gives the Overall CRO Score card the highlighted hero treatment, and Sites Tracked a plain card", async () => {
     getRecentAnalysesMock.mockResolvedValue([
       { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 68, createdAt: "2026-06-01T00:00:00.000Z" },
     ]);
@@ -88,10 +89,13 @@ describe("Dashboard", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Sites Tracked")).toBeInTheDocument();
+      expect(screen.getByText("Overall CRO Score")).toBeInTheDocument();
     });
-    const heroCard = screen.getByText("Sites Tracked").closest("div.bg-primary");
+    const heroCard = screen.getByText("Overall CRO Score").closest("div.bg-primary");
     expect(heroCard).not.toBeNull();
+
+    const sitesTrackedCard = screen.getByText("Sites Tracked").closest("div");
+    expect(sitesTrackedCard).not.toHaveClass("bg-primary");
   });
 
   it("selects a site when its row is clicked, and deselects on a second click", async () => {
@@ -171,6 +175,61 @@ describe("Dashboard", () => {
       expect(screen.getByText("Score Trend")).toBeInTheDocument();
     });
     expect(screen.getByText("Friction by Category")).toBeInTheDocument();
-    expect(screen.getByText("UX Clarity")).toBeInTheDocument();
+    expect(screen.getAllByText("UX Clarity").length).toBeGreaterThan(0);
+  });
+
+  it("shows the pages audited count in the hero card", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 68, createdAt: "2026-06-01T00:00:00.000Z" },
+      { url: "https://example.com/checkout", analysisType: "checkout", device: "desktop", conversionScore: 55, createdAt: "2026-06-02T00:00:00.000Z" },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/2 pages audited/i)).toBeInTheDocument();
+    });
+  });
+
+  it("renders the severity breakdown and top issues widgets", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+    getAllActionItemsMock.mockResolvedValue([
+      { id: "1", userId: "uid-1", url: "https://example.com", analysisType: "homepage", category: "ux-clarity", severity: "high", title: "Weak headline", description: "d", fix: "Rewrite it", impactScore: 90, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Issues by Severity")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Top Issues")).toBeInTheDocument();
+    expect(screen.getByText("Weak headline")).toBeInTheDocument();
+  });
+
+  it("renders the page breakdown table", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com/checkout", analysisType: "checkout", device: "desktop", conversionScore: 55, createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Page Breakdown")).toBeInTheDocument();
+    });
+    expect(screen.getByText("https://example.com/checkout")).toBeInTheDocument();
   });
 });
