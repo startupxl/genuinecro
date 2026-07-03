@@ -17,6 +17,7 @@ export interface ActionItem extends FrictionPointInput {
   analysisType: string;
   status: "open" | "resolved";
   createdAt: string;
+  resolvedAt?: string;
 }
 
 export async function createActionItems(
@@ -68,6 +69,7 @@ function mapActionItemDoc(docSnap: { id: string; data: () => Record<string, unkn
     impactScore: number;
     status: "open" | "resolved";
     createdAt: { toDate: () => Date } | string;
+    resolvedAt?: { toDate: () => Date } | string;
   };
   return {
     id: docSnap.id,
@@ -82,6 +84,7 @@ function mapActionItemDoc(docSnap: { id: string; data: () => Record<string, unkn
     impactScore: data.impactScore,
     status: data.status,
     createdAt: typeof data.createdAt === "string" ? data.createdAt : data.createdAt.toDate().toISOString(),
+    resolvedAt: !data.resolvedAt ? undefined : typeof data.resolvedAt === "string" ? data.resolvedAt : data.resolvedAt.toDate().toISOString(),
   };
 }
 
@@ -96,5 +99,5 @@ export async function getAllActionItems(userId: string): Promise<ActionItem[]> {
 }
 
 export async function resolveActionItem(itemId: string): Promise<void> {
-  await updateDoc(doc(db, "actionItems", itemId), { status: "resolved" });
+  await updateDoc(doc(db, "actionItems", itemId), { status: "resolved", resolvedAt: serverTimestamp() });
 }

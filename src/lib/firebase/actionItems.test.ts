@@ -156,9 +156,40 @@ describe("getAllActionItems", () => {
 });
 
 describe("resolveActionItem", () => {
-  it("updates the item's status to resolved", async () => {
+  it("updates the item's status to resolved and stamps resolvedAt", async () => {
     updateDocMock.mockResolvedValue(undefined);
     await resolveActionItem("item-1");
-    expect(updateDocMock).toHaveBeenCalledWith({ __doc: true }, { status: "resolved" });
+    expect(updateDocMock).toHaveBeenCalledWith({ __doc: true }, { status: "resolved", resolvedAt: "server-timestamp" });
+  });
+});
+
+describe("resolvedAt mapping", () => {
+  it("includes resolvedAt on a resolved item when present", async () => {
+    getDocsMock.mockReset();
+    getDocsMock.mockResolvedValue({
+      docs: [
+        {
+          id: "item-1",
+          data: () => ({
+            userId: "uid-1",
+            url: "https://example.com",
+            analysisType: "homepage",
+            category: "ux-clarity",
+            severity: "high",
+            title: "Weak headline",
+            description: "d1",
+            fix: "f1",
+            impactScore: 80,
+            status: "resolved",
+            createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+            resolvedAt: { toDate: () => new Date("2026-06-05T00:00:00.000Z") },
+          }),
+        },
+      ],
+    });
+
+    const items = await getAllActionItems("uid-1");
+
+    expect(items[0].resolvedAt).toBe("2026-06-05T00:00:00.000Z");
   });
 });

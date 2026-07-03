@@ -8,6 +8,7 @@ import {
   buildHeroScoreSummary,
   buildCategoryScoreBreakdown,
   CATEGORY_BENCHMARKS,
+  buildIssueMomentum,
 } from "./dashboardMetrics";
 import type { AnalysisRecord } from "./firebase/analyses";
 import type { ActionItem } from "./firebase/actionItems";
@@ -348,5 +349,60 @@ describe("buildCategoryScoreBreakdown", () => {
     const result = buildCategoryScoreBreakdown(analyses, "a.com");
 
     expect(result.find((r) => r.category === "navigation")!.score).toBe(70);
+  });
+});
+
+describe("buildIssueMomentum", () => {
+  it("counts items created after the second-most-recent audit as new", () => {
+    const analyses = [
+      buildAnalysis({ createdAt: "2026-06-01T00:00:00.000Z" }),
+      buildAnalysis({ createdAt: "2026-06-05T00:00:00.000Z" }),
+    ];
+    const items = [
+      buildActionItem({ createdAt: "2026-06-01T00:00:00.000Z" }),
+      buildActionItem({ createdAt: "2026-06-05T00:00:00.000Z" }),
+    ];
+
+    const momentum = buildIssueMomentum(items, analyses, null);
+
+    expect(momentum.newSinceLastScan).toBe(1);
+  });
+
+  it("counts items resolved after the second-most-recent audit", () => {
+    const analyses = [
+      buildAnalysis({ createdAt: "2026-06-01T00:00:00.000Z" }),
+      buildAnalysis({ createdAt: "2026-06-05T00:00:00.000Z" }),
+    ];
+    const items = [
+      buildActionItem({ status: "resolved", resolvedAt: "2026-06-06T00:00:00.000Z" }),
+      buildActionItem({ status: "resolved", resolvedAt: "2025-01-01T00:00:00.000Z" }),
+      buildActionItem({ status: "open" }),
+    ];
+
+    const momentum = buildIssueMomentum(items, analyses, null);
+
+    expect(momentum.resolvedSinceLastScan).toBe(1);
+  });
+
+  it("returns zeroes when there's no second-most-recent audit yet", () => {
+    const analyses = [buildAnalysis({ createdAt: "2026-06-01T00:00:00.000Z" })];
+    const items = [buildActionItem({ createdAt: "2026-06-01T00:00:00.000Z" })];
+
+    expect(buildIssueMomentum(items, analyses, null)).toEqual({ newSinceLastScan: 0, resolvedSinceLastScan: 0 });
+  });
+
+  it("filters to a single domain when one is given", () => {
+    const analyses = [
+      buildAnalysis({ url: "https://a.com", createdAt: "2026-06-01T00:00:00.000Z" }),
+      buildAnalysis({ url: "https://a.com", createdAt: "2026-06-05T00:00:00.000Z" }),
+    ];
+    const items = [
+      buildActionItem({ url: "https://a.com", createdAt: "2026-06-06T00:00:00.000Z" }),
+      buildActionItem({ url: "https://b.com", createdAt: "2026-06-06T00:00:00.000Z" }),
+    ];
+
+    const momentum = buildIssueMomentum(items, analyses, "a.com");
+
+    expect(momentum.newSinceLastScan).toBe(1);
   });
 });

@@ -209,3 +209,29 @@ export function buildCategoryScoreBreakdown(analyses: AnalysisRecord[], domain: 
 
   return entries.sort((a, b) => a.deltaVsBenchmark - b.deltaVsBenchmark);
 }
+
+export interface IssueMomentum {
+  newSinceLastScan: number;
+  resolvedSinceLastScan: number;
+}
+
+export function buildIssueMomentum(items: ActionItem[], analyses: AnalysisRecord[], domain: string | null): IssueMomentum {
+  const filteredAnalyses = analyses
+    .filter((a) => a.analysisType !== "technical")
+    .filter((a) => !domain || getDomain(a.url) === domain)
+    .slice()
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const baseline = filteredAnalyses[1]?.createdAt;
+  if (!baseline) return { newSinceLastScan: 0, resolvedSinceLastScan: 0 };
+
+  const baselineTime = new Date(baseline).getTime();
+  const filteredItems = items.filter((i) => !domain || getDomain(i.url) === domain);
+
+  return {
+    newSinceLastScan: filteredItems.filter((i) => new Date(i.createdAt).getTime() > baselineTime).length,
+    resolvedSinceLastScan: filteredItems.filter(
+      (i) => i.status === "resolved" && i.resolvedAt && new Date(i.resolvedAt).getTime() > baselineTime
+    ).length,
+  };
+}
