@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { CRITERIA_LIBRARY } from "./criteriaLibrary.js";
+import { SCORING_CATEGORIES } from "./analysisPrompt.js";
 
-const VALID_CATEGORIES = ["ux-clarity", "trust-credibility", "friction-effort", "speed-performance", "intent-match", "funnel-health"];
+const VALID_CATEGORIES = Object.keys(SCORING_CATEGORIES);
 
 describe("CRITERIA_LIBRARY", () => {
   it("has ten criteria each for homepage and checkout", () => {
