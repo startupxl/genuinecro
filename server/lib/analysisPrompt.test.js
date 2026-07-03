@@ -31,4 +31,23 @@ describe("buildAnalysisPrompt", () => {
     const prompt = buildAnalysisPrompt("unknown-type", "content", "https://example.com", "desktop");
     expect(prompt).toContain("Homepage is the gateway");
   });
+
+  it("includes the named evidence-based criteria for homepage", () => {
+    const prompt = buildAnalysisPrompt("homepage", "# Some content", "https://example.com", "desktop");
+    expect(prompt).toContain("NAMED EVIDENCE-BASED CRITERIA");
+    expect(prompt).toContain("homepage-001");
+    expect(prompt).toContain("Nielsen Norman Group");
+  });
+
+  it("includes the named evidence-based criteria for checkout", () => {
+    const prompt = buildAnalysisPrompt("checkout", "# Some content", "https://example.com", "desktop");
+    expect(prompt).toContain("NAMED EVIDENCE-BASED CRITERIA");
+    expect(prompt).toContain("checkout-001");
+    expect(prompt).toContain("Baymard Institute");
+  });
+
+  it("does not include the evidence-based criteria section for other page types", () => {
+    const prompt = buildAnalysisPrompt("product-page", "# Some content", "https://example.com", "desktop");
+    expect(prompt).not.toContain("NAMED EVIDENCE-BASED CRITERIA");
+  });
 });

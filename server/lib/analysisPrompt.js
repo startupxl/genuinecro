@@ -1,3 +1,5 @@
+import { CRITERIA_LIBRARY } from "./criteriaLibrary.js";
+
 // ── Scoring categories mapped from the 100+ rule engine ──
 export const SCORING_CATEGORIES = {
   "ux-clarity": { weight: 0.20, label: "UX Clarity" },
@@ -59,10 +61,26 @@ const ANALYSIS_TYPE_LABELS = {
   "landing-marketing": "Landing Page — Marketing", "landing-paid-media": "Landing Page — Paid Media",
 };
 
+function buildCriteriaSection(analysisType) {
+  const criteria = CRITERIA_LIBRARY[analysisType];
+  if (!criteria) return "";
+
+  const list = criteria
+    .map((c) => `- [${c.id}] ${c.rule}: ${c.guidance} (Source: ${c.source})`)
+    .join("\n");
+
+  return `
+
+## NAMED EVIDENCE-BASED CRITERIA
+Check the page specifically against each of these named, sourced criteria. When a friction point you report matches one of these criteria, include a "sourceCitation" field on that friction point containing the exact Source text shown for it below. Not every finding needs to match one of these — only add "sourceCitation" when there's a genuine match; never invent a citation.
+${list}`;
+}
+
 export function buildAnalysisPrompt(analysisType, markdown, url, device) {
   const typeLabel = ANALYSIS_TYPE_LABELS[analysisType] || analysisType;
   const emphasis = ANALYSIS_TYPE_EMPHASIS[analysisType] || ANALYSIS_TYPE_EMPHASIS.homepage;
   const deviceBench = DEVICE_BENCHMARKS[device] || DEVICE_BENCHMARKS.desktop;
+  const criteriaSection = buildCriteriaSection(analysisType);
 
   const deviceContext = device === "mobile"
     ? "You are analyzing the MOBILE experience. Focus on touch targets (44px min), thumb-zone accessibility, mobile viewport issues, responsive layout, tap target spacing, text readability on small screens, mobile keyboard optimization, and cellular performance."
@@ -103,6 +121,7 @@ Severity mapping: 90–100 = Elite | 75–89 = Strong | 50–74 = Needs Optimiza
 
 ## THE 100+ RULE ENGINE — Evaluate against ALL of these:
 ${RULES_REFERENCE}
+${criteriaSection}
 
 ## ANALYSIS INSTRUCTIONS
 1. Evaluate the page content against EVERY relevant rule in the engine above
