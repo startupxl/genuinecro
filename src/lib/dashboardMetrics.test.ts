@@ -204,6 +204,19 @@ describe("buildPageBreakdown", () => {
     expect(result[0].issueCount).toBe(2);
   });
 
+  it("counts in-progress issues alongside open ones, but not resolved ones", () => {
+    const analyses = [buildAnalysis({ url: "https://a.com/", conversionScore: 40 })];
+    const items = [
+      buildActionItem({ url: "https://a.com/", status: "open" }),
+      buildActionItem({ url: "https://a.com/", status: "in_progress" }),
+      buildActionItem({ url: "https://a.com/", status: "resolved" }),
+    ];
+
+    const result = buildPageBreakdown(analyses, items);
+
+    expect(result[0].issueCount).toBe(2);
+  });
+
   it("excludes technical audits", () => {
     const analyses = [buildAnalysis({ url: "https://a.com/", analysisType: "technical" })];
 

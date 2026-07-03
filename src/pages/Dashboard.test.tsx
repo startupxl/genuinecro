@@ -236,6 +236,27 @@ describe("Dashboard", () => {
     expect(screen.queryByText("Trust issue")).not.toBeInTheDocument();
   });
 
+  it("shows in-progress issues in Top Issues alongside open ones, but not resolved ones", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+    getAllActionItemsMock.mockResolvedValue([
+      { id: "1", userId: "uid-1", url: "https://example.com", analysisType: "homepage", category: "navigation", severity: "high", title: "In progress issue", description: "d", fix: "f", impactScore: 90, status: "in_progress", createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "2", userId: "uid-1", url: "https://example.com", analysisType: "homepage", category: "navigation", severity: "high", title: "Done issue", description: "d", fix: "f", impactScore: 80, status: "resolved", createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("In progress issue")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Done issue")).not.toBeInTheDocument();
+  });
+
   it("shows the worst category and a Re-scan button on each site row, and Re-scan navigates with a prefilled URL", async () => {
     getRecentAnalysesMock.mockResolvedValue([
       { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z", categoryScores: { navigation: 20, "trust-credibility": 90 } },

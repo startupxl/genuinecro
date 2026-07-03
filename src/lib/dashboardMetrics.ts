@@ -101,7 +101,7 @@ export function buildPageBreakdown(analyses: AnalysisRecord[], items: ActionItem
 
   const openIssueCountByUrl = new Map<string, number>();
   for (const item of items) {
-    if (item.status !== "open") continue;
+    if (item.status === "resolved") continue;
     openIssueCountByUrl.set(item.url, (openIssueCountByUrl.get(item.url) ?? 0) + 1);
   }
 

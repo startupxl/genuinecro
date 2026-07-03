@@ -15,7 +15,7 @@ export interface ActionItem extends FrictionPointInput {
   userId: string;
   url: string;
   analysisType: string;
-  status: "open" | "resolved";
+  status: "open" | "in_progress" | "resolved";
   createdAt: string;
   resolvedAt?: string;
 }
@@ -45,11 +45,11 @@ export async function createActionItems(
   );
 }
 
-export async function getOpenActionItems(userId: string): Promise<ActionItem[]> {
+export async function getActiveActionItems(userId: string): Promise<ActionItem[]> {
   const q = query(
     collection(db, "actionItems"),
     where("userId", "==", userId),
-    where("status", "==", "open"),
+    where("status", "in", ["open", "in_progress"]),
     orderBy("impactScore", "desc")
   );
   const snapshot = await getDocs(q);
@@ -67,7 +67,7 @@ function mapActionItemDoc(docSnap: { id: string; data: () => Record<string, unkn
     description: string;
     fix: string;
     impactScore: number;
-    status: "open" | "resolved";
+    status: "open" | "in_progress" | "resolved";
     createdAt: { toDate: () => Date } | string;
     resolvedAt?: { toDate: () => Date } | string;
   };
@@ -98,6 +98,8 @@ export async function getAllActionItems(userId: string): Promise<ActionItem[]> {
   return snapshot.docs.map(mapActionItemDoc);
 }
 
-export async function resolveActionItem(itemId: string): Promise<void> {
-  await updateDoc(doc(db, "actionItems", itemId), { status: "resolved", resolvedAt: serverTimestamp() });
+export async function updateActionItemStatus(itemId: string, status: ActionItem["status"]): Promise<void> {
+  const updates: Record<string, unknown> = { status };
+  if (status === "resolved") updates.resolvedAt = serverTimestamp();
+  await updateDoc(doc(db, "actionItems", itemId), updates);
 }

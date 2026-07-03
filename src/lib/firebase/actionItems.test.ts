@@ -23,7 +23,7 @@ vi.mock("firebase/firestore", () => ({
 
 vi.mock("@/integrations/firebase/client", () => ({ db: {} }));
 
-import { createActionItems, getOpenActionItems, getAllActionItems, resolveActionItem } from "./actionItems";
+import { createActionItems, getActiveActionItems, getAllActionItems, updateActionItemStatus } from "./actionItems";
 
 describe("createActionItems", () => {
   beforeEach(() => {
@@ -54,12 +54,13 @@ describe("createActionItems", () => {
   });
 });
 
-describe("getOpenActionItems", () => {
+describe("getActiveActionItems", () => {
   beforeEach(() => {
     getDocsMock.mockReset();
+    whereMock.mockClear();
   });
 
-  it("queries for open items belonging to the user, ordered by impact", async () => {
+  it("queries for open and in-progress items belonging to the user, ordered by impact", async () => {
     getDocsMock.mockResolvedValue({
       docs: [
         {
@@ -81,10 +82,10 @@ describe("getOpenActionItems", () => {
       ],
     });
 
-    const items = await getOpenActionItems("uid-1");
+    const items = await getActiveActionItems("uid-1");
 
     expect(whereMock).toHaveBeenCalledWith("userId", "==", "uid-1");
-    expect(whereMock).toHaveBeenCalledWith("status", "==", "open");
+    expect(whereMock).toHaveBeenCalledWith("status", "in", ["open", "in_progress"]);
     expect(items).toEqual([
       {
         id: "item-1",
@@ -155,11 +156,21 @@ describe("getAllActionItems", () => {
   });
 });
 
-describe("resolveActionItem", () => {
-  it("updates the item's status to resolved and stamps resolvedAt", async () => {
+describe("updateActionItemStatus", () => {
+  beforeEach(() => {
+    updateDocMock.mockReset();
+  });
+
+  it("stamps resolvedAt when moving an item to resolved", async () => {
     updateDocMock.mockResolvedValue(undefined);
-    await resolveActionItem("item-1");
+    await updateActionItemStatus("item-1", "resolved");
     expect(updateDocMock).toHaveBeenCalledWith({ __doc: true }, { status: "resolved", resolvedAt: "server-timestamp" });
+  });
+
+  it("updates status without touching resolvedAt for a non-resolved transition", async () => {
+    updateDocMock.mockResolvedValue(undefined);
+    await updateActionItemStatus("item-1", "in_progress");
+    expect(updateDocMock).toHaveBeenCalledWith({ __doc: true }, { status: "in_progress" });
   });
 });
 

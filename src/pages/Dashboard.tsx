@@ -61,7 +61,7 @@ const Dashboard = () => {
     (p) => !selectedDomain || p.domain === selectedDomain
   );
   const topIssues = actionItems
-    .filter((i) => i.status === "open")
+    .filter((i) => i.status !== "resolved")
     .filter((i) => !selectedDomain || getDomain(i.url) === selectedDomain)
     .filter((i) => !selectedCategory || i.category === selectedCategory)
     .slice()
