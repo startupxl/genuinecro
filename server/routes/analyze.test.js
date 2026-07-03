@@ -79,6 +79,60 @@ describe("POST /api/analyze/analyze-url", () => {
     expect(generateHeuristicAnalysisMock).not.toHaveBeenCalled();
   });
 
+  it("passes through a sourceCitation when the AI includes one", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { markdown: "# Page content", screenshot: "https://shot.example/a.png" } }),
+    });
+    callOpenAIMock.mockResolvedValue({
+      conversionScore: 72,
+      grade: "Strong",
+      topIssues: ["Issue A"],
+      insightSummary: {},
+      categoryScores: {},
+      frictionPoints: [
+        {
+          category: "friction-effort",
+          severity: "high",
+          title: "Forced account creation",
+          impactScore: 90,
+          sourceCitation: "Baymard Institute's publicly published checkout usability research",
+        },
+      ],
+    });
+
+    const res = await request(buildApp())
+      .post("/api/analyze/analyze-url")
+      .send({ url: "example.com", analysisType: "checkout", device: "desktop" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.frictionPoints[0].sourceCitation).toBe(
+      "Baymard Institute's publicly published checkout usability research"
+    );
+  });
+
+  it("defaults sourceCitation to null when the AI omits one", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { markdown: "# Page content", screenshot: "https://shot.example/a.png" } }),
+    });
+    callOpenAIMock.mockResolvedValue({
+      conversionScore: 72,
+      grade: "Strong",
+      topIssues: ["Issue A"],
+      insightSummary: {},
+      categoryScores: {},
+      frictionPoints: [{ category: "ux-clarity", severity: "high", title: "Test issue", impactScore: 80 }],
+    });
+
+    const res = await request(buildApp())
+      .post("/api/analyze/analyze-url")
+      .send({ url: "example.com", analysisType: "homepage", device: "desktop" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.frictionPoints[0].sourceCitation).toBeNull();
+  });
+
   it("falls back to the heuristic analysis when the AI call fails", async () => {
     fetchMock.mockResolvedValue({
       ok: true,

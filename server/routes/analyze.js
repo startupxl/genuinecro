@@ -74,6 +74,7 @@ router.post("/analyze-url", async (req, res) => {
       impactScore: fp.impactScore || 50,
       roiEstimate: fp.roiEstimate || "",
       insightCluster: fp.insightCluster || "",
+      sourceCitation: fp.sourceCitation || null,
       screenshotUrl,
       benchmark: fp.benchmark || { industryAvg: 50, topPerformers: 80, label: "Score" },
       abTest: fp.abTest || { testName: "", hypothesis: "", control: "", variant: "", metric: "", duration: "" },
