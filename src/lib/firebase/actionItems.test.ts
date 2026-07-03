@@ -23,7 +23,7 @@ vi.mock("firebase/firestore", () => ({
 
 vi.mock("@/integrations/firebase/client", () => ({ db: {} }));
 
-import { createActionItems, getOpenActionItems, resolveActionItem } from "./actionItems";
+import { createActionItems, getOpenActionItems, getAllActionItems, resolveActionItem } from "./actionItems";
 
 describe("createActionItems", () => {
   beforeEach(() => {
@@ -98,6 +98,57 @@ describe("getOpenActionItems", () => {
         fix: "f1",
         impactScore: 80,
         status: "open",
+        createdAt: "2026-06-01T00:00:00.000Z",
+      },
+    ]);
+  });
+});
+
+describe("getAllActionItems", () => {
+  beforeEach(() => {
+    getDocsMock.mockReset();
+    whereMock.mockClear();
+  });
+
+  it("queries for all items belonging to the user, regardless of status", async () => {
+    getDocsMock.mockResolvedValue({
+      docs: [
+        {
+          id: "item-1",
+          data: () => ({
+            userId: "uid-1",
+            url: "https://example.com",
+            analysisType: "homepage",
+            category: "ux-clarity",
+            severity: "high",
+            title: "Weak headline",
+            description: "d1",
+            fix: "f1",
+            impactScore: 80,
+            status: "resolved",
+            createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+          }),
+        },
+      ],
+    });
+
+    const items = await getAllActionItems("uid-1");
+
+    expect(whereMock).toHaveBeenCalledWith("userId", "==", "uid-1");
+    expect(whereMock).not.toHaveBeenCalledWith("status", "==", "open");
+    expect(items).toEqual([
+      {
+        id: "item-1",
+        userId: "uid-1",
+        url: "https://example.com",
+        analysisType: "homepage",
+        category: "ux-clarity",
+        severity: "high",
+        title: "Weak headline",
+        description: "d1",
+        fix: "f1",
+        impactScore: 80,
+        status: "resolved",
         createdAt: "2026-06-01T00:00:00.000Z",
       },
     ]);

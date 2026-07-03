@@ -52,35 +52,47 @@ export async function getOpenActionItems(userId: string): Promise<ActionItem[]> 
     orderBy("impactScore", "desc")
   );
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((docSnap) => {
-    const data = docSnap.data() as {
-      userId: string;
-      url: string;
-      analysisType: string;
-      category: string;
-      severity: "high" | "med" | "low";
-      title: string;
-      description: string;
-      fix: string;
-      impactScore: number;
-      status: "open" | "resolved";
-      createdAt: { toDate: () => Date } | string;
-    };
-    return {
-      id: docSnap.id,
-      userId: data.userId,
-      url: data.url,
-      analysisType: data.analysisType,
-      category: data.category,
-      severity: data.severity,
-      title: data.title,
-      description: data.description,
-      fix: data.fix,
-      impactScore: data.impactScore,
-      status: data.status,
-      createdAt: typeof data.createdAt === "string" ? data.createdAt : data.createdAt.toDate().toISOString(),
-    };
-  });
+  return snapshot.docs.map(mapActionItemDoc);
+}
+
+function mapActionItemDoc(docSnap: { id: string; data: () => Record<string, unknown> }): ActionItem {
+  const data = docSnap.data() as {
+    userId: string;
+    url: string;
+    analysisType: string;
+    category: string;
+    severity: "high" | "med" | "low";
+    title: string;
+    description: string;
+    fix: string;
+    impactScore: number;
+    status: "open" | "resolved";
+    createdAt: { toDate: () => Date } | string;
+  };
+  return {
+    id: docSnap.id,
+    userId: data.userId,
+    url: data.url,
+    analysisType: data.analysisType,
+    category: data.category,
+    severity: data.severity,
+    title: data.title,
+    description: data.description,
+    fix: data.fix,
+    impactScore: data.impactScore,
+    status: data.status,
+    createdAt: typeof data.createdAt === "string" ? data.createdAt : data.createdAt.toDate().toISOString(),
+  };
+}
+
+export async function getAllActionItems(userId: string): Promise<ActionItem[]> {
+  const q = query(
+    collection(db, "actionItems"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(mapActionItemDoc);
 }
 
 export async function resolveActionItem(itemId: string): Promise<void> {
