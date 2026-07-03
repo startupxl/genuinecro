@@ -199,13 +199,19 @@ export const categoryLabels: Record<string, string> = {
   "form-ux": "Form UX",
   "trust-signals": "Trust Signals",
   "conversion-clarity": "Conversion Clarity",
-  // New scoring categories
+  // Previous scoring categories (retired, kept for historical records)
   "ux-clarity": "UX Clarity",
   "trust-credibility": "Trust & Credibility",
   "friction-effort": "Friction & Effort",
   "speed-performance": "Speed & Performance",
   "intent-match": "Intent Match",
   "funnel-health": "Funnel Health",
+  // Current scoring categories (10-category taxonomy)
+  "visual-friction": "Visual Friction",
+  "ux-friction": "UX Friction",
+  "form-friction": "Form Friction",
+  "cta-effectiveness": "CTA Effectiveness",
+  "checkout-friction": "Checkout Friction",
 };
 
 export const categoryIcons: Record<string, string> = {
