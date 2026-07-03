@@ -71,4 +71,47 @@ describe("WorkspaceNav", () => {
     fireEvent.click(screen.getByText("Sign in"));
     expect(onSignIn).toHaveBeenCalled();
   });
+
+  it("is off-screen by default on mobile and slides in when isOpen is true", () => {
+    const { container, rerender } = render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav />
+      </MemoryRouter>
+    );
+    expect(container.querySelector("nav")).toHaveClass("-translate-x-full");
+
+    rerender(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav isOpen />
+      </MemoryRouter>
+    );
+    expect(container.querySelector("nav")).toHaveClass("translate-x-0");
+  });
+
+  it("calls onNavigate when a nav link is clicked, so mobile callers can close the drawer", () => {
+    const onNavigate = vi.fn();
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav onNavigate={onNavigate} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Technical"));
+    expect(onNavigate).toHaveBeenCalled();
+  });
+
+  it("calls onNavigate in addition to onSignIn when Sign in is clicked", () => {
+    mockUser = null;
+    const onNavigate = vi.fn();
+    const onSignIn = vi.fn();
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav onNavigate={onNavigate} onSignIn={onSignIn} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Sign in"));
+    expect(onNavigate).toHaveBeenCalled();
+    expect(onSignIn).toHaveBeenCalled();
+  });
 });

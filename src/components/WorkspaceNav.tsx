@@ -1,7 +1,7 @@
 import { useNavigate, NavLink } from "react-router-dom";
 import {
   LayoutDashboard, Wrench, FileText, Search, Activity, Swords, CheckSquare, FileBarChart,
-  FileSpreadsheet, LogIn, LogOut, UserCog, CreditCard, HelpCircle, Settings, ChevronUp,
+  FileSpreadsheet, LogIn, LogOut, UserCog, CreditCard, HelpCircle, Settings, ChevronUp, X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -37,9 +37,11 @@ const sections: NavSection[] = [
 interface WorkspaceNavProps {
   onLogoClick?: () => void;
   onSignIn?: () => void;
+  isOpen?: boolean;
+  onNavigate?: () => void;
 }
 
-const WorkspaceNav = ({ onLogoClick, onSignIn }: WorkspaceNavProps) => {
+const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate }: WorkspaceNavProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { currentPlan } = useSubscription();
@@ -47,15 +49,41 @@ const WorkspaceNav = ({ onLogoClick, onSignIn }: WorkspaceNavProps) => {
   const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : "U";
   const displayName = user?.displayName || user?.email || "User";
 
+  const handleLogoClick = () => {
+    onNavigate?.();
+    (onLogoClick || (() => navigate("/")))();
+  };
+
+  const handleSignIn = () => {
+    onNavigate?.();
+    (onSignIn || (() => navigate("/")))();
+  };
+
   return (
-    <nav className="w-48 flex-shrink-0 border-r border-border bg-surface py-4 flex flex-col">
-      <button
-        onClick={onLogoClick || (() => navigate("/"))}
-        className="flex items-center justify-center px-3 pb-4 mb-2 border-b border-border hover:opacity-80 transition-opacity"
-        title="Back to home"
-      >
-        <img src={logoImg} alt="GenuineCRO" className="h-10 w-full object-contain" />
-      </button>
+    <nav
+      className={`fixed inset-y-0 left-0 z-40 w-48 flex-shrink-0 border-r border-border bg-surface py-4 flex flex-col transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
+      <div className="flex items-center gap-1 px-3 pb-4 mb-2 border-b border-border">
+        <button
+          onClick={handleLogoClick}
+          className="flex-1 flex items-center justify-center hover:opacity-80 transition-opacity"
+          title="Back to home"
+        >
+          <img src={logoImg} alt="GenuineCRO" className="h-10 w-full object-contain" />
+        </button>
+        {isOpen && (
+          <button
+            type="button"
+            onClick={() => onNavigate?.()}
+            aria-label="Close menu"
+            className="md:hidden flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
 
       <div className="flex-1">
         {sections.map((section) => (
@@ -63,6 +91,7 @@ const WorkspaceNav = ({ onLogoClick, onSignIn }: WorkspaceNavProps) => {
             key={section.path}
             to={section.path}
             end={section.path === "/"}
+            onClick={() => onNavigate?.()}
             className={({ isActive }) =>
               `flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
                 isActive
@@ -97,25 +126,25 @@ const WorkspaceNav = ({ onLogoClick, onSignIn }: WorkspaceNavProps) => {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" side="top" className="w-56">
-            <DropdownMenuItem onClick={() => navigate("/account")} className="cursor-pointer">
+            <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/account"); }} className="cursor-pointer">
               <UserCog className="mr-2 h-4 w-4" />
               Account
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/subscription")} className="cursor-pointer">
+            <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/subscription"); }} className="cursor-pointer">
               <CreditCard className="mr-2 h-4 w-4" />
               Subscription
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/help")} className="cursor-pointer">
+            <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/help"); }} className="cursor-pointer">
               <HelpCircle className="mr-2 h-4 w-4" />
               Help Center
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
+            <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/settings"); }} className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
+            <DropdownMenuItem onClick={() => { onNavigate?.(); signOut(); }} className="cursor-pointer text-destructive focus:text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </DropdownMenuItem>
@@ -123,7 +152,7 @@ const WorkspaceNav = ({ onLogoClick, onSignIn }: WorkspaceNavProps) => {
         </DropdownMenu>
       ) : (
         <button
-          onClick={onSignIn || (() => navigate("/"))}
+          onClick={handleSignIn}
           className="flex items-center gap-2 px-4 py-3 mt-1 border-t border-border text-sm text-foreground hover:bg-secondary/50 transition-colors"
         >
           <span className="h-1.5 w-1.5 flex-shrink-0" />
