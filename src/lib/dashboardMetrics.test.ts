@@ -1,7 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { buildScoreTrendData, buildCategoryBreakdown } from "./dashboardMetrics";
+import {
+  buildScoreTrendData,
+  buildCategoryBreakdown,
+  getSeverityBand,
+  buildSeverityBreakdown,
+  buildPageBreakdown,
+  buildHeroScoreSummary,
+} from "./dashboardMetrics";
 import type { AnalysisRecord } from "./firebase/analyses";
 import type { ActionItem } from "./firebase/actionItems";
+import type { SiteSummary } from "./firebase/analyses";
 
 function buildAnalysis(overrides: Partial<AnalysisRecord> = {}): AnalysisRecord {
   return {
@@ -110,5 +118,174 @@ describe("buildCategoryBreakdown", () => {
 
   it("returns an empty array for no items", () => {
     expect(buildCategoryBreakdown([], null)).toEqual([]);
+  });
+});
+
+describe("getSeverityBand", () => {
+  it("bands scores into Critical / Needs Work / Good / Excellent", () => {
+    expect(getSeverityBand(0)).toBe("Critical");
+    expect(getSeverityBand(49)).toBe("Critical");
+    expect(getSeverityBand(50)).toBe("Needs Work");
+    expect(getSeverityBand(69)).toBe("Needs Work");
+    expect(getSeverityBand(70)).toBe("Good");
+    expect(getSeverityBand(89)).toBe("Good");
+    expect(getSeverityBand(90)).toBe("Excellent");
+    expect(getSeverityBand(100)).toBe("Excellent");
+  });
+});
+
+describe("buildSeverityBreakdown", () => {
+  it("counts items per severity in fixed Critical/Warning/Info order", () => {
+    const items = [
+      buildActionItem({ severity: "low" }),
+      buildActionItem({ severity: "high" }),
+      buildActionItem({ severity: "high" }),
+      buildActionItem({ severity: "med" }),
+    ];
+
+    const result = buildSeverityBreakdown(items, null);
+
+    expect(result).toEqual([
+      { category: "high", label: "Critical", count: 2 },
+      { category: "med", label: "Warning", count: 1 },
+      { category: "low", label: "Info", count: 1 },
+    ]);
+  });
+
+  it("omits severities with zero items", () => {
+    const items = [buildActionItem({ severity: "high" })];
+
+    const result = buildSeverityBreakdown(items, null);
+
+    expect(result).toEqual([{ category: "high", label: "Critical", count: 1 }]);
+  });
+
+  it("filters to a single domain when one is given", () => {
+    const items = [
+      buildActionItem({ url: "https://a.com", severity: "high" }),
+      buildActionItem({ url: "https://b.com", severity: "low" }),
+    ];
+
+    const result = buildSeverityBreakdown(items, "a.com");
+
+    expect(result).toEqual([{ category: "high", label: "Critical", count: 1 }]);
+  });
+});
+
+describe("buildPageBreakdown", () => {
+  it("returns one row per distinct URL using the most recent record", () => {
+    const analyses = [
+      buildAnalysis({ url: "https://a.com/", analysisType: "homepage", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" }),
+      buildAnalysis({ url: "https://a.com/", analysisType: "homepage", conversionScore: 55, createdAt: "2026-06-05T00:00:00.000Z" }),
+      buildAnalysis({ url: "https://a.com/checkout", analysisType: "checkout", conversionScore: 80, createdAt: "2026-06-02T00:00:00.000Z" }),
+    ];
+
+    const result = buildPageBreakdown(analyses, []);
+
+    expect(result).toHaveLength(2);
+    const home = result.find((r) => r.url === "https://a.com/");
+    expect(home).toMatchObject({ score: 55, analysisType: "homepage", domain: "a.com" });
+  });
+
+  it("counts open issues per exact URL", () => {
+    const analyses = [buildAnalysis({ url: "https://a.com/", conversionScore: 40 })];
+    const items = [
+      buildActionItem({ url: "https://a.com/", status: "open" }),
+      buildActionItem({ url: "https://a.com/", status: "open" }),
+      buildActionItem({ url: "https://a.com/", status: "resolved" }),
+      buildActionItem({ url: "https://b.com/", status: "open" }),
+    ];
+
+    const result = buildPageBreakdown(analyses, items);
+
+    expect(result[0].issueCount).toBe(2);
+  });
+
+  it("excludes technical audits", () => {
+    const analyses = [buildAnalysis({ url: "https://a.com/", analysisType: "technical" })];
+
+    const result = buildPageBreakdown(analyses, []);
+
+    expect(result).toEqual([]);
+  });
+
+  it("sorts by most recently crawled first", () => {
+    const analyses = [
+      buildAnalysis({ url: "https://old.com/", createdAt: "2026-06-01T00:00:00.000Z" }),
+      buildAnalysis({ url: "https://new.com/", createdAt: "2026-06-05T00:00:00.000Z" }),
+    ];
+
+    const result = buildPageBreakdown(analyses, []);
+
+    expect(result.map((r) => r.url)).toEqual(["https://new.com/", "https://old.com/"]);
+  });
+});
+
+describe("buildHeroScoreSummary", () => {
+  function buildSite(overrides: Partial<SiteSummary> = {}): SiteSummary {
+    return {
+      domain: "a.com",
+      latestScore: 60,
+      previousScore: null,
+      scoreDelta: null,
+      lastAnalyzedAt: "2026-06-01T00:00:00.000Z",
+      analysisCount: 1,
+      ...overrides,
+    };
+  }
+
+  it("averages latest scores across sites for the overall score and band", () => {
+    const sites = [buildSite({ latestScore: 40 }), buildSite({ domain: "b.com", latestScore: 80 })];
+    const analyses = [buildAnalysis({ conversionScore: 40 }), buildAnalysis({ conversionScore: 80 })];
+
+    const summary = buildHeroScoreSummary(sites, analyses);
+
+    expect(summary.overallScore).toBe(60);
+    expect(summary.band).toBe("Needs Work");
+  });
+
+  it("averages the trend delta only across sites that have one", () => {
+    const sites = [
+      buildSite({ scoreDelta: 10 }),
+      buildSite({ domain: "b.com", scoreDelta: null }),
+      buildSite({ domain: "c.com", scoreDelta: 20 }),
+    ];
+
+    const summary = buildHeroScoreSummary(sites, []);
+
+    expect(summary.trendDelta).toBe(15);
+  });
+
+  it("returns a null trend delta when no site has one yet", () => {
+    const sites = [buildSite({ scoreDelta: null })];
+
+    const summary = buildHeroScoreSummary(sites, []);
+
+    expect(summary.trendDelta).toBeNull();
+  });
+
+  it("counts pages audited as non-technical analyses, and reports the most recent audit date", () => {
+    const analyses = [
+      buildAnalysis({ analysisType: "homepage", createdAt: "2026-06-01T00:00:00.000Z" }),
+      buildAnalysis({ analysisType: "checkout", createdAt: "2026-06-05T00:00:00.000Z" }),
+      buildAnalysis({ analysisType: "technical", createdAt: "2026-06-10T00:00:00.000Z" }),
+    ];
+
+    const summary = buildHeroScoreSummary([], analyses);
+
+    expect(summary.pagesAudited).toBe(2);
+    expect(summary.lastAuditAt).toBe("2026-06-05T00:00:00.000Z");
+  });
+
+  it("returns sensible defaults with no data at all", () => {
+    const summary = buildHeroScoreSummary([], []);
+
+    expect(summary).toEqual({
+      overallScore: 0,
+      trendDelta: null,
+      band: "Critical",
+      pagesAudited: 0,
+      lastAuditAt: null,
+    });
   });
 });
