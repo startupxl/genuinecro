@@ -6,7 +6,7 @@ import AnalysisView from "@/components/AnalysisView";
 import ComparisonView from "@/components/ComparisonView";
 import AuthPage from "@/components/AuthPage";
 import UpgradeWall from "@/components/UpgradeWall";
-import { generateMockAnalysis, type AnalysisResult, type AnalysisType } from "@/lib/mockData";
+import { generateMockAnalysis, extractCategoryScores, type AnalysisResult, type AnalysisType } from "@/lib/mockData";
 import { analyzeUrl } from "@/lib/api/analyze";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
@@ -38,7 +38,7 @@ const Index = () => {
     if (!user || !pending || recordedResultRef.current === pending) return;
     recordedResultRef.current = pending;
     (async () => {
-      await trackAnalysis(pending.url, pending.analysisType, pending.device, pending.conversionScore ?? pending.benchmark.overallScore);
+      await trackAnalysis(pending.url, pending.analysisType, pending.device, pending.conversionScore ?? pending.benchmark.overallScore, extractCategoryScores(pending.benchmark));
       await createActionItems(user.uid, pending.url, pending.analysisType, pending.frictionPoints);
     })();
   }, [user, result, comparisonResults, trackAnalysis]);
@@ -71,7 +71,7 @@ const Index = () => {
         ]);
         setComparisonResults({ desktop: desktopData, mobile: mobileData });
         if (user) recordedResultRef.current = desktopData;
-        await trackAnalysis(formatted, type, "desktop", desktopData.conversionScore ?? desktopData.benchmark.overallScore);
+        await trackAnalysis(formatted, type, "desktop", desktopData.conversionScore ?? desktopData.benchmark.overallScore, extractCategoryScores(desktopData.benchmark));
         if (user) await createActionItems(user.uid, formatted, type, desktopData.frictionPoints);
         toast.success(`Found ${desktopData.frictionPoints.length} desktop + ${mobileData.frictionPoints.length} mobile friction points`);
       } catch (err) {
@@ -81,7 +81,7 @@ const Index = () => {
         const mockMobile = { ...generateMockAnalysis(formatted, type), device: "mobile" as const };
         setComparisonResults({ desktop: mockDesktop, mobile: mockMobile });
         if (user) recordedResultRef.current = mockDesktop;
-        await trackAnalysis(formatted, type, "desktop", mockDesktop.conversionScore ?? mockDesktop.benchmark.overallScore);
+        await trackAnalysis(formatted, type, "desktop", mockDesktop.conversionScore ?? mockDesktop.benchmark.overallScore, extractCategoryScores(mockDesktop.benchmark));
         if (user) await createActionItems(user.uid, formatted, type, mockDesktop.frictionPoints);
       }
     } else {
@@ -91,7 +91,7 @@ const Index = () => {
         const data = await analyzeUrl(formatted, type, device);
         setResult(data);
         if (user) recordedResultRef.current = data;
-        await trackAnalysis(formatted, type, device, data.conversionScore ?? data.benchmark.overallScore);
+        await trackAnalysis(formatted, type, device, data.conversionScore ?? data.benchmark.overallScore, extractCategoryScores(data.benchmark));
         if (user) await createActionItems(user.uid, formatted, type, data.frictionPoints);
         toast.success(`Found ${data.frictionPoints.length} friction points (${device})`);
       } catch (err) {
@@ -102,7 +102,7 @@ const Index = () => {
         const mockResult = generateMockAnalysis(formatted, type);
         setResult(mockResult);
         if (user) recordedResultRef.current = mockResult;
-        await trackAnalysis(formatted, type, device, mockResult.conversionScore ?? mockResult.benchmark.overallScore);
+        await trackAnalysis(formatted, type, device, mockResult.conversionScore ?? mockResult.benchmark.overallScore, extractCategoryScores(mockResult.benchmark));
         if (user) await createActionItems(user.uid, formatted, type, mockResult.frictionPoints);
       }
     }

@@ -7,6 +7,7 @@ export interface AnalysisEntry {
   analysisType: string;
   device: string;
   conversionScore: number;
+  categoryScores?: Record<string, number>;
 }
 
 export async function recordAnalysis(entry: AnalysisEntry): Promise<void> {
@@ -29,6 +30,7 @@ export interface AnalysisRecord {
   device: string;
   conversionScore: number;
   createdAt: string;
+  categoryScores?: Record<string, number>;
 }
 
 export async function getRecentAnalyses(userId: string, take = 200): Promise<AnalysisRecord[]> {
@@ -46,6 +48,7 @@ export async function getRecentAnalyses(userId: string, take = 200): Promise<Ana
       device: string;
       conversionScore: number;
       createdAt: { toDate: () => Date } | string;
+      categoryScores?: Record<string, number>;
     };
     return {
       url: data.url,
@@ -53,6 +56,7 @@ export async function getRecentAnalyses(userId: string, take = 200): Promise<Ana
       device: data.device,
       conversionScore: data.conversionScore,
       createdAt: typeof data.createdAt === "string" ? data.createdAt : data.createdAt.toDate().toISOString(),
+      categoryScores: data.categoryScores,
     };
   });
 }

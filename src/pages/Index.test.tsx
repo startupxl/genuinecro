@@ -114,7 +114,7 @@ describe("Index — login-gated results", () => {
     await waitFor(() => {
       expect(screen.getByTestId("analysis-view")).toBeInTheDocument();
     });
-    expect(trackAnalysisMock).toHaveBeenCalledWith("https://example.com", "homepage", "desktop", 72);
+    expect(trackAnalysisMock).toHaveBeenCalledWith("https://example.com", "homepage", "desktop", 72, {});
     expect(createActionItemsMock).toHaveBeenCalledWith("uid-1", "https://example.com", "homepage", mockAnalysisResult.frictionPoints);
   });
 

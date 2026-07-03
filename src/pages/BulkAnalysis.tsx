@@ -15,7 +15,7 @@ import { analyzeUrl } from "@/lib/api/analyze";
 import { createActionItems } from "@/lib/firebase/actionItems";
 import { toast } from "sonner";
 import type { AnalysisResult, AnalysisType } from "@/lib/mockData";
-import { detectPageType } from "@/lib/mockData";
+import { detectPageType, extractCategoryScores } from "@/lib/mockData";
 
 interface BulkItem {
   url: string;
@@ -124,7 +124,7 @@ const BulkAnalysis = () => {
 
       try {
         const result = await analyzeUrl(url, type, "desktop");
-        await trackAnalysis(url, type, "desktop", result.conversionScore ?? result.benchmark.overallScore);
+        await trackAnalysis(url, type, "desktop", result.conversionScore ?? result.benchmark.overallScore, extractCategoryScores(result.benchmark));
         if (user) await createActionItems(user.uid, url, type, result.frictionPoints);
         const avgScore = result.frictionPoints.length > 0
           ? Math.round(result.frictionPoints.reduce((s, p) => s + p.impactScore, 0) / result.frictionPoints.length)

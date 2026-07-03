@@ -174,6 +174,16 @@ export interface AnalysisResult {
   insightSummary?: InsightSummary;
 }
 
+/** Flattens a BenchmarkSummary's per-category scores down to plain numbers for storage. */
+export function extractCategoryScores(benchmark: BenchmarkSummary): Record<string, number> {
+  const scores: Record<string, number> = {};
+  if (!benchmark.categoryScores) return scores;
+  for (const [category, categoryScore] of Object.entries(benchmark.categoryScores)) {
+    if (categoryScore) scores[category] = categoryScore.score;
+  }
+  return scores;
+}
+
 export const categoryLabels: Record<string, string> = {
   visual: "Visual Friction",
   technical: "Technical Friction",

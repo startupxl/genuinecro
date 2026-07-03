@@ -58,6 +58,19 @@ describe("useUsageTracking", () => {
     });
   });
 
+  it("records categoryScores when provided", async () => {
+    countAnalysesSinceMock.mockResolvedValue(0);
+    recordAnalysisMock.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useUsageTracking());
+
+    await waitFor(() => expect(result.current.usage).toBeDefined());
+    await result.current.trackAnalysis("https://example.com", "homepage", "desktop", 72, { "content-hierarchy": 65 });
+
+    expect(recordAnalysisMock).toHaveBeenCalledWith(
+      expect.objectContaining({ categoryScores: { "content-hierarchy": 65 } })
+    );
+  });
+
   it("limits the free signed-in plan to 3 audits", async () => {
     useSubscriptionMock.mockReturnValue({ currentPlan: "Free", subscription: null });
     countAnalysesSinceMock.mockResolvedValue(0);

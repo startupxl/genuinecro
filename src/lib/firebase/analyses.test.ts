@@ -49,6 +49,22 @@ describe("firebase analyses module", () => {
     );
   });
 
+  it("records categoryScores when provided", async () => {
+    addDocMock.mockResolvedValue(undefined);
+    await recordAnalysis({
+      userId: "uid-1",
+      url: "https://example.com",
+      analysisType: "homepage",
+      device: "desktop",
+      conversionScore: 72,
+      categoryScores: { "content-hierarchy": 65, navigation: 60 },
+    });
+    expect(addDocMock).toHaveBeenCalledWith(
+      { __collection: true },
+      expect.objectContaining({ categoryScores: { "content-hierarchy": 65, navigation: 60 } })
+    );
+  });
+
   it("counts analyses for a user since a given date", async () => {
     getCountFromServerMock.mockResolvedValue({ data: () => ({ count: 7 }) });
     const count = await countAnalysesSince("uid-1", new Date("2026-06-01T00:00:00.000Z"));
@@ -82,8 +98,30 @@ describe("getRecentAnalyses", () => {
         device: "desktop",
         conversionScore: 72,
         createdAt: "2026-06-01T00:00:00.000Z",
+        categoryScores: undefined,
       },
     ]);
+  });
+
+  it("passes through categoryScores when present on the document", async () => {
+    getDocsMock.mockResolvedValue({
+      docs: [
+        {
+          data: () => ({
+            url: "https://a.example.com",
+            analysisType: "homepage",
+            device: "desktop",
+            conversionScore: 72,
+            createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+            categoryScores: { "content-hierarchy": 65, navigation: 60 },
+          }),
+        },
+      ],
+    });
+
+    const records = await getRecentAnalyses("uid-1");
+
+    expect(records[0].categoryScores).toEqual({ "content-hierarchy": 65, navigation: 60 });
   });
 });
 
