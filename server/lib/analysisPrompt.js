@@ -2,12 +2,16 @@ import { CRITERIA_LIBRARY } from "./criteriaLibrary.js";
 
 // ── Scoring categories mapped from the 100+ rule engine ──
 export const SCORING_CATEGORIES = {
-  "ux-clarity": { weight: 0.20, label: "UX Clarity" },
-  "trust-credibility": { weight: 0.20, label: "Trust & Credibility" },
-  "friction-effort": { weight: 0.20, label: "Friction & Effort" },
-  "speed-performance": { weight: 0.15, label: "Speed & Performance" },
-  "intent-match": { weight: 0.15, label: "Intent Match" },
-  "funnel-health": { weight: 0.10, label: "Funnel Health" },
+  "content-hierarchy": { weight: 0.10, label: "Content Hierarchy" },
+  navigation: { weight: 0.10, label: "Navigation" },
+  performance: { weight: 0.12, label: "Performance" },
+  accessibility: { weight: 0.08, label: "Accessibility" },
+  "visual-friction": { weight: 0.08, label: "Visual Friction" },
+  "ux-friction": { weight: 0.12, label: "UX Friction" },
+  "trust-credibility": { weight: 0.15, label: "Trust & Credibility" },
+  "form-friction": { weight: 0.10, label: "Form Friction" },
+  "cta-effectiveness": { weight: 0.10, label: "CTA Effectiveness" },
+  "checkout-friction": { weight: 0.05, label: "Checkout Friction" },
 };
 
 // ── Benchmark data (from BENCHMARK.md) ──
@@ -19,40 +23,46 @@ const DEVICE_BENCHMARKS = {
 
 // ── The 100+ rules organized by scoring category ──
 const RULES_REFERENCE = `
-## A. UX Clarity (20 rules)
-**Messaging & Value Prop:** Clear headline above fold; Value prop understood <5s; No jargon; Benefit > feature clarity; USP visible.
-**CTA Clarity:** Primary CTA visible without scroll; Only 1 dominant CTA; Action-oriented CTA language; High CTA contrast; CTA repeated logically.
-**Visual Hierarchy:** Clear reading flow (Z/F pattern); No competing elements; Important info above fold; Font readability (size/contrast); No clutter.
-**Navigation:** Simple nav (≤7 items); No dead-end pages; Easy back navigation; Breadcrumbs (product pages); Sticky nav.
+## A. Content Hierarchy (10 rules)
+Clear headline above fold; Value prop understood <5s; No jargon; Clear reading flow (Z/F pattern); No competing elements; Important info above fold; Font readability (size/contrast); No clutter; Info chunked; Content depth matches intent.
 
-## B. Trust & Credibility (20 rules)
-Customer reviews visible; Ratings displayed; Real testimonials; Trust badges (payment/security); HTTPS enforced; Clear return/refund policy; Contact info visible; Brand story available; Real product images; Social proof count; Media mentions; Guarantees; Transparent pricing; No hidden fees; Shipping info upfront; User-generated content; Verified reviews; FAQ section; Policy pages accessible; No spammy popups early.
+## B. Navigation (10 rules)
+Simple nav (≤7 items); No dead-end pages; Easy back navigation; Breadcrumbs (product pages); Sticky nav; Ad → landing consistency; Keyword → headline alignment; Clear next step; Consistent tone; Geo relevance.
 
-## C. Friction & Effort (25 rules)
-**Forms:** Fields ≤5; Autofill enabled; Guest checkout; No forced signup; Inline validation; Clear error messages; Mobile keyboard optimized; Dropdowns minimized; Progress indicator; No unnecessary fields.
-**Cognitive Load:** Too many choices avoided; Clear decision path; No conflicting CTAs; Info chunked; Minimal scrolling for action.
-**Checkout:** Shipping cost shown early; Taxes visible; Multiple payment options; Fast checkout (<3 steps); Save cart.
-**Interaction:** No broken links; No unexpected redirects; No autoplay interruptions; Popups not blocking CTA; No aggressive interstitials.
+## C. Performance (12 rules)
+Load time <2.5s; FCP <1.8s; Mobile optimized; Images compressed; Lazy loading; No heavy blocking scripts; CDN usage; Minimal JS execution; No layout shifts (CLS); Server response <500ms; Page weight <2MB; Fonts optimized.
 
-## D. Speed & Performance (15 rules)
-Load time <2.5s; FCP <1.8s; Mobile optimized; Images compressed; Lazy loading; No heavy blocking scripts; CDN usage; Minimal JS execution; No layout shifts (CLS); Server response <500ms; Page weight <2MB; Fonts optimized; No render-blocking CSS; Caching; Smooth scrolling.
+## D. Accessibility (8 rules)
+Mobile tap targets ≥44x44px with spacing; Sufficient color contrast (WCAG AA); Alt text on images; Keyboard navigable; Screen-reader friendly headings; No autoplay interruptions; Readable font sizes on mobile; Device-specific optimization.
 
-## E. Intent Match (15 rules)
-Ad → landing consistency; Keyword → headline alignment; Audience targeting clear; Offer relevance; No bait-and-switch; Product matches expectation; Pricing matches intent; Personalization; Geo relevance; Device-specific optimization; Content depth matches intent; No irrelevant distractions; Clear next step; Strong above-fold match; Consistent tone.
+## E. Visual Friction (8 rules)
+No aggressive interstitials; Popups not blocking CTA; No unexpected redirects; No broken links; No autoplay video with sound; No overlapping elements; Consistent visual language; No spammy popups early.
 
-## F. Funnel Health (15 rules)
-Conversion rate vs benchmark; Add-to-cart vs benchmark; Cart abandonment vs benchmark; Mobile vs desktop gap; Drop-off at product page; Drop-off at checkout; Repeat user conversion; Bounce rate; Session duration; Rage clicks; Scroll depth; CTA click-through rate; Form completion rate; Exit rate on key pages; Revenue per visitor.
+## F. UX Friction (12 rules)
+Too many choices avoided; Clear decision path; No conflicting CTAs; Minimal scrolling for action; Personalization; No irrelevant distractions; Offer relevance; No bait-and-switch; Product matches expectation; Audience targeting clear; Strong above-fold match; No unnecessary fields.
+
+## G. Trust & Credibility (15 rules)
+Customer reviews visible; Ratings displayed; Real testimonials; Trust badges (payment/security); HTTPS enforced; Clear return/refund policy; Contact info visible; Brand story available; Real product images; Social proof count; Media mentions; Guarantees; Verified reviews; FAQ section; Policy pages accessible.
+
+## H. Form Friction (10 rules)
+Fields ≤5; Autofill enabled; Guest checkout; No forced signup; Inline validation; Clear error messages; Mobile keyboard optimized; Dropdowns minimized; Progress indicator; No unnecessary fields.
+
+## I. CTA Effectiveness (10 rules)
+Primary CTA visible without scroll; Only 1 dominant CTA; Action-oriented CTA language; High CTA contrast; CTA repeated logically; Pricing visible and clear; Transparent pricing; No hidden fees; CTA click-through rate vs benchmark; Form completion rate vs benchmark.
+
+## J. Checkout Friction (5 rules)
+Shipping cost shown early; Taxes visible; Multiple payment options; Fast checkout (<3 steps); Save cart.
 `;
 
 // ── Analysis type → relevant emphasis ──
 const ANALYSIS_TYPE_EMPHASIS = {
-  homepage: "Focus heavily on UX Clarity (hero messaging, value prop, navigation) and Trust & Credibility. Homepage is the gateway — visual hierarchy and clear CTA paths are critical.",
-  "blog-content": "Focus on UX Clarity (readability, content structure, headings), Intent Match (content depth matching search intent), and Friction & Effort (distraction-free reading experience, no aggressive interstitials).",
-  checkout: "Focus heavily on Friction & Effort (form fields, checkout steps, payment options, guest checkout) and Trust & Credibility (security badges, transparent pricing, shipping costs). Also assess Funnel Health benchmarks.",
-  "lead-form": "Focus on Friction & Effort (form optimization, field count, inline validation), Trust & Credibility (social proof, guarantees), and UX Clarity (clear CTA, value exchange messaging).",
-  "product-page": "Focus on Trust & Credibility (reviews, ratings, images, guarantees), UX Clarity (value proposition, feature presentation), and Friction & Effort (add-to-cart friction, decision complexity).",
-  "landing-marketing": "Focus on UX Clarity (hero messaging, single dominant CTA), Intent Match (message consistency), and Trust & Credibility (social proof, testimonials). Conversion funnel should be tight.",
-  "landing-paid-media": "Focus heavily on Intent Match (ad-to-page message consistency, keyword alignment), UX Clarity (attention ratio, single CTA), and Speed & Performance (bounce prevention). Every element must reinforce the paid traffic's intent.",
+  homepage: "Focus heavily on Content Hierarchy (hero messaging, value prop), Navigation, and Trust & Credibility. Homepage is the gateway — visual hierarchy and clear CTA paths are critical.",
+  "blog-content": "Focus on Content Hierarchy (readability, content structure, headings), UX Friction (content depth matching search intent), and Visual Friction (distraction-free reading experience, no aggressive interstitials).",
+  checkout: "Focus heavily on Checkout Friction (payment options, shipping costs, save cart), Form Friction (fields, guest checkout), and Trust & Credibility (security badges, transparent pricing).",
+  "lead-form": "Focus on Form Friction (field count, inline validation), Trust & Credibility (social proof, guarantees), and CTA Effectiveness (clear CTA, value exchange messaging).",
+  "product-page": "Focus on Trust & Credibility (reviews, ratings, images, guarantees), Content Hierarchy (value proposition, feature presentation), and CTA Effectiveness (add-to-cart friction, decision complexity).",
+  "landing-marketing": "Focus on Content Hierarchy (hero messaging, single dominant CTA), UX Friction (message consistency), and Trust & Credibility (social proof, testimonials). Conversion path should be tight.",
+  "landing-paid-media": "Focus heavily on UX Friction (ad-to-page message consistency, keyword alignment), CTA Effectiveness (attention ratio, single CTA), and Performance (bounce prevention). Every element must reinforce the paid traffic's intent.",
 };
 
 const ANALYSIS_TYPE_LABELS = {
@@ -99,19 +109,14 @@ ${emphasis}
 
 ## SCORING SYSTEM (Lighthouse-style, 0–100)
 Final Conversion Score = weighted sum:
-- UX Clarity × 0.20
-- Trust & Credibility × 0.20
-- Friction & Effort × 0.20
-- Speed & Performance × 0.15
-- Intent Match × 0.15
-- Funnel Health × 0.10
+${Object.entries(SCORING_CATEGORIES).map(([, c]) => `- ${c.label} × ${c.weight.toFixed(2)}`).join("\n")}
 
 Severity mapping: 90–100 = Elite | 75–89 = Strong | 50–74 = Needs Optimization | 30–49 = High Friction | <30 = Broken
 
 ## PENALTY RULES
 - If load time appears >4s → cap total score at 60
 - If no trust signals found → reduce score by 20%
-- If checkout has >3 steps or >5 form fields → cap Friction at 50
+- If checkout has >3 steps or >5 form fields → cap Checkout Friction at 50
 
 ## DEVICE BENCHMARKS (Global Averages)
 - Conversion Rate: ${deviceBench.conversionRate}
@@ -133,7 +138,7 @@ ${criteriaSection}
 7. Group issues into insight clusters: Trust Gap, Clarity Gap, Effort Gap, Motivation Gap
 
 For each friction point, provide:
-- category: one of "ux-clarity", "trust-credibility", "friction-effort", "speed-performance", "intent-match", "funnel-health"
+- category: one of ${Object.keys(SCORING_CATEGORIES).map((c) => `"${c}"`).join(", ")}
 - severity: "high" | "med" | "low"
 - title: concise (max 8 words)
 - description: specific explanation with ${device} observations. Be insight-driven, not checklist-driven.
@@ -158,16 +163,20 @@ Return ONLY valid JSON:
     "speedGap": "Description of speed issues..."
   },
   "categoryScores": {
-    "ux-clarity": { "score": 65, "passed": 14, "total": 20, "industryAvg": 55 },
-    "trust-credibility": { "score": 45, "passed": 9, "total": 20, "industryAvg": 55 },
-    "friction-effort": { "score": 52, "passed": 13, "total": 25, "industryAvg": 50 },
-    "speed-performance": { "score": 70, "passed": 11, "total": 15, "industryAvg": 60 },
-    "intent-match": { "score": 58, "passed": 9, "total": 15, "industryAvg": 55 },
-    "funnel-health": { "score": 50, "passed": 7, "total": 15, "industryAvg": 50 }
+    "content-hierarchy": { "score": 65, "passed": 6, "total": 10, "industryAvg": 55 },
+    "navigation": { "score": 60, "passed": 6, "total": 10, "industryAvg": 55 },
+    "performance": { "score": 70, "passed": 8, "total": 12, "industryAvg": 60 },
+    "accessibility": { "score": 55, "passed": 4, "total": 8, "industryAvg": 50 },
+    "visual-friction": { "score": 75, "passed": 6, "total": 8, "industryAvg": 60 },
+    "ux-friction": { "score": 58, "passed": 7, "total": 12, "industryAvg": 55 },
+    "trust-credibility": { "score": 45, "passed": 7, "total": 15, "industryAvg": 55 },
+    "form-friction": { "score": 52, "passed": 5, "total": 10, "industryAvg": 50 },
+    "cta-effectiveness": { "score": 66, "passed": 7, "total": 10, "industryAvg": 55 },
+    "checkout-friction": { "score": 50, "passed": 2, "total": 5, "industryAvg": 50 }
   },
   "frictionPoints": [
     {
-      "category": "ux-clarity",
+      "category": "content-hierarchy",
       "severity": "high",
       "title": "CTA buried below the fold",
       "description": "The primary CTA is not visible without scrolling...",

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildAnalysisPrompt } from "./analysisPrompt.js";
+import { buildAnalysisPrompt, SCORING_CATEGORIES } from "./analysisPrompt.js";
 
 describe("buildAnalysisPrompt", () => {
   it("includes the URL, page type label, and device in the prompt", () => {
@@ -49,5 +49,23 @@ describe("buildAnalysisPrompt", () => {
   it("does not include the evidence-based criteria section for other page types", () => {
     const prompt = buildAnalysisPrompt("product-page", "# Some content", "https://example.com", "desktop");
     expect(prompt).not.toContain("NAMED EVIDENCE-BASED CRITERIA");
+  });
+
+  it("defines exactly the 10 new taxonomy categories, weighted to sum to 1", () => {
+    const keys = Object.keys(SCORING_CATEGORIES);
+    expect(keys).toEqual([
+      "content-hierarchy", "navigation", "performance", "accessibility", "visual-friction",
+      "ux-friction", "trust-credibility", "form-friction", "cta-effectiveness", "checkout-friction",
+    ]);
+    const totalWeight = keys.reduce((sum, k) => sum + SCORING_CATEGORIES[k].weight, 0);
+    expect(Math.round(totalWeight * 100) / 100).toBe(1);
+  });
+
+  it("lists the new category keys in the friction-point category instruction", () => {
+    const prompt = buildAnalysisPrompt("homepage", "content", "https://example.com", "desktop");
+    expect(prompt).toContain('"content-hierarchy"');
+    expect(prompt).toContain('"checkout-friction"');
+    expect(prompt).not.toContain('"ux-clarity"');
+    expect(prompt).not.toContain('"funnel-health"');
   });
 });
