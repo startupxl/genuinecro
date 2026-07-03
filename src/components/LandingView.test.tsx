@@ -86,4 +86,45 @@ describe("LandingView", () => {
 
     expect(screen.getByText(/Navigation clarity/)).toBeInTheDocument();
   });
+
+  it("shows the page type as an auto-detected label, not an open dropdown, by default", () => {
+    render(
+      <MemoryRouter>
+        <LandingView onAnalyze={vi.fn()} usage={usage} user={null} onSignIn={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.getByText("Homepage")).toBeInTheDocument();
+    expect(screen.getByText("Auto-detected")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Change" })).toBeInTheDocument();
+  });
+
+  it("reveals the type dropdown when Change is clicked, and lets the user pick a type", () => {
+    render(
+      <MemoryRouter>
+        <LandingView onAnalyze={vi.fn()} usage={usage} user={null} onSignIn={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Change" }));
+    const select = screen.getByRole("combobox");
+    fireEvent.change(select, { target: { value: "checkout" } });
+
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.getByText("Checkout")).toBeInTheDocument();
+    expect(screen.getByText("Manual")).toBeInTheDocument();
+  });
+
+  it("renders the logo at a compact, non-dominant size", () => {
+    render(
+      <MemoryRouter>
+        <LandingView onAnalyze={vi.fn()} usage={usage} user={null} onSignIn={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    const logos = screen.getAllByAltText("GenuineCRO");
+    const heroLogo = logos[logos.length - 1];
+    expect(heroLogo).not.toHaveClass("h-[120px]");
+  });
 });

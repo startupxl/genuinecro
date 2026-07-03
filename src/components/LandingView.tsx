@@ -43,6 +43,7 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => 
   const [analysisType, setAnalysisType] = useState<AnalysisType>("homepage");
   const [device, setDevice] = useState<"desktop" | "mobile" | "both">(() => getUserSettings().defaultDevice);
   const [userOverridden, setUserOverridden] = useState(false);
+  const [isEditingType, setIsEditingType] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const capabilities = usePlanCapabilities();
   const navigate = useNavigate();
@@ -62,6 +63,12 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => 
   const handleTypeChange = (type: AnalysisType) => {
     setAnalysisType(type);
     setUserOverridden(true);
+    setIsEditingType(false);
+  };
+
+  const resetToAutoDetect = () => {
+    setUserOverridden(false);
+    if (url.trim()) setAnalysisType(detectPageType(url.trim()));
   };
 
   const handleUrlChange = (value: string) => {
@@ -113,7 +120,7 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
         >
-          <img src={logoImg} alt="GenuineCRO" className="h-[120px] w-auto mx-auto mb-4 object-contain" />
+          <img src={logoImg} alt="GenuineCRO" className="h-12 w-auto mx-auto mb-4 object-contain" />
           <p className="text-body text-muted-foreground mb-8">
             Paste a URL. Get a prioritized backlog of conversion-killing friction.
           </p>
@@ -151,20 +158,49 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => 
             transition={{ duration: 0.25 }}
             className="flex items-center justify-center"
           >
-            <div className="relative inline-flex items-center">
-              <select
-                value={analysisType}
-                onChange={(e) => handleTypeChange(e.target.value as AnalysisType)}
-                className="appearance-none bg-secondary text-foreground text-xs font-medium pl-3 pr-7 py-1.5 rounded-full border-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                {allTypes.map((t) => (
-                  <option key={t} value={t}>
-                    {analysisTypeLabels[t]}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
-            </div>
+            {isEditingType ? (
+              <div className="relative inline-flex items-center">
+                <select
+                  autoFocus
+                  value={analysisType}
+                  onChange={(e) => handleTypeChange(e.target.value as AnalysisType)}
+                  onBlur={() => setIsEditingType(false)}
+                  className="appearance-none bg-secondary text-foreground text-xs font-medium pl-3 pr-7 py-1.5 rounded-full border-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  {allTypes.map((t) => (
+                    <option key={t} value={t}>
+                      {analysisTypeLabels[t]}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <span className="bg-secondary text-foreground text-xs font-medium px-3 py-1.5 rounded-full">
+                  {analysisTypeLabels[analysisType]}
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  {userOverridden ? "Manual" : "Auto-detected"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingType(true)}
+                  className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  Change
+                </button>
+                {userOverridden && getUserSettings().autoDetectPageType && (
+                  <button
+                    type="button"
+                    onClick={resetToAutoDetect}
+                    className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            )}
           </motion.div>
 
           {/* Device Toggle */}
