@@ -2,6 +2,7 @@ import express from "express";
 import { buildAnalysisPrompt } from "../lib/analysisPrompt.js";
 import { generateHeuristicAnalysis } from "../lib/heuristicAnalysis.js";
 import { callOpenAI } from "../lib/openai.js";
+import { recordCategoryScores } from "../lib/benchmarks.js";
 
 const router = express.Router();
 
@@ -98,6 +99,12 @@ router.post("/analyze-url", async (req, res) => {
         categoryScores: aiData.categoryScores || aiData.benchmark?.categoryScores || {},
       },
     };
+
+    if (Object.keys(result.benchmark.categoryScores).length > 0) {
+      recordCategoryScores(result.benchmark.categoryScores).catch((err) =>
+        console.error("Failed to record benchmark samples:", err)
+      );
+    }
 
     res.json({ success: true, data: result });
   } catch (error) {

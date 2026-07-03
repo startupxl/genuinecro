@@ -350,6 +350,38 @@ describe("buildCategoryScoreBreakdown", () => {
 
     expect(result.find((r) => r.category === "navigation")!.score).toBe(70);
   });
+
+  it("uses the live benchmark figure once a category has enough samples", () => {
+    const analyses = [buildAnalysis({ url: "https://a.com", categoryScores: { navigation: 70 } })];
+
+    const result = buildCategoryScoreBreakdown(analyses, null, {
+      navigation: { accountAvg: 40, topQuartile: 90, sampleCount: 10 },
+    });
+
+    expect(result.find((r) => r.category === "navigation")!.deltaVsBenchmark).toBe(30);
+  });
+
+  it("falls back to the static benchmark when live samples are too few", () => {
+    const analyses = [buildAnalysis({ url: "https://a.com", categoryScores: { navigation: 70 } })];
+
+    const result = buildCategoryScoreBreakdown(analyses, null, {
+      navigation: { accountAvg: 10, topQuartile: 20, sampleCount: 1 },
+    });
+
+    expect(result.find((r) => r.category === "navigation")!.deltaVsBenchmark).toBe(
+      70 - CATEGORY_BENCHMARKS.navigation.accountAvg
+    );
+  });
+
+  it("falls back to the static benchmark when no live benchmark exists for that category", () => {
+    const analyses = [buildAnalysis({ url: "https://a.com", categoryScores: { navigation: 70 } })];
+
+    const result = buildCategoryScoreBreakdown(analyses, null, {});
+
+    expect(result.find((r) => r.category === "navigation")!.deltaVsBenchmark).toBe(
+      70 - CATEGORY_BENCHMARKS.navigation.accountAvg
+    );
+  });
 });
 
 describe("buildIssueMomentum", () => {

@@ -177,7 +177,19 @@ export interface CategoryScoreEntry {
   worstSite?: { url: string; score: number };
 }
 
-export function buildCategoryScoreBreakdown(analyses: AnalysisRecord[], domain: string | null): CategoryScoreEntry[] {
+export const MIN_LIVE_BENCHMARK_SAMPLES = 5;
+
+export interface LiveBenchmarkStats {
+  accountAvg: number;
+  topQuartile: number;
+  sampleCount: number;
+}
+
+export function buildCategoryScoreBreakdown(
+  analyses: AnalysisRecord[],
+  domain: string | null,
+  liveBenchmarks: Record<string, LiveBenchmarkStats> = {}
+): CategoryScoreEntry[] {
   const filtered = analyses
     .filter((a) => a.analysisType !== "technical")
     .filter((a) => !domain || getDomain(a.url) === domain)
@@ -194,7 +206,8 @@ export function buildCategoryScoreBreakdown(analyses: AnalysisRecord[], domain: 
   const entries: CategoryScoreEntry[] = [];
   for (const [category, points] of byCategory) {
     const avgScore = Math.round(points.reduce((sum, p) => sum + p.score, 0) / points.length);
-    const benchmark = CATEGORY_BENCHMARKS[category];
+    const live = liveBenchmarks[category];
+    const benchmark = live && live.sampleCount >= MIN_LIVE_BENCHMARK_SAMPLES ? live : CATEGORY_BENCHMARKS[category];
     const worstSite = points.reduce((min, p) => (p.score < min.score ? p : min), points[0]);
 
     entries.push({

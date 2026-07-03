@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 const getRecentAnalysesMock = vi.fn();
 const groupAnalysesByDomainMock = vi.fn();
 const getAllActionItemsMock = vi.fn();
+const getLiveBenchmarksMock = vi.fn();
 const navigateMock = vi.fn();
 
 vi.mock("react-router-dom", async () => {
@@ -35,6 +36,10 @@ vi.mock("@/lib/firebase/actionItems", () => ({
   getAllActionItems: (...args: unknown[]) => getAllActionItemsMock(...args),
 }));
 
+vi.mock("@/lib/firebase/benchmarks", () => ({
+  getLiveBenchmarks: (...args: unknown[]) => getLiveBenchmarksMock(...args),
+}));
+
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: { uid: "uid-1" } }),
 }));
@@ -50,6 +55,7 @@ describe("Dashboard", () => {
     getRecentAnalysesMock.mockReset();
     groupAnalysesByDomainMock.mockReset().mockImplementation(defaultGroupByDomain);
     getAllActionItemsMock.mockReset().mockResolvedValue([]);
+    getLiveBenchmarksMock.mockReset().mockResolvedValue({});
     navigateMock.mockReset();
   });
 
@@ -180,6 +186,26 @@ describe("Dashboard", () => {
     });
     expect(screen.getByText("Category Scores")).toBeInTheDocument();
     expect(screen.getByText("Navigation")).toBeInTheDocument();
+  });
+
+  it("uses live cross-account benchmarks once a category has enough samples", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 70, createdAt: "2026-06-01T00:00:00.000Z", categoryScores: { navigation: 70 } },
+    ]);
+    getLiveBenchmarksMock.mockResolvedValue({
+      navigation: { accountAvg: 20, topQuartile: 90, sampleCount: 12 },
+    });
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Category Scores")).toBeInTheDocument();
+    });
+    expect(screen.getByText("+50")).toBeInTheDocument();
   });
 
   it("filters Top Issues when a category bar is clicked", async () => {

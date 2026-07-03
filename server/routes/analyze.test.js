@@ -5,6 +5,7 @@ import request from "supertest";
 const buildAnalysisPromptMock = vi.fn(() => "built-prompt");
 const generateHeuristicAnalysisMock = vi.fn();
 const callOpenAIMock = vi.fn();
+const recordCategoryScoresMock = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("../lib/analysisPrompt.js", () => ({
   buildAnalysisPrompt: (...args) => buildAnalysisPromptMock(...args),
@@ -14,6 +15,9 @@ vi.mock("../lib/heuristicAnalysis.js", () => ({
 }));
 vi.mock("../lib/openai.js", () => ({
   callOpenAI: (...args) => callOpenAIMock(...args),
+}));
+vi.mock("../lib/benchmarks.js", () => ({
+  recordCategoryScores: (...args) => recordCategoryScoresMock(...args),
 }));
 
 const fetchMock = vi.fn();
@@ -33,6 +37,7 @@ describe("POST /api/analyze/analyze-url", () => {
     buildAnalysisPromptMock.mockClear();
     generateHeuristicAnalysisMock.mockReset();
     callOpenAIMock.mockReset();
+    recordCategoryScoresMock.mockClear();
     fetchMock.mockReset();
     process.env.FIRECRAWL_API_KEY = "test-firecrawl-key";
   });
@@ -147,5 +152,43 @@ describe("POST /api/analyze/analyze-url", () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ success: true, data: { conversionScore: 40, frictionPoints: [] } });
+  });
+
+  it("records category scores for cross-account benchmarks on the AI happy path", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { markdown: "# Page content", screenshot: "https://shot.example/a.png" } }),
+    });
+    callOpenAIMock.mockResolvedValue({
+      conversionScore: 72,
+      grade: "Strong",
+      topIssues: ["Issue A"],
+      insightSummary: {},
+      categoryScores: { navigation: 65, performance: 70 },
+      frictionPoints: [{ category: "navigation", severity: "high", title: "Test issue", impactScore: 80 }],
+    });
+
+    await request(buildApp())
+      .post("/api/analyze/analyze-url")
+      .send({ url: "example.com", analysisType: "homepage", device: "desktop" });
+    await new Promise((r) => setImmediate(r));
+
+    expect(recordCategoryScoresMock).toHaveBeenCalledWith({ navigation: 65, performance: 70 });
+  });
+
+  it("does not record benchmark samples on the heuristic fallback path", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { markdown: "# Page content", screenshot: null } }),
+    });
+    callOpenAIMock.mockRejectedValue(new Error("AI unavailable"));
+    generateHeuristicAnalysisMock.mockReturnValue({ conversionScore: 40, frictionPoints: [] });
+
+    await request(buildApp())
+      .post("/api/analyze/analyze-url")
+      .send({ url: "example.com", analysisType: "homepage", device: "desktop" });
+    await new Promise((r) => setImmediate(r));
+
+    expect(recordCategoryScoresMock).not.toHaveBeenCalled();
   });
 });

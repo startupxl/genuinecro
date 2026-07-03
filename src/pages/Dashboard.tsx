@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
 import { getRecentAnalyses, groupAnalysesByDomain, type AnalysisRecord } from "@/lib/firebase/analyses";
 import { getAllActionItems, type ActionItem } from "@/lib/firebase/actionItems";
+import { getLiveBenchmarks, type LiveBenchmarkStats } from "@/lib/firebase/benchmarks";
 import {
   buildScoreTrendData,
   buildSeverityBreakdown,
@@ -26,6 +27,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [records, setRecords] = useState<AnalysisRecord[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
+  const [liveBenchmarks, setLiveBenchmarks] = useState<Record<string, LiveBenchmarkStats>>({});
   const [loading, setLoading] = useState(true);
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -36,11 +38,14 @@ const Dashboard = () => {
       setLoading(false);
       return;
     }
-    Promise.all([getRecentAnalyses(user.uid), getAllActionItems(user.uid)]).then(([analysisRecords, items]) => {
-      setRecords(analysisRecords);
-      setActionItems(items);
-      setLoading(false);
-    });
+    Promise.all([getRecentAnalyses(user.uid), getAllActionItems(user.uid), getLiveBenchmarks()]).then(
+      ([analysisRecords, items, benchmarks]) => {
+        setRecords(analysisRecords);
+        setActionItems(items);
+        setLiveBenchmarks(benchmarks);
+        setLoading(false);
+      }
+    );
   }, [user]);
 
   const sites = groupAnalysesByDomain(records);
@@ -48,7 +53,7 @@ const Dashboard = () => {
   const displayedSites = criticalOnly ? sites.filter((s) => s.latestScore < 50) : sites;
 
   const scoreTrendData = buildScoreTrendData(records, selectedDomain);
-  const categoryScoreData = buildCategoryScoreBreakdown(records, selectedDomain);
+  const categoryScoreData = buildCategoryScoreBreakdown(records, selectedDomain, liveBenchmarks);
   const severityData = buildSeverityBreakdown(actionItems, selectedDomain);
   const issueMomentum = buildIssueMomentum(actionItems, records, selectedDomain);
   const heroSummary = buildHeroScoreSummary(sites, records);
@@ -152,7 +157,7 @@ const Dashboard = () => {
               )}
             </div>
             {displayedSites.map((site) => {
-              const worstCategory = buildCategoryScoreBreakdown(records, site.domain)[0];
+              const worstCategory = buildCategoryScoreBreakdown(records, site.domain, liveBenchmarks)[0];
               return (
                 <div
                   key={site.domain}
