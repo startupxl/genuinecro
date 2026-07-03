@@ -26,17 +26,17 @@ export function generateHeuristicAnalysis(markdown, url, analysisType, device, s
     });
   };
 
-  // ── UX Clarity rules ──
+  // ── Content Hierarchy / CTA Effectiveness / Navigation rules ──
   if (headingCount < 3) {
-    addPoint("ux-clarity", "high", "Weak content hierarchy", `Only ${headingCount} headings detected. Users can't scan the page effectively.${isMobile ? " Critical on mobile where screen real estate is limited." : ""}`, "h1, h2, h3", "Add clear H2/H3 headings to create a scannable content structure. Each section should have a descriptive heading.", 75, "Could improve scroll depth by 15-25%", "Clarity Gap", "Content Structure Score");
+    addPoint("content-hierarchy", "high", "Weak content hierarchy", `Only ${headingCount} headings detected. Users can't scan the page effectively.${isMobile ? " Critical on mobile where screen real estate is limited." : ""}`, "h1, h2, h3", "Add clear H2/H3 headings to create a scannable content structure. Each section should have a descriptive heading.", 75, "Could improve scroll depth by 15-25%", "Clarity Gap", "Content Structure Score");
   }
   if (ctaWords < 1) {
-    addPoint("ux-clarity", "high", "No clear call-to-action found", "Page lacks action-oriented language. Users have no clear next step, which directly kills conversion.", "body", "Add a prominent, action-oriented CTA above the fold. Use verbs like 'Get Started', 'Try Free', 'Buy Now'.", 90, "Could increase conversion by 20-40%", "Clarity Gap", "CTA Presence Score");
+    addPoint("cta-effectiveness", "high", "No clear call-to-action found", "Page lacks action-oriented language. Users have no clear next step, which directly kills conversion.", "body", "Add a prominent, action-oriented CTA above the fold. Use verbs like 'Get Started', 'Try Free', 'Buy Now'.", 90, "Could increase conversion by 20-40%", "Clarity Gap", "CTA Presence Score");
   } else if (ctaWords > 6) {
-    addPoint("ux-clarity", "med", "Too many competing CTAs", `${ctaWords} action phrases found. Multiple CTAs create decision paralysis and dilute the primary conversion path.`, "button, a.cta", "Establish one dominant CTA. Secondary actions should be visually subordinate.", 65, "Could increase primary CTA clicks by 10-18%", "Clarity Gap", "CTA Focus Score");
+    addPoint("cta-effectiveness", "med", "Too many competing CTAs", `${ctaWords} action phrases found. Multiple CTAs create decision paralysis and dilute the primary conversion path.`, "button, a.cta", "Establish one dominant CTA. Secondary actions should be visually subordinate.", 65, "Could increase primary CTA clicks by 10-18%", "Clarity Gap", "CTA Focus Score");
   }
   if (linkCount > 20) {
-    addPoint("ux-clarity", "med", "Navigation overload detected", `${linkCount} links found. ${isMobile ? "On mobile, dense links cause mis-taps." : "Excessive choices create decision paralysis."} Best practice is ≤7 primary nav items.`, "nav, header", isMobile ? "Use hamburger menu with 5-7 items max. Ensure 44px tap targets." : "Reduce to 5-7 primary links. Group secondary items in dropdowns.", 62, "Could increase CTA click-through by 10%", "Clarity Gap", "Navigation Simplicity");
+    addPoint("navigation", "med", "Navigation overload detected", `${linkCount} links found. ${isMobile ? "On mobile, dense links cause mis-taps." : "Excessive choices create decision paralysis."} Best practice is ≤7 primary nav items.`, "nav, header", isMobile ? "Use hamburger menu with 5-7 items max. Ensure 44px tap targets." : "Reduce to 5-7 primary links. Group secondary items in dropdowns.", 62, "Could increase CTA click-through by 10%", "Clarity Gap", "Navigation Simplicity");
   }
 
   // ── Trust & Credibility rules ──
@@ -56,33 +56,33 @@ export function generateHeuristicAnalysis(markdown, url, analysisType, device, s
     addPoint("trust-credibility", "low", "No FAQ section detected", "FAQs address objections pre-emptively and reduce support burden while improving conversion confidence.", "main", "Add an FAQ section addressing top 5-8 customer objections.", 45, "Could reduce bounce by 5-8%", "Trust Gap", "FAQ Presence");
   }
 
-  // ── Friction & Effort rules ──
+  // ── Form Friction / UX Friction rules ──
   if (formIndicators > 8) {
-    addPoint("friction-effort", "high", "Form appears overly complex", `${formIndicators} form-related elements detected. Best practice is ≤5 fields. Every extra field drops conversion ~5-10%.`, "form, input", "Reduce to essential fields only. Use progressive disclosure or multi-step forms for complexity.", 85, "Could increase form completion by 20-35%", "Effort Gap", "Form Complexity Score");
+    addPoint("form-friction", "high", "Form appears overly complex", `${formIndicators} form-related elements detected. Best practice is ≤5 fields. Every extra field drops conversion ~5-10%.`, "form, input", "Reduce to essential fields only. Use progressive disclosure or multi-step forms for complexity.", 85, "Could increase form completion by 20-35%", "Effort Gap", "Form Complexity Score");
   }
   if (wordCount > 2500 && (analysisType === "lead-form" || analysisType === "checkout" || analysisType === "landing-paid-media")) {
-    addPoint("friction-effort", "med", "Excessive content for conversion page", `~${wordCount} words on a ${analysisType} page. Conversion-focused pages should be concise and action-oriented.`, "main", "Trim content to essentials. Use expandable sections for details. Keep focus on the conversion action.", 60, "Could reduce bounce by 10-15%", "Effort Gap", "Content Conciseness");
+    addPoint("ux-friction", "med", "Excessive content for conversion page", `~${wordCount} words on a ${analysisType} page. Conversion-focused pages should be concise and action-oriented.`, "main", "Trim content to essentials. Use expandable sections for details. Keep focus on the conversion action.", 60, "Could reduce bounce by 10-15%", "Effort Gap", "Content Conciseness");
   }
 
-  // ── Speed & Performance rules ──
+  // ── Performance rules ──
   if (isMobile) {
-    addPoint("speed-performance", "high", "Mobile performance critical", "Mobile users on cellular connections need optimized loading. ~53% of mobile users abandon sites that take >3s to load.", "head, body", "Implement critical CSS inlining, lazy-load below-fold images, use responsive srcset, minimize JS.", 82, "Could reduce mobile bounce by 15-25%", "Speed Gap", "Mobile Performance Score");
+    addPoint("performance", "high", "Mobile performance critical", "Mobile users on cellular connections need optimized loading. ~53% of mobile users abandon sites that take >3s to load.", "head, body", "Implement critical CSS inlining, lazy-load below-fold images, use responsive srcset, minimize JS.", 82, "Could reduce mobile bounce by 15-25%", "Speed Gap", "Mobile Performance Score");
   }
   if (imageCount > 10 && !lower.includes("lazy")) {
-    addPoint("speed-performance", "med", "Many images without lazy loading", `${imageCount} images detected with no evidence of lazy loading. This increases initial page weight and load time.`, "img", "Add loading='lazy' to below-fold images. Use modern formats (WebP/AVIF) and responsive srcset.", 65, "Could improve load time by 20-40%", "Speed Gap", "Image Optimization");
+    addPoint("performance", "med", "Many images without lazy loading", `${imageCount} images detected with no evidence of lazy loading. This increases initial page weight and load time.`, "img", "Add loading='lazy' to below-fold images. Use modern formats (WebP/AVIF) and responsive srcset.", 65, "Could improve load time by 20-40%", "Speed Gap", "Image Optimization");
   }
 
-  // ── Intent Match rules ──
+  // ── CTA Effectiveness (pricing clarity) rules ──
   if (analysisType === "landing-paid-media" && !hasPricing) {
-    addPoint("intent-match", "high", "Paid landing page lacks pricing", "Users from paid ads expect immediate pricing clarity. Missing pricing creates friction and increases bounce.", "main, .pricing", "Add clear pricing or 'Starting from $X' near the hero. Paid traffic has high intent — don't make them search.", 80, "Could reduce bounce by 20-30%", "Motivation Gap", "Pricing Clarity");
+    addPoint("cta-effectiveness", "high", "Paid landing page lacks pricing", "Users from paid ads expect immediate pricing clarity. Missing pricing creates friction and increases bounce.", "main, .pricing", "Add clear pricing or 'Starting from $X' near the hero. Paid traffic has high intent — don't make them search.", 80, "Could reduce bounce by 20-30%", "Motivation Gap", "Pricing Clarity");
   }
   if (analysisType === "product-page" && !hasPricing) {
-    addPoint("intent-match", "high", "Product page missing pricing", "No pricing information detected. Price transparency is essential for purchase decisions.", ".product, main", "Display pricing prominently with any applicable discounts or payment options.", 85, "Could increase add-to-cart by 15-25%", "Motivation Gap", "Pricing Visibility");
+    addPoint("cta-effectiveness", "high", "Product page missing pricing", "No pricing information detected. Price transparency is essential for purchase decisions.", ".product, main", "Display pricing prominently with any applicable discounts or payment options.", 85, "Could increase add-to-cart by 15-25%", "Motivation Gap", "Pricing Visibility");
   }
 
-  // ── Mobile-specific rules ──
+  // ── Accessibility rules ──
   if (isMobile) {
-    addPoint("friction-effort", "high", "Mobile tap targets need review", "Interactive elements must be ≥44x44px with adequate spacing. Small/close buttons cause mis-taps and frustration.", "button, a, input", "Ensure all tap targets are minimum 44x44px with 8px+ spacing between interactive elements.", 78, "Could reduce mobile error rate by 30%", "Effort Gap", "Tap Target Compliance");
+    addPoint("accessibility", "high", "Mobile tap targets need review", "Interactive elements must be ≥44x44px with adequate spacing. Small/close buttons cause mis-taps and frustration.", "button, a, input", "Ensure all tap targets are minimum 44x44px with 8px+ spacing between interactive elements.", 78, "Could reduce mobile error rate by 30%", "Effort Gap", "Tap Target Compliance");
   }
 
   // ── Compute scores ──
@@ -92,7 +92,7 @@ export function generateHeuristicAnalysis(markdown, url, analysisType, device, s
 
   for (const cat of catKeys) {
     const catPoints = points.filter((p) => p.category === cat);
-    const maxRules = cat === "friction-effort" ? 25 : cat === "ux-clarity" || cat === "trust-credibility" ? 20 : 15;
+    const maxRules = Math.round(SCORING_CATEGORIES[cat].weight * 100);
     const failedCount = catPoints.length;
     const passed = maxRules - failedCount;
     const score = Math.max(10, Math.round((passed / maxRules) * 100));

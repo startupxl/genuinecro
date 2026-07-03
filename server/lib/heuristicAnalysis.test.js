@@ -30,4 +30,19 @@ describe("generateHeuristicAnalysis", () => {
       expect(result.frictionPoints[i - 1].impactScore).toBeGreaterThanOrEqual(result.frictionPoints[i].impactScore);
     }
   });
+
+  it("uses the new taxonomy's category keys, not the retired ones", () => {
+    const result = generateHeuristicAnalysis("Just some plain text with no headings at all.", "https://example.com", "homepage", "mobile", null);
+    const categories = result.frictionPoints.map((p) => p.category);
+    expect(categories).toContain("content-hierarchy");
+    expect(categories).toContain("accessibility");
+    expect(categories).not.toContain("ux-clarity");
+    expect(categories).not.toContain("friction-effort");
+  });
+
+  it("computes category score totals from the taxonomy's weights (out of 100)", () => {
+    const result = generateHeuristicAnalysis("content", "https://example.com", "homepage", "desktop", null);
+    expect(result.benchmark.categoryScores["checkout-friction"].total).toBe(5);
+    expect(result.benchmark.categoryScores["trust-credibility"].total).toBe(15);
+  });
 });
