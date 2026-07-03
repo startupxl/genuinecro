@@ -52,4 +52,23 @@ describe("FrictionCard", () => {
     );
     expect(container.querySelector(".badge-high")).toBeNull();
   });
+
+  it("shows an 'Evidence-based' badge when sourceCitation is present", () => {
+    render(
+      <FrictionCard
+        point={buildPoint({ sourceCitation: "Baymard Institute's publicly published checkout usability research" })}
+        index={0}
+        isSelected={false}
+        onClick={() => {}}
+      />
+    );
+    expect(screen.getByText("Evidence-based")).toBeInTheDocument();
+  });
+
+  it("does not show the 'Evidence-based' badge when sourceCitation is absent", () => {
+    render(
+      <FrictionCard point={buildPoint({ sourceCitation: undefined })} index={0} isSelected={false} onClick={() => {}} />
+    );
+    expect(screen.queryByText("Evidence-based")).not.toBeInTheDocument();
+  });
 });

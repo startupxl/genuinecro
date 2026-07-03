@@ -187,6 +187,16 @@ const EvidencePanel = ({ point }: EvidencePanelProps) => {
                 <p className="text-body text-foreground/80">{point.description}</p>
               </div>
 
+              {/* Evidence Base */}
+              {point.sourceCitation && (
+                <div className="bg-primary/[0.04] rounded-md p-3 border border-primary/20">
+                  <h4 className="text-label text-primary mb-1.5" style={{ fontSize: "10px" }}>
+                    Evidence Base
+                  </h4>
+                  <p className="text-xs text-foreground/80 leading-relaxed">{point.sourceCitation}</p>
+                </div>
+              )}
+
               {/* Selector */}
               <div>
                 <h4 className="text-label text-muted-foreground mb-2" style={{ fontSize: "10px" }}>

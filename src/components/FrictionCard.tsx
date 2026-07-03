@@ -71,6 +71,12 @@ const FrictionCard = ({ point, index, isSelected, onClick }: FrictionCardProps) 
               {point.insightCluster}
             </span>
           )}
+          {point.sourceCitation && (
+            <span className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+              <ShieldCheck className="h-2.5 w-2.5" />
+              Evidence-based
+            </span>
+          )}
         </div>
         <span className={`text-[11px] font-medium ${severityTextClass[point.severity]}`}>
           {severityLabel[point.severity]}
