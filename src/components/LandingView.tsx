@@ -113,6 +113,7 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => 
       transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
     >
       <AppShell onSignIn={onSignIn}>
+      <div className="h-full flex flex-col">
       <div className="flex-1 flex items-center justify-center px-4">
       <div className="w-full max-w-xl text-center">
         <motion.div
@@ -121,8 +122,11 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => 
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
         >
           <img src={logoImg} alt="GenuineCRO" className="h-12 w-auto mx-auto mb-4 object-contain" />
-          <p className="text-body text-muted-foreground mb-8">
+          <p className="text-body text-muted-foreground mb-3">
             Paste a URL. Get a prioritized backlog of conversion-killing friction.
+          </p>
+          <p className="text-xs text-muted-foreground/80 mb-8">
+            Free to try · No signup required · Results in under 60 seconds
           </p>
         </motion.div>
 
@@ -263,7 +267,7 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => 
       </div>
 
       {/* Footer with legal links */}
-      <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+      <div className="flex-shrink-0 flex justify-center py-4">
         <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
           <a href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</a>
           <span className="hidden sm:inline">·</span>
@@ -275,6 +279,7 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => 
           <span className="hidden sm:inline">·</span>
           <a href="/contact" className="hover:text-foreground transition-colors">Contact Us</a>
         </nav>
+      </div>
       </div>
       </AppShell>
     </motion.div>
