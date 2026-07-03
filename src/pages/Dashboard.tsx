@@ -1,20 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Globe, TrendingUp, TrendingDown, AlertTriangle, X, FileText } from "lucide-react";
+import { Plus, Globe, TrendingUp, TrendingDown, AlertTriangle, X, FileText, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
 import { getRecentAnalyses, groupAnalysesByDomain, type AnalysisRecord } from "@/lib/firebase/analyses";
 import { getAllActionItems, type ActionItem } from "@/lib/firebase/actionItems";
 import {
   buildScoreTrendData,
-  buildCategoryBreakdown,
   buildSeverityBreakdown,
   buildPageBreakdown,
   buildHeroScoreSummary,
+  buildCategoryScoreBreakdown,
+  buildIssueMomentum,
   getDomain,
 } from "@/lib/dashboardMetrics";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
 import CategoryBreakdownChart from "@/components/CategoryBreakdownChart";
+import CategoryDeltaBar from "@/components/CategoryDeltaBar";
 import HeroScoreCard from "@/components/HeroScoreCard";
 import TopIssuesList from "@/components/TopIssuesList";
 import PageBreakdownTable from "@/components/PageBreakdownTable";
@@ -26,6 +28,7 @@ const Dashboard = () => {
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [criticalOnly, setCriticalOnly] = useState(false);
 
   useEffect(() => {
@@ -45,8 +48,9 @@ const Dashboard = () => {
   const displayedSites = criticalOnly ? sites.filter((s) => s.latestScore < 50) : sites;
 
   const scoreTrendData = buildScoreTrendData(records, selectedDomain);
-  const categoryData = buildCategoryBreakdown(actionItems, selectedDomain);
+  const categoryScoreData = buildCategoryScoreBreakdown(records, selectedDomain);
   const severityData = buildSeverityBreakdown(actionItems, selectedDomain);
+  const issueMomentum = buildIssueMomentum(actionItems, records, selectedDomain);
   const heroSummary = buildHeroScoreSummary(sites, records);
   const pageData = buildPageBreakdown(records, actionItems).filter(
     (p) => !selectedDomain || p.domain === selectedDomain
@@ -54,9 +58,15 @@ const Dashboard = () => {
   const topIssues = actionItems
     .filter((i) => i.status === "open")
     .filter((i) => !selectedDomain || getDomain(i.url) === selectedDomain)
+    .filter((i) => !selectedCategory || i.category === selectedCategory)
     .slice()
     .sort((a, b) => b.impactScore - a.impactScore)
     .slice(0, 5);
+
+  const handleRescan = (e: React.MouseEvent, url: string) => {
+    e.stopPropagation();
+    navigate("/", { state: { prefillUrl: `https://${url}` } });
+  };
 
   if (!user) {
     return (
@@ -141,41 +151,72 @@ const Dashboard = () => {
                 </button>
               )}
             </div>
-            {displayedSites.map((site) => (
-              <div
-                key={site.domain}
-                data-testid="site-row"
-                onClick={() => setSelectedDomain((d) => (d === site.domain ? null : site.domain))}
-                className={`flex items-center justify-between px-4 py-3 border-b border-border last:border-b-0 cursor-pointer transition-colors hover:bg-secondary/50 ${
-                  selectedDomain === site.domain ? "bg-secondary" : ""
-                }`}
-              >
-                <div>
-                  <p className="text-sm font-medium text-foreground">{site.domain}</p>
-                  <p className="text-xs text-muted-foreground">{site.analysisCount} audit{site.analysisCount === 1 ? "" : "s"}</p>
+            {displayedSites.map((site) => {
+              const worstCategory = buildCategoryScoreBreakdown(records, site.domain)[0];
+              return (
+                <div
+                  key={site.domain}
+                  data-testid="site-row"
+                  onClick={() => setSelectedDomain((d) => (d === site.domain ? null : site.domain))}
+                  className={`flex items-center justify-between px-4 py-3 border-b border-border last:border-b-0 cursor-pointer transition-colors hover:bg-secondary/50 ${
+                    selectedDomain === site.domain ? "bg-secondary" : ""
+                  }`}
+                >
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{site.domain}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {site.analysisCount} audit{site.analysisCount === 1 ? "" : "s"}
+                      {worstCategory && <> · Worst: {worstCategory.label}</>}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-semibold text-foreground">{site.latestScore}</span>
+                      {site.scoreDelta !== null && (
+                        <span className={`flex items-center gap-0.5 text-xs ${site.scoreDelta >= 0 ? "text-primary" : "text-destructive"}`}>
+                          {site.scoreDelta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                          {site.scoreDelta >= 0 ? "+" : ""}{site.scoreDelta}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => handleRescan(e, site.domain)}
+                      className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-secondary"
+                    >
+                      <RefreshCw className="h-3 w-3" /> Re-scan
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-foreground">{site.latestScore}</span>
-                  {site.scoreDelta !== null && (
-                    <span className={`flex items-center gap-0.5 text-xs ${site.scoreDelta >= 0 ? "text-primary" : "text-destructive"}`}>
-                      {site.scoreDelta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                      {site.scoreDelta >= 0 ? "+" : ""}{site.scoreDelta}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {selectedDomain && (
-            <div className="flex items-center gap-1.5 mb-4 -mt-3">
-              <span className="text-xs text-muted-foreground">Filtered to {selectedDomain}</span>
-              <button
-                onClick={() => setSelectedDomain(null)}
-                className="flex items-center gap-0.5 text-xs text-primary hover:text-primary/80 transition-colors"
-              >
-                <X className="h-3 w-3" /> Clear
-              </button>
+          {(selectedDomain || selectedCategory) && (
+            <div className="flex items-center gap-3 mb-4 -mt-3">
+              {selectedDomain && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Filtered to {selectedDomain}</span>
+                  <button
+                    onClick={() => setSelectedDomain(null)}
+                    className="flex items-center gap-0.5 text-xs text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <X className="h-3 w-3" /> Clear
+                  </button>
+                </div>
+              )}
+              {selectedCategory && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">
+                    Category: {categoryScoreData.find((c) => c.category === selectedCategory)?.label ?? selectedCategory}
+                  </span>
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className="flex items-center gap-0.5 text-xs text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <X className="h-3 w-3" /> Clear
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -190,10 +231,14 @@ const Dashboard = () => {
             </div>
             <div className="bg-surface border border-border rounded-lg overflow-hidden">
               <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-                Friction by Category
+                Category Scores
               </div>
               <div className="p-4">
-                <CategoryBreakdownChart data={categoryData} />
+                <CategoryDeltaBar
+                  data={categoryScoreData}
+                  selectedCategory={selectedCategory}
+                  onCategoryClick={(cat) => setSelectedCategory((c) => (c === cat ? null : cat))}
+                />
               </div>
             </div>
           </div>
@@ -205,6 +250,14 @@ const Dashboard = () => {
               </div>
               <div className="p-4">
                 <CategoryBreakdownChart data={severityData} />
+                {(issueMomentum.newSinceLastScan > 0 || issueMomentum.resolvedSinceLastScan > 0) && (
+                  <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+                    <span className="text-destructive font-medium">+{issueMomentum.newSinceLastScan} new</span>
+                    {" · "}
+                    <span className="text-primary font-medium">−{issueMomentum.resolvedSinceLastScan} resolved</span>
+                    {" since last scan"}
+                  </p>
+                )}
               </div>
             </div>
             <div className="bg-surface border border-border rounded-lg overflow-hidden">

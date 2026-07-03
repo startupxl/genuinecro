@@ -15,6 +15,7 @@ interface LandingViewProps {
   usage: { used: number; limit: number; canAnalyze: boolean; requiresAuth: boolean; requiresPaid: boolean };
   user: User | null;
   onSignIn: () => void;
+  initialUrl?: string;
 }
 
 const typeDescriptions: Record<AnalysisType, string> = {
@@ -37,8 +38,8 @@ const allTypes: AnalysisType[] = [
   "landing-paid-media",
 ];
 
-const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => {
-  const [url, setUrl] = useState("");
+const LandingView = ({ onAnalyze, usage, user, onSignIn, initialUrl }: LandingViewProps) => {
+  const [url, setUrl] = useState(initialUrl ?? "");
   const [analysisType, setAnalysisType] = useState<AnalysisType>("homepage");
   const [device, setDevice] = useState<"desktop" | "mobile" | "both">(() => getUserSettings().defaultDevice);
   const [userOverridden, setUserOverridden] = useState(false);

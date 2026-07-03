@@ -196,6 +196,7 @@ const Index = () => {
       )}
       <AnimatePresence mode="wait">
         <LandingView
+          initialUrl={location.state?.prefillUrl}
           onAnalyze={handleAnalyze}
           usage={usage}
           user={user}

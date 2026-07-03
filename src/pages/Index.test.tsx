@@ -26,8 +26,15 @@ vi.mock("@/lib/firebase/actionItems", () => ({
 }));
 
 vi.mock("@/components/LandingView", () => ({
-  default: ({ onAnalyze }: { onAnalyze: (url: string, type?: string, device?: string) => void }) => (
+  default: ({
+    onAnalyze,
+    initialUrl,
+  }: {
+    onAnalyze: (url: string, type?: string, device?: string) => void;
+    initialUrl?: string;
+  }) => (
     <div>
+      <div data-testid="initial-url">{initialUrl ?? ""}</div>
       <button onClick={() => onAnalyze("example.com", "homepage", "desktop")}>Analyze</button>
       <button onClick={() => onAnalyze("example.com", "homepage", "both")}>Analyze Both</button>
     </div>
@@ -152,5 +159,17 @@ describe("Index — login-gated results", () => {
       expect(screen.getByTestId("auth-page")).toBeInTheDocument();
     });
     expect(screen.queryByTestId("comparison-view")).not.toBeInTheDocument();
+  });
+
+  it("prefills the URL field when navigated here with a prefillUrl (Re-scan from Dashboard)", async () => {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: "/", state: { prefillUrl: "https://stripe.com" } }]}>
+        <Index />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("initial-url")).toHaveTextContent("https://stripe.com");
+    });
   });
 });

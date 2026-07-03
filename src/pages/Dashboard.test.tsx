@@ -5,6 +5,12 @@ import { MemoryRouter } from "react-router-dom";
 const getRecentAnalysesMock = vi.fn();
 const groupAnalysesByDomainMock = vi.fn();
 const getAllActionItemsMock = vi.fn();
+const navigateMock = vi.fn();
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  return { ...actual, useNavigate: () => navigateMock };
+});
 
 function defaultGroupByDomain(records: Array<{ url: string; conversionScore: number; createdAt: string }>) {
   if (records.length === 0) return [];
@@ -44,6 +50,7 @@ describe("Dashboard", () => {
     getRecentAnalysesMock.mockReset();
     groupAnalysesByDomainMock.mockReset().mockImplementation(defaultGroupByDomain);
     getAllActionItemsMock.mockReset().mockResolvedValue([]);
+    navigateMock.mockReset();
   });
 
   it("shows an empty state when there are no audits yet", async () => {
@@ -156,13 +163,10 @@ describe("Dashboard", () => {
     expect(screen.getByText("healthy.com")).toBeInTheDocument();
   });
 
-  it("renders the score trend and friction-by-category widgets", async () => {
+  it("renders the score trend and category scores widgets", async () => {
     getRecentAnalysesMock.mockResolvedValue([
-      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z" },
-      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 65, createdAt: "2026-06-02T00:00:00.000Z" },
-    ]);
-    getAllActionItemsMock.mockResolvedValue([
-      { id: "1", userId: "uid-1", url: "https://example.com", analysisType: "homepage", category: "ux-clarity", severity: "high", title: "t", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z", categoryScores: { navigation: 40 } },
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 65, createdAt: "2026-06-02T00:00:00.000Z", categoryScores: { navigation: 60 } },
     ]);
 
     render(
@@ -174,8 +178,76 @@ describe("Dashboard", () => {
     await waitFor(() => {
       expect(screen.getByText("Score Trend")).toBeInTheDocument();
     });
-    expect(screen.getByText("Friction by Category")).toBeInTheDocument();
-    expect(screen.getAllByText("UX Clarity").length).toBeGreaterThan(0);
+    expect(screen.getByText("Category Scores")).toBeInTheDocument();
+    expect(screen.getByText("Navigation")).toBeInTheDocument();
+  });
+
+  it("filters Top Issues when a category bar is clicked", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z", categoryScores: { navigation: 40, "trust-credibility": 70 } },
+    ]);
+    getAllActionItemsMock.mockResolvedValue([
+      { id: "1", userId: "uid-1", url: "https://example.com", analysisType: "homepage", category: "navigation", severity: "high", title: "Nav issue", description: "d", fix: "f", impactScore: 90, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "2", userId: "uid-1", url: "https://example.com", analysisType: "homepage", category: "trust-credibility", severity: "high", title: "Trust issue", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Nav issue")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Trust issue")).toBeInTheDocument();
+
+    const categoryRow = screen.getByText("Category Scores").parentElement!
+      .querySelector("[data-testid='category-delta-row']")!;
+    fireEvent.click(within(categoryRow).getByText("Navigation"));
+
+    expect(screen.getByText("Nav issue")).toBeInTheDocument();
+    expect(screen.queryByText("Trust issue")).not.toBeInTheDocument();
+  });
+
+  it("shows the worst category and a Re-scan button on each site row, and Re-scan navigates with a prefilled URL", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z", categoryScores: { navigation: 20, "trust-credibility": 90 } },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Worst: Navigation/)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Re-scan"));
+    expect(navigateMock).toHaveBeenCalledWith("/", { state: { prefillUrl: "https://example.com" } });
+  });
+
+  it("shows issue momentum since the last scan", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z" },
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-05T00:00:00.000Z" },
+    ]);
+    getAllActionItemsMock.mockResolvedValue([
+      { id: "1", userId: "uid-1", url: "https://example.com", analysisType: "homepage", category: "navigation", severity: "high", title: "New one", description: "d", fix: "f", impactScore: 90, status: "open", createdAt: "2026-06-06T00:00:00.000Z" },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/new/)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/resolved/)).toBeInTheDocument();
   });
 
   it("shows the pages audited count in the hero card", async () => {
