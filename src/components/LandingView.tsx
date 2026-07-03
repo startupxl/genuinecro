@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Search, Monitor, Smartphone, ChevronDown, Lock } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import type { AnalysisType } from "@/lib/mockData";
-import logoImg from "@/assets/logo.png";
 import { analysisTypeLabels, detectPageType } from "@/lib/mockData";
 import type { User } from "firebase/auth";
 import { usePlanCapabilities, getUpgradeMessage } from "@/hooks/usePlanCapabilities";
@@ -121,12 +120,15 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn }: LandingViewProps) => 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
         >
-          <img src={logoImg} alt="GenuineCRO" className="h-12 w-auto mx-auto mb-4 object-contain" />
+          <p className="text-label text-primary/70 mb-2">Free CRO Tools /</p>
+          <h1 className="font-display text-4xl sm:text-5xl font-semibold text-foreground tracking-tight leading-[1.05] mb-4">
+            Conversion Friction Checker
+          </h1>
           <p className="text-body text-muted-foreground mb-3">
             Paste a URL. Get a prioritized backlog of conversion-killing friction.
           </p>
           <p className="text-xs text-muted-foreground/80 mb-8">
-            Free to try · No signup required · Results in under 60 seconds
+            Free to try · No signup required for your first scan
           </p>
         </motion.div>
 

@@ -116,15 +116,24 @@ describe("LandingView", () => {
     expect(screen.getByText("Manual")).toBeInTheDocument();
   });
 
-  it("renders the logo at a compact, non-dominant size", () => {
+  it("shows a big headline instead of repeating the logo, since the sidebar already shows it", () => {
     render(
       <MemoryRouter>
         <LandingView onAnalyze={vi.fn()} usage={usage} user={null} onSignIn={vi.fn()} />
       </MemoryRouter>
     );
 
-    const logos = screen.getAllByAltText("GenuineCRO");
-    const heroLogo = logos[logos.length - 1];
-    expect(heroLogo).not.toHaveClass("h-[120px]");
+    expect(screen.getAllByAltText("GenuineCRO")).toHaveLength(1);
+    expect(screen.getByRole("heading", { name: "Conversion Friction Checker" })).toBeInTheDocument();
+  });
+
+  it("does not make unverified claims like a specific scan duration", () => {
+    render(
+      <MemoryRouter>
+        <LandingView onAnalyze={vi.fn()} usage={usage} user={null} onSignIn={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByText(/seconds/i)).not.toBeInTheDocument();
   });
 });
