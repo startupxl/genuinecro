@@ -51,10 +51,10 @@ const WorkspaceNav = ({ onLogoClick, onSignIn }: WorkspaceNavProps) => {
     <nav className="w-48 flex-shrink-0 border-r border-border bg-surface py-4 flex flex-col">
       <button
         onClick={onLogoClick || (() => navigate("/"))}
-        className="flex items-center px-4 pb-4 mb-2 border-b border-border hover:opacity-80 transition-opacity"
+        className="flex items-center justify-center px-3 pb-4 mb-2 border-b border-border hover:opacity-80 transition-opacity"
         title="Back to home"
       >
-        <img src={logoImg} alt="GenuineCRO" className="h-6 w-auto object-contain" />
+        <img src={logoImg} alt="GenuineCRO" className="h-10 w-full object-contain" />
       </button>
 
       <div className="flex-1">
@@ -124,9 +124,10 @@ const WorkspaceNav = ({ onLogoClick, onSignIn }: WorkspaceNavProps) => {
       ) : (
         <button
           onClick={onSignIn || (() => navigate("/"))}
-          className="flex items-center gap-2 px-4 py-2.5 border-t border-border text-sm text-foreground hover:bg-secondary/50 transition-colors"
+          className="flex items-center gap-2 px-4 py-3 mt-1 border-t border-border text-sm text-foreground hover:bg-secondary/50 transition-colors"
         >
-          <LogIn className="h-3.5 w-3.5" />
+          <span className="h-1.5 w-1.5 flex-shrink-0" />
+          <LogIn className="h-3.5 w-3.5 flex-shrink-0" />
           Sign in
         </button>
       )}
