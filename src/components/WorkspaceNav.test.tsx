@@ -72,6 +72,37 @@ describe("WorkspaceNav", () => {
     expect(onSignIn).toHaveBeenCalled();
   });
 
+  it("positions the profile row above the nav sections, in its own bordered section", () => {
+    mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Jane" };
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav />
+      </MemoryRouter>
+    );
+
+    const profileEl = screen.getByText("Jane");
+    const dashboardEl = screen.getByText("Dashboard");
+    // eslint-disable-next-line no-bitwise
+    expect(profileEl.compareDocumentPosition(dashboardEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    const profileButton = profileEl.closest("button");
+    expect(profileButton).toHaveClass("border-b");
+  });
+
+  it("positions the Sign in button above the nav sections when signed out", () => {
+    mockUser = null;
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav onSignIn={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    const signInEl = screen.getByText("Sign in");
+    const dashboardEl = screen.getByText("Dashboard");
+    // eslint-disable-next-line no-bitwise
+    expect(signInEl.compareDocumentPosition(dashboardEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("is off-screen by default on mobile and slides in when isOpen is true", () => {
     const { container, rerender } = render(
       <MemoryRouter initialEntries={["/dashboard"]}>
