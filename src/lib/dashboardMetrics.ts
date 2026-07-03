@@ -152,3 +152,60 @@ export function buildHeroScoreSummary(sites: SiteSummary[], analyses: AnalysisRe
     lastAuditAt,
   };
 }
+
+// Static, curated benchmark figures (not live cross-account aggregation — see
+// the evidence-based criteria library for the same approach applied elsewhere).
+export const CATEGORY_BENCHMARKS: Record<string, { accountAvg: number; topQuartile: number }> = {
+  "content-hierarchy": { accountAvg: 55, topQuartile: 80 },
+  navigation: { accountAvg: 58, topQuartile: 82 },
+  performance: { accountAvg: 52, topQuartile: 78 },
+  accessibility: { accountAvg: 50, topQuartile: 75 },
+  "visual-friction": { accountAvg: 60, topQuartile: 85 },
+  "ux-friction": { accountAvg: 54, topQuartile: 79 },
+  "trust-credibility": { accountAvg: 55, topQuartile: 80 },
+  "form-friction": { accountAvg: 53, topQuartile: 78 },
+  "cta-effectiveness": { accountAvg: 56, topQuartile: 81 },
+  "checkout-friction": { accountAvg: 50, topQuartile: 76 },
+};
+
+export interface CategoryScoreEntry {
+  category: string;
+  label: string;
+  score: number;
+  deltaVsBenchmark: number;
+  siteCount: number;
+  worstSite?: { url: string; score: number };
+}
+
+export function buildCategoryScoreBreakdown(analyses: AnalysisRecord[], domain: string | null): CategoryScoreEntry[] {
+  const filtered = analyses
+    .filter((a) => a.analysisType !== "technical")
+    .filter((a) => !domain || getDomain(a.url) === domain)
+    .filter((a): a is AnalysisRecord & { categoryScores: Record<string, number> } => !!a.categoryScores);
+
+  const byCategory = new Map<string, { score: number; url: string }[]>();
+  for (const a of filtered) {
+    for (const [category, score] of Object.entries(a.categoryScores)) {
+      if (!byCategory.has(category)) byCategory.set(category, []);
+      byCategory.get(category)!.push({ score, url: a.url });
+    }
+  }
+
+  const entries: CategoryScoreEntry[] = [];
+  for (const [category, points] of byCategory) {
+    const avgScore = Math.round(points.reduce((sum, p) => sum + p.score, 0) / points.length);
+    const benchmark = CATEGORY_BENCHMARKS[category];
+    const worstSite = points.reduce((min, p) => (p.score < min.score ? p : min), points[0]);
+
+    entries.push({
+      category,
+      label: categoryLabels[category] ?? category,
+      score: avgScore,
+      deltaVsBenchmark: benchmark ? avgScore - benchmark.accountAvg : 0,
+      siteCount: new Set(points.map((p) => getDomain(p.url))).size,
+      worstSite: { url: worstSite.url, score: worstSite.score },
+    });
+  }
+
+  return entries.sort((a, b) => a.deltaVsBenchmark - b.deltaVsBenchmark);
+}

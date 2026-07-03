@@ -6,6 +6,8 @@ import {
   buildSeverityBreakdown,
   buildPageBreakdown,
   buildHeroScoreSummary,
+  buildCategoryScoreBreakdown,
+  CATEGORY_BENCHMARKS,
 } from "./dashboardMetrics";
 import type { AnalysisRecord } from "./firebase/analyses";
 import type { ActionItem } from "./firebase/actionItems";
@@ -287,5 +289,64 @@ describe("buildHeroScoreSummary", () => {
       pagesAudited: 0,
       lastAuditAt: null,
     });
+  });
+});
+
+describe("buildCategoryScoreBreakdown", () => {
+  it("averages category scores across analyses and computes delta vs. the static benchmark", () => {
+    const analyses = [
+      buildAnalysis({ url: "https://a.com", categoryScores: { "content-hierarchy": 40 } }),
+      buildAnalysis({ url: "https://b.com", categoryScores: { "content-hierarchy": 60 } }),
+    ];
+
+    const result = buildCategoryScoreBreakdown(analyses, null);
+
+    const entry = result.find((r) => r.category === "content-hierarchy")!;
+    expect(entry.score).toBe(50);
+    expect(entry.label).toBe("Content Hierarchy");
+    expect(entry.deltaVsBenchmark).toBe(50 - CATEGORY_BENCHMARKS["content-hierarchy"].accountAvg);
+  });
+
+  it("counts distinct sites contributing to each category and identifies the worst site", () => {
+    const analyses = [
+      buildAnalysis({ url: "https://a.com", categoryScores: { navigation: 70 } }),
+      buildAnalysis({ url: "https://b.com", categoryScores: { navigation: 30 } }),
+    ];
+
+    const result = buildCategoryScoreBreakdown(analyses, null);
+
+    const entry = result.find((r) => r.category === "navigation")!;
+    expect(entry.siteCount).toBe(2);
+    expect(entry.worstSite).toEqual({ url: "https://b.com", score: 30 });
+  });
+
+  it("sorts categories worst delta first", () => {
+    const analyses = [
+      buildAnalysis({ url: "https://a.com", categoryScores: { "content-hierarchy": 90, navigation: 10 } }),
+    ];
+
+    const result = buildCategoryScoreBreakdown(analyses, null);
+
+    expect(result[0].category).toBe("navigation");
+  });
+
+  it("ignores analyses with no categoryScores and excludes technical audits", () => {
+    const analyses = [
+      buildAnalysis({ url: "https://a.com", categoryScores: undefined }),
+      buildAnalysis({ url: "https://b.com", analysisType: "technical", categoryScores: { navigation: 90 } }),
+    ];
+
+    expect(buildCategoryScoreBreakdown(analyses, null)).toEqual([]);
+  });
+
+  it("filters to a single domain when one is given", () => {
+    const analyses = [
+      buildAnalysis({ url: "https://a.com", categoryScores: { navigation: 70 } }),
+      buildAnalysis({ url: "https://b.com", categoryScores: { navigation: 30 } }),
+    ];
+
+    const result = buildCategoryScoreBreakdown(analyses, "a.com");
+
+    expect(result.find((r) => r.category === "navigation")!.score).toBe(70);
   });
 });
