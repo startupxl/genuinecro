@@ -8,6 +8,8 @@ const orderByMock = vi.fn((..._args: unknown[]) => ({ __orderBy: true }));
 const limitMock = vi.fn((..._args: unknown[]) => ({ __limit: true }));
 const getDocsMock = vi.fn();
 const getCountFromServerMock = vi.fn();
+const docMock = vi.fn((...args: unknown[]) => ({ __doc: args }));
+const getDocMock = vi.fn();
 
 vi.mock("firebase/firestore", () => ({
   collection: (...args: unknown[]) => collectionMock(...args),
@@ -18,13 +20,15 @@ vi.mock("firebase/firestore", () => ({
   limit: (...args: unknown[]) => limitMock(...args),
   getDocs: (...args: unknown[]) => getDocsMock(...args),
   getCountFromServer: (...args: unknown[]) => getCountFromServerMock(...args),
+  doc: (...args: unknown[]) => docMock(...args),
+  getDoc: (...args: unknown[]) => getDocMock(...args),
   serverTimestamp: () => "server-timestamp",
   Timestamp: { fromDate: (d: Date) => ({ __timestamp: d.toISOString() }) },
 }));
 
 vi.mock("@/integrations/firebase/client", () => ({ db: {} }));
 
-import { recordAnalysis, countAnalysesSince, getRecentAnalyses, groupAnalysesByDomain } from "./analyses";
+import { recordAnalysis, countAnalysesSince, getRecentAnalyses, groupAnalysesByDomain, getAnalysisById } from "./analyses";
 
 describe("firebase analyses module", () => {
   beforeEach(() => {
@@ -78,6 +82,7 @@ describe("getRecentAnalyses", () => {
     getDocsMock.mockResolvedValue({
       docs: [
         {
+          id: "doc-1",
           data: () => ({
             url: "https://a.example.com",
             analysisType: "homepage",
@@ -93,6 +98,7 @@ describe("getRecentAnalyses", () => {
 
     expect(records).toEqual([
       {
+        id: "doc-1",
         url: "https://a.example.com",
         analysisType: "homepage",
         device: "desktop",
@@ -107,6 +113,7 @@ describe("getRecentAnalyses", () => {
     getDocsMock.mockResolvedValue({
       docs: [
         {
+          id: "doc-1",
           data: () => ({
             url: "https://a.example.com",
             analysisType: "homepage",
@@ -175,5 +182,46 @@ describe("groupAnalysesByDomain", () => {
     expect(summaries).toHaveLength(1);
     expect(summaries[0].latestScore).toBe(70);
     expect(summaries[0].analysisCount).toBe(1);
+  });
+});
+
+describe("getAnalysisById", () => {
+  beforeEach(() => {
+    getDocMock.mockReset();
+  });
+
+  it("returns the analysis record with its id when the doc exists", async () => {
+    getDocMock.mockResolvedValue({
+      exists: () => true,
+      id: "doc-1",
+      data: () => ({
+        url: "https://a.example.com",
+        analysisType: "homepage",
+        device: "desktop",
+        conversionScore: 72,
+        createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+        categoryScores: { navigation: 60 },
+      }),
+    });
+
+    const record = await getAnalysisById("doc-1");
+
+    expect(record).toEqual({
+      id: "doc-1",
+      url: "https://a.example.com",
+      analysisType: "homepage",
+      device: "desktop",
+      conversionScore: 72,
+      createdAt: "2026-06-01T00:00:00.000Z",
+      categoryScores: { navigation: 60 },
+    });
+  });
+
+  it("returns null when the doc doesn't exist", async () => {
+    getDocMock.mockResolvedValue({ exists: () => false });
+
+    const record = await getAnalysisById("missing-doc");
+
+    expect(record).toBeNull();
   });
 });

@@ -8,7 +8,13 @@ export interface LiveBenchmarkStats {
 }
 
 export async function getLiveBenchmarks(): Promise<Record<string, LiveBenchmarkStats>> {
-  const snapshot = await getDocs(collection(db, "benchmarks"));
+  let snapshot;
+  try {
+    snapshot = await getDocs(collection(db, "benchmarks"));
+  } catch (err) {
+    console.error("Failed to load live benchmarks, falling back to static figures:", err);
+    return {};
+  }
 
   const result: Record<string, LiveBenchmarkStats> = {};
   for (const doc of snapshot.docs) {

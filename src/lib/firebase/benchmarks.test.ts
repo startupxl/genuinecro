@@ -38,4 +38,12 @@ describe("getLiveBenchmarks", () => {
 
     expect(result).toEqual({});
   });
+
+  it("returns an empty object instead of throwing when the read fails (e.g. rules not yet deployed)", async () => {
+    getDocsMock.mockRejectedValue(new Error("Missing or insufficient permissions"));
+
+    const result = await getLiveBenchmarks();
+
+    expect(result).toEqual({});
+  });
 });

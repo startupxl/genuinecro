@@ -9,6 +9,10 @@ import {
   buildCategoryScoreBreakdown,
   CATEGORY_BENCHMARKS,
   buildIssueMomentum,
+  buildScanHistory,
+  buildSingleScanCategoryScores,
+  getNextAnalysisCreatedAt,
+  filterActionItemsForScan,
 } from "./dashboardMetrics";
 import type { AnalysisRecord } from "./firebase/analyses";
 import type { ActionItem } from "./firebase/actionItems";
@@ -449,5 +453,104 @@ describe("buildIssueMomentum", () => {
     const momentum = buildIssueMomentum(items, analyses, "a.com");
 
     expect(momentum.newSinceLastScan).toBe(1);
+  });
+});
+
+describe("buildScanHistory", () => {
+  it("returns one entry per analysis, newest first, excluding technical audits", () => {
+    const analyses = [
+      { id: "a1", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "a2", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 55, createdAt: "2026-06-05T00:00:00.000Z" },
+      { id: "a3", url: "https://a.com", analysisType: "technical", device: "desktop", conversionScore: 90, createdAt: "2026-06-06T00:00:00.000Z" },
+    ];
+
+    const result = buildScanHistory(analyses, null);
+
+    expect(result.map((r) => r.id)).toEqual(["a2", "a1"]);
+  });
+
+  it("filters to a single domain when one is given", () => {
+    const analyses = [
+      { id: "a1", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "b1", url: "https://b.com", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-02T00:00:00.000Z" },
+    ];
+
+    const result = buildScanHistory(analyses, "a.com");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("a1");
+  });
+});
+
+describe("buildSingleScanCategoryScores", () => {
+  it("builds one entry per category using the scan's own score and the static benchmark delta", () => {
+    const result = buildSingleScanCategoryScores({ navigation: 70 }, {});
+
+    expect(result).toEqual([
+      {
+        category: "navigation",
+        label: "Navigation",
+        score: 70,
+        deltaVsBenchmark: 70 - CATEGORY_BENCHMARKS.navigation.accountAvg,
+        siteCount: 1,
+      },
+    ]);
+  });
+
+  it("prefers the live benchmark once it has enough samples", () => {
+    const result = buildSingleScanCategoryScores(
+      { navigation: 70 },
+      { navigation: { accountAvg: 20, topQuartile: 90, sampleCount: 10 } }
+    );
+
+    expect(result[0].deltaVsBenchmark).toBe(50);
+  });
+});
+
+describe("getNextAnalysisCreatedAt", () => {
+  it("returns the createdAt of the next-chronological analysis for the same url", () => {
+    const analyses = [
+      { url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" },
+      { url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 55, createdAt: "2026-06-05T00:00:00.000Z" },
+    ];
+
+    expect(getNextAnalysisCreatedAt(analyses, "https://a.com", "2026-06-01T00:00:00.000Z")).toBe(
+      "2026-06-05T00:00:00.000Z"
+    );
+  });
+
+  it("returns null when the given scan is the most recent for that url", () => {
+    const analyses = [
+      { url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" },
+      { url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 55, createdAt: "2026-06-05T00:00:00.000Z" },
+    ];
+
+    expect(getNextAnalysisCreatedAt(analyses, "https://a.com", "2026-06-05T00:00:00.000Z")).toBeNull();
+  });
+});
+
+describe("filterActionItemsForScan", () => {
+  it("keeps only items for the given url created within the scan's time window, sorted by impact", () => {
+    const items = [
+      buildActionItem({ id: "1", url: "https://a.com", impactScore: 50, createdAt: "2026-06-01T00:00:00.000Z" }),
+      buildActionItem({ id: "2", url: "https://a.com", impactScore: 90, createdAt: "2026-06-02T00:00:00.000Z" }),
+      buildActionItem({ id: "3", url: "https://a.com", impactScore: 70, createdAt: "2026-06-06T00:00:00.000Z" }),
+      buildActionItem({ id: "4", url: "https://b.com", impactScore: 99, createdAt: "2026-06-01T00:00:00.000Z" }),
+    ];
+
+    const result = filterActionItemsForScan(items, "https://a.com", "2026-06-01T00:00:00.000Z", "2026-06-05T00:00:00.000Z");
+
+    expect(result.map((i) => i.id)).toEqual(["2", "1"]);
+  });
+
+  it("includes everything from the scan's start onward when there is no next scan", () => {
+    const items = [
+      buildActionItem({ id: "1", url: "https://a.com", createdAt: "2026-06-01T00:00:00.000Z" }),
+      buildActionItem({ id: "2", url: "https://a.com", createdAt: "2026-12-01T00:00:00.000Z" }),
+    ];
+
+    const result = filterActionItemsForScan(items, "https://a.com", "2026-06-01T00:00:00.000Z", null);
+
+    expect(result).toHaveLength(2);
   });
 });

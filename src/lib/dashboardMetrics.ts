@@ -248,3 +248,74 @@ export function buildIssueMomentum(items: ActionItem[], analyses: AnalysisRecord
     ).length,
   };
 }
+
+export interface ScanHistoryEntry {
+  id?: string;
+  url: string;
+  analysisType: string;
+  device: string;
+  score: number;
+  createdAt: string;
+}
+
+export function buildScanHistory(analyses: AnalysisRecord[], domain: string | null): ScanHistoryEntry[] {
+  return analyses
+    .filter((a) => a.analysisType !== "technical")
+    .filter((a) => !domain || getDomain(a.url) === domain)
+    .map((a) => ({
+      id: a.id,
+      url: a.url,
+      analysisType: a.analysisType,
+      device: a.device,
+      score: a.conversionScore,
+      createdAt: a.createdAt,
+    }))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export function buildSingleScanCategoryScores(
+  categoryScores: Record<string, number>,
+  liveBenchmarks: Record<string, LiveBenchmarkStats>
+): CategoryScoreEntry[] {
+  return Object.entries(categoryScores).map(([category, score]) => {
+    const live = liveBenchmarks[category];
+    const benchmark = live && live.sampleCount >= MIN_LIVE_BENCHMARK_SAMPLES ? live : CATEGORY_BENCHMARKS[category];
+    return {
+      category,
+      label: categoryLabels[category] ?? category,
+      score,
+      deltaVsBenchmark: benchmark ? score - benchmark.accountAvg : 0,
+      siteCount: 1,
+    };
+  });
+}
+
+export function getNextAnalysisCreatedAt(
+  analyses: AnalysisRecord[],
+  url: string,
+  createdAt: string
+): string | null {
+  const startTime = new Date(createdAt).getTime();
+  const later = analyses
+    .filter((a) => a.url === url && new Date(a.createdAt).getTime() > startTime)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  return later[0]?.createdAt ?? null;
+}
+
+export function filterActionItemsForScan(
+  items: ActionItem[],
+  url: string,
+  scanCreatedAt: string,
+  nextScanCreatedAt: string | null
+): ActionItem[] {
+  const start = new Date(scanCreatedAt).getTime();
+  const end = nextScanCreatedAt ? new Date(nextScanCreatedAt).getTime() : Infinity;
+
+  return items
+    .filter((i) => i.url === url)
+    .filter((i) => {
+      const time = new Date(i.createdAt).getTime();
+      return time >= start && time < end;
+    })
+    .sort((a, b) => b.impactScore - a.impactScore);
+}

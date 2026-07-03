@@ -1,4 +1,4 @@
-import { collection, addDoc, query, where, orderBy, limit, getDocs, getCountFromServer, serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, addDoc, query, where, orderBy, limit, getDocs, getCountFromServer, doc, getDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 
 export interface AnalysisEntry {
@@ -25,12 +25,34 @@ export async function countAnalysesSince(userId: string, since: Date): Promise<n
 }
 
 export interface AnalysisRecord {
+  id?: string;
   url: string;
   analysisType: string;
   device: string;
   conversionScore: number;
   createdAt: string;
   categoryScores?: Record<string, number>;
+}
+
+interface AnalysisDocData {
+  url: string;
+  analysisType: string;
+  device: string;
+  conversionScore: number;
+  createdAt: { toDate: () => Date } | string;
+  categoryScores?: Record<string, number>;
+}
+
+function mapAnalysisDoc(id: string, data: AnalysisDocData): AnalysisRecord {
+  return {
+    id,
+    url: data.url,
+    analysisType: data.analysisType,
+    device: data.device,
+    conversionScore: data.conversionScore,
+    createdAt: typeof data.createdAt === "string" ? data.createdAt : data.createdAt.toDate().toISOString(),
+    categoryScores: data.categoryScores,
+  };
 }
 
 export async function getRecentAnalyses(userId: string, take = 200): Promise<AnalysisRecord[]> {
@@ -41,24 +63,13 @@ export async function getRecentAnalyses(userId: string, take = 200): Promise<Ana
     limit(take)
   );
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => {
-    const data = doc.data() as {
-      url: string;
-      analysisType: string;
-      device: string;
-      conversionScore: number;
-      createdAt: { toDate: () => Date } | string;
-      categoryScores?: Record<string, number>;
-    };
-    return {
-      url: data.url,
-      analysisType: data.analysisType,
-      device: data.device,
-      conversionScore: data.conversionScore,
-      createdAt: typeof data.createdAt === "string" ? data.createdAt : data.createdAt.toDate().toISOString(),
-      categoryScores: data.categoryScores,
-    };
-  });
+  return snapshot.docs.map((docSnap) => mapAnalysisDoc(docSnap.id, docSnap.data() as AnalysisDocData));
+}
+
+export async function getAnalysisById(analysisId: string): Promise<AnalysisRecord | null> {
+  const snap = await getDoc(doc(db, "analyses", analysisId));
+  if (!snap.exists()) return null;
+  return mapAnalysisDoc(snap.id, snap.data() as AnalysisDocData);
 }
 
 export interface SiteSummary {

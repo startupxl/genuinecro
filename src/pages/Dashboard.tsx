@@ -13,6 +13,7 @@ import {
   buildHeroScoreSummary,
   buildCategoryScoreBreakdown,
   buildIssueMomentum,
+  buildScanHistory,
   getDomain,
 } from "@/lib/dashboardMetrics";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
@@ -21,6 +22,7 @@ import CategoryDeltaBar from "@/components/CategoryDeltaBar";
 import HeroScoreCard from "@/components/HeroScoreCard";
 import TopIssuesList from "@/components/TopIssuesList";
 import PageBreakdownTable from "@/components/PageBreakdownTable";
+import SiteHistoryTable from "@/components/SiteHistoryTable";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -60,6 +62,7 @@ const Dashboard = () => {
   const pageData = buildPageBreakdown(records, actionItems).filter(
     (p) => !selectedDomain || p.domain === selectedDomain
   );
+  const scanHistory = buildScanHistory(records, selectedDomain);
   const topIssues = actionItems
     .filter((i) => i.status !== "resolved")
     .filter((i) => !selectedDomain || getDomain(i.url) === selectedDomain)
@@ -275,12 +278,21 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-surface border border-border rounded-lg overflow-hidden">
+          <div className="bg-surface border border-border rounded-lg overflow-hidden mb-6">
             <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
               Page Breakdown
             </div>
             <div className="p-4 overflow-x-auto">
               <PageBreakdownTable data={pageData} />
+            </div>
+          </div>
+
+          <div className="bg-surface border border-border rounded-lg overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+              Scan History
+            </div>
+            <div className="p-4 overflow-x-auto">
+              <SiteHistoryTable data={scanHistory} onSelect={(id) => navigate(`/dashboard/scan/${id}`)} />
             </div>
           </div>
         </>
