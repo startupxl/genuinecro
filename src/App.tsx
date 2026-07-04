@@ -18,6 +18,7 @@ import ContactUs from "./pages/ContactUs.tsx";
 import BulkAnalysis from "./pages/BulkAnalysis.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import Audits from "./pages/Audits.tsx";
 import ScanDetail from "./pages/ScanDetail.tsx";
 import ActionCenter from "./pages/ActionCenter.tsx";
 import Technical from "./pages/Technical.tsx";
@@ -47,7 +48,8 @@ const App = () => (
             <Route path="/bulk" element={<BulkAnalysis />} />
             <Route path="/contact" element={<ContactUs />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/scan/:id" element={<ScanDetail />} />
+            <Route path="/audits" element={<Audits />} />
+            <Route path="/audits/:id" element={<ScanDetail />} />
             <Route path="/technical" element={<Technical />} />
             <Route path="/content" element={<AppShell><ComingSoon title="Content" /></AppShell>} />
             <Route path="/monitoring" element={<AppShell><ComingSoon title="Monitoring" /></AppShell>} />

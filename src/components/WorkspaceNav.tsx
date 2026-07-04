@@ -1,6 +1,6 @@
 import { useNavigate, NavLink } from "react-router-dom";
 import {
-  LayoutDashboard, Wrench, FileText, Search, Activity, Swords, CheckSquare, FileBarChart,
+  LayoutDashboard, ClipboardList, Activity, CheckSquare, FileBarChart,
   FileSpreadsheet, LogIn, LogOut, UserCog, CreditCard, HelpCircle, Settings, ChevronUp, X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,12 +24,9 @@ interface NavSection {
 
 const sections: NavSection[] = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, real: true },
-  { label: "Technical", path: "/technical", icon: Wrench, real: true },
-  { label: "Content", path: "/content", icon: FileText, real: false },
-  { label: "Conversion", path: "/", icon: Search, real: true },
-  { label: "Monitoring", path: "/monitoring", icon: Activity, real: false },
-  { label: "Analysis", path: "/competitor-analysis", icon: Swords, real: false },
+  { label: "Audits", path: "/audits", icon: ClipboardList, real: true },
   { label: "Action Center", path: "/action-center", icon: CheckSquare, real: true },
+  { label: "Monitoring", path: "/monitoring", icon: Activity, real: false },
   { label: "Reports", path: "/reports", icon: FileBarChart, real: false },
   { label: "Bulk", path: "/bulk", icon: FileSpreadsheet, real: true },
 ];

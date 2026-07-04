@@ -72,7 +72,7 @@ describe("AppShell", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
-    fireEvent.click(screen.getByText("Technical"));
+    fireEvent.click(screen.getByText("Audits"));
 
     expect(container.querySelector("nav")).toHaveClass("-translate-x-full");
   });

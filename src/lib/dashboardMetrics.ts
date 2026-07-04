@@ -319,3 +319,50 @@ export function filterActionItemsForScan(
     })
     .sort((a, b) => b.impactScore - a.impactScore);
 }
+
+export interface AuditListEntry {
+  id?: string;
+  url: string;
+  analysisType: string;
+  device: string;
+  score: number;
+  scoreDelta: number | null;
+  issueCount: number;
+  isCritical: boolean;
+  createdAt: string;
+}
+
+export function buildAuditsList(
+  analyses: AnalysisRecord[],
+  actionItems: ActionItem[],
+  domain: string | null
+): AuditListEntry[] {
+  const filtered = analyses
+    .filter((a) => !domain || getDomain(a.url) === domain)
+    .slice()
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  const lastScoreByUrl = new Map<string, number>();
+  const entries: AuditListEntry[] = [];
+
+  for (const a of filtered) {
+    const prevScore = lastScoreByUrl.get(a.url) ?? null;
+    const nextCreatedAt = getNextAnalysisCreatedAt(analyses, a.url, a.createdAt);
+    const issueCount = filterActionItemsForScan(actionItems, a.url, a.createdAt, nextCreatedAt).length;
+
+    entries.push({
+      id: a.id,
+      url: a.url,
+      analysisType: a.analysisType,
+      device: a.device,
+      score: a.conversionScore,
+      scoreDelta: prevScore === null ? null : a.conversionScore - prevScore,
+      issueCount,
+      isCritical: a.conversionScore < 50,
+      createdAt: a.createdAt,
+    });
+    lastScoreByUrl.set(a.url, a.conversionScore);
+  }
+
+  return entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}

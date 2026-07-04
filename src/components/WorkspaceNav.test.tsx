@@ -21,7 +21,7 @@ describe("WorkspaceNav", () => {
     signOutMock.mockReset();
   });
 
-  it("renders all nine sections with Dashboard, Technical, Conversion, Action Center, and Bulk marked real", () => {
+  it("renders all six sections with Dashboard, Audits, Action Center, and Bulk marked real", () => {
     mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Jane" };
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
@@ -29,8 +29,11 @@ describe("WorkspaceNav", () => {
       </MemoryRouter>
     );
 
-    ["Dashboard", "Technical", "Content", "Conversion", "Monitoring", "Analysis", "Action Center", "Reports", "Bulk"].forEach((label) => {
+    ["Dashboard", "Audits", "Action Center", "Monitoring", "Bulk", "Reports"].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
+    });
+    ["Technical", "Content", "Conversion", "Analysis"].forEach((label) => {
+      expect(screen.queryByText(label)).not.toBeInTheDocument();
     });
   });
 
@@ -127,7 +130,7 @@ describe("WorkspaceNav", () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByText("Technical"));
+    fireEvent.click(screen.getByText("Audits"));
     expect(onNavigate).toHaveBeenCalled();
   });
 

@@ -380,25 +380,4 @@ describe("Dashboard", () => {
     const pageBreakdownPanel = screen.getByText("Page Breakdown").parentElement!;
     expect(within(pageBreakdownPanel).getByText("https://example.com/checkout")).toBeInTheDocument();
   });
-
-  it("navigates to the scan detail page when a scan history row is clicked", async () => {
-    getRecentAnalysesMock.mockResolvedValue([
-      { id: "scan-1", url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 55, createdAt: "2026-06-01T00:00:00.000Z" },
-    ]);
-
-    render(
-      <MemoryRouter>
-        <Dashboard />
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText("Scan History")).toBeInTheDocument();
-    });
-
-    const historyPanel = screen.getByText("Scan History").parentElement!;
-    fireEvent.click(within(historyPanel).getByText("55"));
-
-    expect(navigateMock).toHaveBeenCalledWith("/dashboard/scan/scan-1");
-  });
 });

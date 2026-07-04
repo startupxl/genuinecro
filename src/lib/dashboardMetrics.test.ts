@@ -13,6 +13,7 @@ import {
   buildSingleScanCategoryScores,
   getNextAnalysisCreatedAt,
   filterActionItemsForScan,
+  buildAuditsList,
 } from "./dashboardMetrics";
 import type { AnalysisRecord } from "./firebase/analyses";
 import type { ActionItem } from "./firebase/actionItems";
@@ -552,5 +553,57 @@ describe("filterActionItemsForScan", () => {
     const result = filterActionItemsForScan(items, "https://a.com", "2026-06-01T00:00:00.000Z", null);
 
     expect(result).toHaveLength(2);
+  });
+});
+
+describe("buildAuditsList", () => {
+  it("returns one entry per scan (including technical), newest first", () => {
+    const analyses = [
+      { id: "a1", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "a2", url: "https://a.com", analysisType: "technical", device: "desktop", conversionScore: 90, createdAt: "2026-06-02T00:00:00.000Z" },
+    ];
+
+    const result = buildAuditsList(analyses, [], null);
+
+    expect(result.map((r) => r.id)).toEqual(["a2", "a1"]);
+  });
+
+  it("computes scoreDelta vs the previous scan of the same exact url, null for the first ever scan", () => {
+    const analyses = [
+      { id: "a1", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "a2", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 55, createdAt: "2026-06-05T00:00:00.000Z" },
+    ];
+
+    const result = buildAuditsList(analyses, [], null);
+
+    expect(result.find((r) => r.id === "a1")!.scoreDelta).toBeNull();
+    expect(result.find((r) => r.id === "a2")!.scoreDelta).toBe(15);
+  });
+
+  it("counts issues created within that scan's window and flags critical scores under 50", () => {
+    const analyses = [
+      { id: "a1", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" },
+    ];
+    const items = [
+      buildActionItem({ url: "https://a.com", createdAt: "2026-06-01T01:00:00.000Z" }),
+      buildActionItem({ url: "https://a.com", createdAt: "2026-06-01T02:00:00.000Z" }),
+    ];
+
+    const result = buildAuditsList(analyses, items, null);
+
+    expect(result[0].issueCount).toBe(2);
+    expect(result[0].isCritical).toBe(true);
+  });
+
+  it("filters to a single domain when one is given", () => {
+    const analyses = [
+      { id: "a1", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "b1", url: "https://b.com", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-02T00:00:00.000Z" },
+    ];
+
+    const result = buildAuditsList(analyses, [], "a.com");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("a1");
   });
 });
