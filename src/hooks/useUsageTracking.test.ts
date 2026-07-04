@@ -43,7 +43,7 @@ describe("useUsageTracking", () => {
 
   it("records an analysis for a signed-in user via Firestore", async () => {
     countAnalysesSinceMock.mockResolvedValue(0);
-    recordAnalysisMock.mockResolvedValue(undefined);
+    recordAnalysisMock.mockResolvedValue("doc-1");
     const { result } = renderHook(() => useUsageTracking());
 
     await waitFor(() => expect(result.current.usage).toBeDefined());
@@ -56,6 +56,28 @@ describe("useUsageTracking", () => {
       device: "desktop",
       conversionScore: 72,
     });
+  });
+
+  it("returns the new analysis's id for a signed-in user", async () => {
+    countAnalysesSinceMock.mockResolvedValue(0);
+    recordAnalysisMock.mockResolvedValue("doc-1");
+    const { result } = renderHook(() => useUsageTracking());
+
+    await waitFor(() => expect(result.current.usage).toBeDefined());
+    const id = await result.current.trackAnalysis("https://example.com", "homepage", "desktop", 72);
+
+    expect(id).toBe("doc-1");
+  });
+
+  it("returns null for an anonymous scan", async () => {
+    useAuthMock.mockReturnValue({ user: null });
+    const { result } = renderHook(() => useUsageTracking());
+
+    await waitFor(() => expect(result.current.usage).toBeDefined());
+    const id = await result.current.trackAnalysis("https://example.com", "homepage", "desktop", 72);
+
+    expect(id).toBeNull();
+    expect(recordAnalysisMock).not.toHaveBeenCalled();
   });
 
   it("records categoryScores when provided", async () => {

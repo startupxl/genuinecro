@@ -38,7 +38,7 @@ describe("firebase analyses module", () => {
   });
 
   it("records an analysis with a server timestamp", async () => {
-    addDocMock.mockResolvedValue(undefined);
+    addDocMock.mockResolvedValue({ id: "doc-1" });
     await recordAnalysis({ userId: "uid-1", url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 72 });
     expect(addDocMock).toHaveBeenCalledWith(
       { __collection: true },
@@ -53,8 +53,14 @@ describe("firebase analyses module", () => {
     );
   });
 
+  it("returns the new doc's id", async () => {
+    addDocMock.mockResolvedValue({ id: "doc-1" });
+    const id = await recordAnalysis({ userId: "uid-1", url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 72 });
+    expect(id).toBe("doc-1");
+  });
+
   it("records categoryScores when provided", async () => {
-    addDocMock.mockResolvedValue(undefined);
+    addDocMock.mockResolvedValue({ id: "doc-1" });
     await recordAnalysis({
       userId: "uid-1",
       url: "https://example.com",

@@ -22,6 +22,7 @@ import CategoryDeltaBar from "@/components/CategoryDeltaBar";
 import HeroScoreCard from "@/components/HeroScoreCard";
 import TopIssuesList from "@/components/TopIssuesList";
 import PageBreakdownTable from "@/components/PageBreakdownTable";
+import NewAuditModal from "@/components/NewAuditModal";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -34,6 +35,7 @@ const Dashboard = () => {
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [criticalOnly, setCriticalOnly] = useState(false);
+  const [isNewAuditOpen, setIsNewAuditOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -97,7 +99,7 @@ const Dashboard = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-foreground font-display">Dashboard</h1>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => setIsNewAuditOpen(true)}
           className="flex items-center gap-1.5 h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" />
@@ -309,6 +311,7 @@ const Dashboard = () => {
         </>
       )}
       </div>
+      <NewAuditModal open={isNewAuditOpen} onOpenChange={setIsNewAuditOpen} />
     </AppShell>
   );
 };

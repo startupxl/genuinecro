@@ -10,8 +10,9 @@ export interface AnalysisEntry {
   categoryScores?: Record<string, number>;
 }
 
-export async function recordAnalysis(entry: AnalysisEntry): Promise<void> {
-  await addDoc(collection(db, "analyses"), { ...entry, createdAt: serverTimestamp() });
+export async function recordAnalysis(entry: AnalysisEntry): Promise<string> {
+  const docRef = await addDoc(collection(db, "analyses"), { ...entry, createdAt: serverTimestamp() });
+  return docRef.id;
 }
 
 export async function countAnalysesSince(userId: string, since: Date): Promise<number> {

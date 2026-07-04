@@ -45,6 +45,10 @@ vi.mock("@/lib/firebase/scanJobs", () => ({
   getActiveScanJobs: (...args: unknown[]) => getActiveScanJobsMock(...args),
 }));
 
+vi.mock("@/components/NewAuditModal", () => ({
+  default: ({ open }: { open: boolean }) => <div data-testid="new-audit-modal">{open ? "open" : "closed"}</div>,
+}));
+
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: { uid: "uid-1" } }),
 }));
@@ -76,6 +80,24 @@ describe("Dashboard", () => {
     await waitFor(() => {
       expect(screen.getByText("No audits yet — run your first analysis to see it here.")).toBeInTheDocument();
     });
+  });
+
+  it("opens the New Audit modal when the button is clicked, instead of navigating away", async () => {
+    getRecentAnalysesMock.mockResolvedValue([]);
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("new-audit-modal")).toHaveTextContent("closed");
+    });
+
+    fireEvent.click(screen.getByText("New Audit"));
+
+    expect(screen.getByTestId("new-audit-modal")).toHaveTextContent("open");
+    expect(navigateMock).not.toHaveBeenCalledWith("/");
   });
 
   it("renders site summaries once analyses load", async () => {
