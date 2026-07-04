@@ -75,7 +75,7 @@ describe("WorkspaceNav", () => {
     expect(onSignIn).toHaveBeenCalled();
   });
 
-  it("positions the profile row above the nav sections, in its own bordered section", () => {
+  it("positions the profile row after the nav sections (right after Bulk), in its own bordered section", () => {
     mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Jane" };
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
@@ -84,15 +84,15 @@ describe("WorkspaceNav", () => {
     );
 
     const profileEl = screen.getByText("Jane");
-    const dashboardEl = screen.getByText("Dashboard");
+    const bulkEl = screen.getByText("Bulk");
     // eslint-disable-next-line no-bitwise
-    expect(profileEl.compareDocumentPosition(dashboardEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(bulkEl.compareDocumentPosition(profileEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     const profileButton = profileEl.closest("button");
-    expect(profileButton).toHaveClass("border-b");
+    expect(profileButton).toHaveClass("border-t");
   });
 
-  it("positions the Sign in button above the nav sections when signed out", () => {
+  it("positions the Sign in button after the nav sections (right after Bulk) when signed out", () => {
     mockUser = null;
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
@@ -101,9 +101,9 @@ describe("WorkspaceNav", () => {
     );
 
     const signInEl = screen.getByText("Sign in");
-    const dashboardEl = screen.getByText("Dashboard");
+    const bulkEl = screen.getByText("Bulk");
     // eslint-disable-next-line no-bitwise
-    expect(signInEl.compareDocumentPosition(dashboardEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(bulkEl.compareDocumentPosition(signInEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("is off-screen by default on mobile and slides in when isOpen is true", () => {

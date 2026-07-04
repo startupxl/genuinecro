@@ -82,58 +82,6 @@ const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate }: Wor
         )}
       </div>
 
-      {user ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 px-4 py-2.5 mb-2 border-b border-border hover:bg-secondary/50 transition-colors">
-              <Avatar className="h-6 w-6 flex-shrink-0">
-                <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-medium">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="text-xs font-medium text-foreground truncate">{displayName}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{currentPlan} plan</p>
-              </div>
-              <ChevronUp className="h-3 w-3 text-muted-foreground flex-shrink-0 rotate-180" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="bottom" className="w-56">
-            <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/account"); }} className="cursor-pointer">
-              <UserCog className="mr-2 h-4 w-4" />
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/subscription"); }} className="cursor-pointer">
-              <CreditCard className="mr-2 h-4 w-4" />
-              Subscription
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/help"); }} className="cursor-pointer">
-              <HelpCircle className="mr-2 h-4 w-4" />
-              Help Center
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/settings"); }} className="cursor-pointer">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { onNavigate?.(); signOut(); }} className="cursor-pointer text-destructive focus:text-destructive">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        <button
-          onClick={handleSignIn}
-          className="flex items-center gap-2 px-4 py-3 mb-2 border-b border-border text-sm text-foreground hover:bg-secondary/50 transition-colors"
-        >
-          <span className="h-1.5 w-1.5 flex-shrink-0" />
-          <LogIn className="h-3.5 w-3.5 flex-shrink-0" />
-          Sign in
-        </button>
-      )}
-
       <div className="flex-1">
         {sections.map((section) => (
           <NavLink
@@ -156,6 +104,58 @@ const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate }: Wor
             {section.label}
           </NavLink>
         ))}
+
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 px-4 py-2.5 mt-2 border-t border-border hover:bg-secondary/50 transition-colors">
+                <Avatar className="h-6 w-6 flex-shrink-0">
+                  <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-medium">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-xs font-medium text-foreground truncate">{displayName}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{currentPlan} plan</p>
+                </div>
+                <ChevronUp className="h-3 w-3 text-muted-foreground flex-shrink-0 rotate-180" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" side="bottom" className="w-56">
+              <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/account"); }} className="cursor-pointer">
+                <UserCog className="mr-2 h-4 w-4" />
+                Account
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/subscription"); }} className="cursor-pointer">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Subscription
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/help"); }} className="cursor-pointer">
+                <HelpCircle className="mr-2 h-4 w-4" />
+                Help Center
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { onNavigate?.(); navigate("/settings"); }} className="cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => { onNavigate?.(); signOut(); }} className="cursor-pointer text-destructive focus:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <button
+            onClick={handleSignIn}
+            className="flex items-center gap-2 px-4 py-3 mt-2 border-t border-border text-sm text-foreground hover:bg-secondary/50 transition-colors"
+          >
+            <span className="h-1.5 w-1.5 flex-shrink-0" />
+            <LogIn className="h-3.5 w-3.5 flex-shrink-0" />
+            Sign in
+          </button>
+        )}
       </div>
     </nav>
   );
