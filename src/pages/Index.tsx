@@ -11,6 +11,7 @@ import { analyzeUrl } from "@/lib/api/analyze";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { createActionItems } from "@/lib/firebase/actionItems";
+import { createScanJob, completeScanJob } from "@/lib/firebase/scanJobs";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -62,6 +63,8 @@ const Index = () => {
     setResult(null);
     setComparisonResults(null);
 
+    const jobId = user ? await createScanJob(user.uid, formatted, type, device) : null;
+
     if (device === "both") {
       setProgress("Analyzing desktop & mobile experiences…");
       try {
@@ -107,6 +110,7 @@ const Index = () => {
       }
     }
 
+    await completeScanJob(jobId);
     setIsAnalyzing(false);
     setProgress("");
   }, [usage, trackAnalysis, user]);

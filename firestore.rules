@@ -24,6 +24,16 @@ service cloud.firestore {
       allow write: if request.auth != null
                     && request.auth.token.email == "experiments@genuinecro.com";
     }
+    // Client-driven scan status (start "scanning", flip to "complete" once
+    // the same tab's analysis request resolves) — lets the Dashboard show
+    // in-progress scans across reloads and other tabs/devices.
+    match /scanJobs/{jobId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]);
+      allow delete: if false;
+    }
     match /actionItems/{itemId} {
       allow read: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;

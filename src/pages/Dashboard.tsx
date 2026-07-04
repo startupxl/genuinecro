@@ -6,6 +6,7 @@ import AppShell from "@/components/AppShell";
 import { getRecentAnalyses, groupAnalysesByDomain, type AnalysisRecord } from "@/lib/firebase/analyses";
 import { getAllActionItems, type ActionItem } from "@/lib/firebase/actionItems";
 import { getLiveBenchmarks, type LiveBenchmarkStats } from "@/lib/firebase/benchmarks";
+import { getActiveScanJobs, type ScanJob } from "@/lib/firebase/scanJobs";
 import {
   buildScoreTrendData,
   buildSeverityBreakdown,
@@ -30,6 +31,7 @@ const Dashboard = () => {
   const [records, setRecords] = useState<AnalysisRecord[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [liveBenchmarks, setLiveBenchmarks] = useState<Record<string, LiveBenchmarkStats>>({});
+  const [scanJobs, setScanJobs] = useState<ScanJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -40,15 +42,21 @@ const Dashboard = () => {
       setLoading(false);
       return;
     }
-    Promise.all([getRecentAnalyses(user.uid), getAllActionItems(user.uid), getLiveBenchmarks()]).then(
-      ([analysisRecords, items, benchmarks]) => {
-        setRecords(analysisRecords);
-        setActionItems(items);
-        setLiveBenchmarks(benchmarks);
-        setLoading(false);
-      }
-    );
+    Promise.all([
+      getRecentAnalyses(user.uid),
+      getAllActionItems(user.uid),
+      getLiveBenchmarks(),
+      getActiveScanJobs(user.uid),
+    ]).then(([analysisRecords, items, benchmarks, activeScanJobs]) => {
+      setRecords(analysisRecords);
+      setActionItems(items);
+      setLiveBenchmarks(benchmarks);
+      setScanJobs(activeScanJobs);
+      setLoading(false);
+    });
   }, [user]);
+
+  const scanningDomains = new Set(scanJobs.map((job) => getDomain(job.url)));
 
   const sites = groupAnalysesByDomain(records);
   const criticalCount = sites.filter((s) => s.latestScore < 50).length;
@@ -161,6 +169,7 @@ const Dashboard = () => {
             </div>
             {displayedSites.map((site) => {
               const worstCategory = buildCategoryScoreBreakdown(records, site.domain, liveBenchmarks)[0];
+              const isScanning = scanningDomains.has(site.domain);
               return (
                 <div
                   key={site.domain}
@@ -179,17 +188,31 @@ const Dashboard = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold text-foreground">{site.latestScore}</span>
-                      {site.scoreDelta !== null && (
-                        <span className={`flex items-center gap-0.5 text-xs ${site.scoreDelta >= 0 ? "text-primary" : "text-destructive"}`}>
-                          {site.scoreDelta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                          {site.scoreDelta >= 0 ? "+" : ""}{site.scoreDelta}
+                      {isScanning ? (
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                          Scanning…
                         </span>
+                      ) : (
+                        <>
+                          <span className="text-lg font-semibold text-foreground">{site.latestScore}</span>
+                          {site.scoreDelta !== null && (
+                            <span className={`flex items-center gap-0.5 text-xs ${site.scoreDelta >= 0 ? "text-primary" : "text-destructive"}`}>
+                              {site.scoreDelta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                              {site.scoreDelta >= 0 ? "+" : ""}{site.scoreDelta}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                     <button
                       onClick={(e) => handleRescan(e, site.domain)}
-                      className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-secondary"
+                      disabled={isScanning}
+                      className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded transition-colors ${
+                        isScanning
+                          ? "text-muted-foreground/40 cursor-not-allowed"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      }`}
                     >
                       <RefreshCw className="h-3 w-3" /> Re-scan
                     </button>

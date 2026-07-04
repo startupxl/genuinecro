@@ -6,6 +6,7 @@ const getRecentAnalysesMock = vi.fn();
 const groupAnalysesByDomainMock = vi.fn();
 const getAllActionItemsMock = vi.fn();
 const getLiveBenchmarksMock = vi.fn();
+const getActiveScanJobsMock = vi.fn();
 const navigateMock = vi.fn();
 
 vi.mock("react-router-dom", async () => {
@@ -40,6 +41,10 @@ vi.mock("@/lib/firebase/benchmarks", () => ({
   getLiveBenchmarks: (...args: unknown[]) => getLiveBenchmarksMock(...args),
 }));
 
+vi.mock("@/lib/firebase/scanJobs", () => ({
+  getActiveScanJobs: (...args: unknown[]) => getActiveScanJobsMock(...args),
+}));
+
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: { uid: "uid-1" } }),
 }));
@@ -56,6 +61,7 @@ describe("Dashboard", () => {
     groupAnalysesByDomainMock.mockReset().mockImplementation(defaultGroupByDomain);
     getAllActionItemsMock.mockReset().mockResolvedValue([]);
     getLiveBenchmarksMock.mockReset().mockResolvedValue({});
+    getActiveScanJobsMock.mockReset().mockResolvedValue([]);
     navigateMock.mockReset();
   });
 
@@ -274,6 +280,28 @@ describe("Dashboard", () => {
 
     fireEvent.click(screen.getByText("Re-scan"));
     expect(navigateMock).toHaveBeenCalledWith("/", { state: { prefillUrl: "https://example.com" } });
+  });
+
+  it("shows a Scanning indicator instead of the score when a site has an active scan job", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+    getActiveScanJobsMock.mockResolvedValue([
+      { id: "job-1", userId: "uid-1", url: "https://example.com", analysisType: "homepage", device: "desktop", status: "scanning", createdAt: "2026-07-03T00:00:00.000Z" },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("example.com")).toBeInTheDocument();
+    });
+    const siteRow = screen.getByText("example.com").closest("[data-testid='site-row']")!;
+    expect(within(siteRow).getByText("Scanning…")).toBeInTheDocument();
+    expect(within(siteRow).getByText("Re-scan").closest("button")).toBeDisabled();
   });
 
   it("shows issue momentum since the last scan", async () => {

@@ -13,6 +13,7 @@ import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { usePlanCapabilities } from "@/hooks/usePlanCapabilities";
 import { analyzeUrl } from "@/lib/api/analyze";
 import { createActionItems } from "@/lib/firebase/actionItems";
+import { createScanJob, completeScanJob } from "@/lib/firebase/scanJobs";
 import { toast } from "sonner";
 import type { AnalysisResult, AnalysisType } from "@/lib/mockData";
 import { detectPageType, extractCategoryScores } from "@/lib/mockData";
@@ -121,6 +122,7 @@ const BulkAnalysis = () => {
 
       const url = items[i].url;
       const type = autoDetectType ? detectPageType(url) : analysisType;
+      const jobId = user ? await createScanJob(user.uid, url, type, "desktop") : null;
 
       try {
         const result = await analyzeUrl(url, type, "desktop");
@@ -146,6 +148,8 @@ const BulkAnalysis = () => {
           )
         );
       }
+
+      await completeScanJob(jobId);
     }
 
     setIsRunning(false);

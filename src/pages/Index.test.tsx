@@ -25,6 +25,13 @@ vi.mock("@/lib/firebase/actionItems", () => ({
   createActionItems: (...args: unknown[]) => createActionItemsMock(...args),
 }));
 
+const createScanJobMock = vi.fn();
+const completeScanJobMock = vi.fn();
+vi.mock("@/lib/firebase/scanJobs", () => ({
+  createScanJob: (...args: unknown[]) => createScanJobMock(...args),
+  completeScanJob: (...args: unknown[]) => completeScanJobMock(...args),
+}));
+
 vi.mock("@/components/LandingView", () => ({
   default: ({
     onAnalyze,
@@ -74,6 +81,8 @@ describe("Index — login-gated results", () => {
     trackAnalysisMock.mockReset().mockResolvedValue(undefined);
     analyzeUrlMock.mockReset();
     createActionItemsMock.mockReset().mockResolvedValue(undefined);
+    createScanJobMock.mockReset().mockResolvedValue("job-1");
+    completeScanJobMock.mockReset().mockResolvedValue(undefined);
     usageMock.requiresAuth = false;
     usageMock.requiresPaid = false;
   });
@@ -142,6 +151,80 @@ describe("Index — login-gated results", () => {
     });
     expect(trackAnalysisMock).toHaveBeenCalledTimes(1);
     expect(createActionItemsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("creates and completes a scan job for a signed-in user's scan", async () => {
+    mockUser = { uid: "uid-1" };
+    analyzeUrlMock.mockResolvedValue(mockAnalysisResult);
+
+    render(
+      <MemoryRouter>
+        <Index />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Analyze"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("analysis-view")).toBeInTheDocument();
+    });
+    expect(createScanJobMock).toHaveBeenCalledWith("uid-1", "https://example.com", "homepage", "desktop");
+    expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
+  });
+
+  it("still completes the scan job when the real analysis fails and falls back to mock", async () => {
+    mockUser = { uid: "uid-1" };
+    analyzeUrlMock.mockRejectedValue(new Error("boom"));
+
+    render(
+      <MemoryRouter>
+        <Index />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Analyze"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("analysis-view")).toBeInTheDocument();
+    });
+    expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
+  });
+
+  it("does not create a scan job for an anonymous scan", async () => {
+    analyzeUrlMock.mockResolvedValue(mockAnalysisResult);
+
+    render(
+      <MemoryRouter>
+        <Index />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Analyze"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("auth-page")).toBeInTheDocument();
+    });
+    expect(createScanJobMock).not.toHaveBeenCalled();
+  });
+
+  it("creates and completes one scan job for a both-devices comparison scan", async () => {
+    mockUser = { uid: "uid-1" };
+    analyzeUrlMock.mockResolvedValue(mockAnalysisResult);
+
+    render(
+      <MemoryRouter>
+        <Index />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Analyze Both"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("comparison-view")).toBeInTheDocument();
+    });
+    expect(createScanJobMock).toHaveBeenCalledTimes(1);
+    expect(createScanJobMock).toHaveBeenCalledWith("uid-1", "https://example.com", "homepage", "both");
+    expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
   });
 
   it("gates the comparison view behind login too", async () => {
