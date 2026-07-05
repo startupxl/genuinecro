@@ -47,7 +47,6 @@ const mockMergedResult = {
   technicalScore: 50,
   benchmark: { overallScore: 72 },
   frictionPoints: [{ category: "ux-clarity", severity: "high", title: "Issue", description: "d", fix: "f", impactScore: 80 }],
-  usedMockData: false,
 };
 
 describe("NewAuditModal", () => {
@@ -94,8 +93,8 @@ describe("NewAuditModal", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("shows a warning toast when the merged audit used mock data, but still completes", async () => {
-    runMergedAuditMock.mockResolvedValue({ ...mockMergedResult, usedMockData: true });
+  it("shows an error and re-enables the form when the scan fails, without navigating away", async () => {
+    runMergedAuditMock.mockRejectedValue(new Error("Analysis failed"));
     const onOpenChange = vi.fn();
 
     render(
@@ -108,10 +107,13 @@ describe("NewAuditModal", () => {
     fireEvent.click(screen.getByText("Analyze"));
 
     await waitFor(() => {
-      expect(trackAnalysisMock).toHaveBeenCalled();
+      expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
     });
-    expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(screen.getByText("Analyze")).not.toBeDisabled();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+    expect(navigateMock).not.toHaveBeenCalled();
+    expect(trackAnalysisMock).not.toHaveBeenCalled();
+    expect(createActionItemsMock).not.toHaveBeenCalled();
   });
 
   it("disables the Analyze button while a scan is running", async () => {

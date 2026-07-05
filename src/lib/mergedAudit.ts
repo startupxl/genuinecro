@@ -1,6 +1,6 @@
 import { analyzeUrl } from "./api/analyze";
 import { runTechnicalAudit } from "./api/technical";
-import { generateMockAnalysis, type AnalysisType, type AnalysisResult } from "./mockData";
+import type { AnalysisType, AnalysisResult } from "./mockData";
 import type { FrictionPointInput } from "./firebase/actionItems";
 
 const TECHNICAL_WEIGHT = 0.15;
@@ -37,7 +37,6 @@ export interface MergedAuditResult {
   technicalScore: number | null;
   benchmark: AnalysisResult["benchmark"];
   frictionPoints: FrictionPointInput[];
-  usedMockData: boolean;
 }
 
 export async function runMergedAudit(
@@ -45,15 +44,7 @@ export async function runMergedAudit(
   type: AnalysisType,
   device: "desktop" | "mobile"
 ): Promise<MergedAuditResult> {
-  let conversionResult: AnalysisResult;
-  let usedMockData = false;
-  try {
-    conversionResult = await analyzeUrl(url, type, device);
-  } catch (err) {
-    console.error("Real conversion analysis failed, falling back to mock:", err);
-    conversionResult = generateMockAnalysis(url, type);
-    usedMockData = true;
-  }
+  const conversionResult = await analyzeUrl(url, type, device);
 
   let technicalScore: number | null = null;
   let technicalIssues: FrictionPointInput[] = [];
@@ -73,6 +64,5 @@ export async function runMergedAudit(
     technicalScore,
     benchmark: conversionResult.benchmark,
     frictionPoints: [...conversionResult.frictionPoints, ...technicalIssues],
-    usedMockData,
   };
 }

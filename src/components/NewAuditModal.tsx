@@ -34,26 +34,31 @@ const NewAuditModal = ({ open, onOpenChange }: NewAuditModalProps) => {
     setIsRunning(true);
     const jobId = await createScanJob(user.uid, formatted, type, device);
 
-    const result = await runMergedAudit(formatted, type, device);
-    if (result.usedMockData) {
-      toast.warning("Live analysis unavailable — showing demo results");
+    try {
+      const result = await runMergedAudit(formatted, type, device);
+
+      const analysisId = await trackAnalysis(
+        formatted,
+        type,
+        device,
+        result.conversionScore,
+        extractCategoryScores(result.benchmark),
+        result.technicalScore ?? undefined
+      );
+      await createActionItems(user.uid, formatted, type, result.frictionPoints);
+
+      setUrl("");
+      onOpenChange(false);
+      if (analysisId) navigate(`/audits/${analysisId}`);
+    } catch (err) {
+      console.error("Analysis failed:", err);
+      toast.error("Analysis failed", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      await completeScanJob(jobId);
+      setIsRunning(false);
     }
-
-    const analysisId = await trackAnalysis(
-      formatted,
-      type,
-      device,
-      result.conversionScore,
-      extractCategoryScores(result.benchmark),
-      result.technicalScore ?? undefined
-    );
-    await createActionItems(user.uid, formatted, type, result.frictionPoints);
-    await completeScanJob(jobId);
-
-    setIsRunning(false);
-    setUrl("");
-    onOpenChange(false);
-    if (analysisId) navigate(`/audits/${analysisId}`);
   };
 
   return (

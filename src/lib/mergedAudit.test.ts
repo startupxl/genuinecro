@@ -10,12 +10,6 @@ vi.mock("./api/technical", () => ({
   runTechnicalAudit: (...args: unknown[]) => runTechnicalAuditMock(...args),
 }));
 
-const generateMockAnalysisMock = vi.fn();
-vi.mock("./mockData", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./mockData")>();
-  return { ...actual, generateMockAnalysis: (...args: unknown[]) => generateMockAnalysisMock(...args) };
-});
-
 import { CATEGORY_TAB, getCategoryTab, combineScores, runMergedAudit } from "./mergedAudit";
 
 describe("getCategoryTab", () => {
@@ -90,7 +84,6 @@ describe("runMergedAudit", () => {
   beforeEach(() => {
     analyzeUrlMock.mockReset();
     runTechnicalAuditMock.mockReset();
-    generateMockAnalysisMock.mockReset();
   });
 
   it("runs both audits and combines the scores", async () => {
@@ -124,17 +117,14 @@ describe("runMergedAudit", () => {
     expect(result.conversionScore).toBe(60);
     expect(result.technicalScore).toBeNull();
     expect(result.frictionPoints).toHaveLength(1);
-    expect(result.usedMockData).toBe(false);
   });
 
-  it("falls back to mock conversion data when the real conversion analysis fails, without throwing", async () => {
+  it("propagates the error when the real conversion analysis fails, instead of masking it with fake data", async () => {
     analyzeUrlMock.mockRejectedValue(new Error("conversion analysis failed"));
     runTechnicalAuditMock.mockResolvedValue(mockTechnicalResult);
-    generateMockAnalysisMock.mockReturnValue(mockConversionResult);
 
-    const result = await runMergedAudit("https://example.com", "homepage", "desktop");
-
-    expect(result.usedMockData).toBe(true);
-    expect(result.conversionScore).toBe(combineScores(40, 60));
+    await expect(runMergedAudit("https://example.com", "homepage", "desktop")).rejects.toThrow(
+      "conversion analysis failed"
+    );
   });
 });

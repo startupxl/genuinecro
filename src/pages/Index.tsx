@@ -6,7 +6,7 @@ import AnalysisView from "@/components/AnalysisView";
 import ComparisonView from "@/components/ComparisonView";
 import AuthPage from "@/components/AuthPage";
 import UpgradeWall from "@/components/UpgradeWall";
-import { generateMockAnalysis, extractCategoryScores, type AnalysisResult, type AnalysisType } from "@/lib/mockData";
+import { extractCategoryScores, type AnalysisResult, type AnalysisType } from "@/lib/mockData";
 import { analyzeUrl } from "@/lib/api/analyze";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
@@ -65,9 +65,9 @@ const Index = () => {
 
     const jobId = user ? await createScanJob(user.uid, formatted, type, device) : null;
 
-    if (device === "both") {
-      setProgress("Analyzing desktop & mobile experiences…");
-      try {
+    try {
+      if (device === "both") {
+        setProgress("Analyzing desktop & mobile experiences…");
         const [desktopData, mobileData] = await Promise.all([
           analyzeUrl(formatted, type, "desktop"),
           analyzeUrl(formatted, type, "mobile"),
@@ -77,19 +77,8 @@ const Index = () => {
         await trackAnalysis(formatted, type, "desktop", desktopData.conversionScore ?? desktopData.benchmark.overallScore, extractCategoryScores(desktopData.benchmark));
         if (user) await createActionItems(user.uid, formatted, type, desktopData.frictionPoints);
         toast.success(`Found ${desktopData.frictionPoints.length} desktop + ${mobileData.frictionPoints.length} mobile friction points`);
-      } catch (err) {
-        console.error("Comparison analysis failed, falling back to mock:", err);
-        toast.warning("Live analysis unavailable — showing demo results");
-        const mockDesktop = generateMockAnalysis(formatted, type);
-        const mockMobile = { ...generateMockAnalysis(formatted, type), device: "mobile" as const };
-        setComparisonResults({ desktop: mockDesktop, mobile: mockMobile });
-        if (user) recordedResultRef.current = mockDesktop;
-        await trackAnalysis(formatted, type, "desktop", mockDesktop.conversionScore ?? mockDesktop.benchmark.overallScore, extractCategoryScores(mockDesktop.benchmark));
-        if (user) await createActionItems(user.uid, formatted, type, mockDesktop.frictionPoints);
-      }
-    } else {
-      setProgress(`Analyzing ${device} experience…`);
-      try {
+      } else {
+        setProgress(`Analyzing ${device} experience…`);
         setProgress(`Analyzing ${device} view for conversion friction…`);
         const data = await analyzeUrl(formatted, type, device);
         setResult(data);
@@ -97,22 +86,17 @@ const Index = () => {
         await trackAnalysis(formatted, type, device, data.conversionScore ?? data.benchmark.overallScore, extractCategoryScores(data.benchmark));
         if (user) await createActionItems(user.uid, formatted, type, data.frictionPoints);
         toast.success(`Found ${data.frictionPoints.length} friction points (${device})`);
-      } catch (err) {
-        console.error("Real analysis failed, falling back to mock:", err);
-        toast.warning("Live analysis unavailable — showing demo results", {
-          description: err instanceof Error ? err.message : "Unknown error",
-        });
-        const mockResult = generateMockAnalysis(formatted, type);
-        setResult(mockResult);
-        if (user) recordedResultRef.current = mockResult;
-        await trackAnalysis(formatted, type, device, mockResult.conversionScore ?? mockResult.benchmark.overallScore, extractCategoryScores(mockResult.benchmark));
-        if (user) await createActionItems(user.uid, formatted, type, mockResult.frictionPoints);
       }
+    } catch (err) {
+      console.error("Analysis failed:", err);
+      toast.error("Analysis failed", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      await completeScanJob(jobId);
+      setIsAnalyzing(false);
+      setProgress("");
     }
-
-    await completeScanJob(jobId);
-    setIsAnalyzing(false);
-    setProgress("");
   }, [usage, trackAnalysis, user]);
 
   const goHome = () => {

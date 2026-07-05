@@ -172,7 +172,7 @@ describe("Index — login-gated results", () => {
     expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
   });
 
-  it("still completes the scan job when the real analysis fails and falls back to mock", async () => {
+  it("completes the scan job and surfaces the error instead of masking it with fake data when analysis fails", async () => {
     mockUser = { uid: "uid-1" };
     analyzeUrlMock.mockRejectedValue(new Error("boom"));
 
@@ -185,9 +185,10 @@ describe("Index — login-gated results", () => {
     fireEvent.click(screen.getByText("Analyze"));
 
     await waitFor(() => {
-      expect(screen.getByTestId("analysis-view")).toBeInTheDocument();
+      expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
     });
-    expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
+    expect(screen.queryByTestId("analysis-view")).not.toBeInTheDocument();
+    expect(screen.getByText("Analyze")).toBeInTheDocument();
   });
 
   it("does not create a scan job for an anonymous scan", async () => {
