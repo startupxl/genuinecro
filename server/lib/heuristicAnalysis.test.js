@@ -53,4 +53,13 @@ describe("generateHeuristicAnalysis", () => {
       expect(point.abTest.durationRationale).toBeTruthy();
     }
   });
+
+  it("assigns a valid effort and confidence rating to every friction point", () => {
+    const result = generateHeuristicAnalysis("Just some plain text with no headings at all.", "https://example.com", "homepage", "desktop", null);
+    expect(result.frictionPoints.length).toBeGreaterThan(0);
+    for (const point of result.frictionPoints) {
+      expect(["low", "medium", "high"]).toContain(point.effort);
+      expect(["low", "medium", "high"]).toContain(point.confidence);
+    }
+  });
 });

@@ -99,6 +99,18 @@ describe("buildAnalysisResultFromScan", () => {
     expect(point.abTest).toEqual({ testName: "", hypothesis: "", control: "", variant: "", metric: "", duration: "" });
   });
 
+  it("carries over effort and confidence when present on the action item", () => {
+    const result = buildAnalysisResultFromScan(baseScan, [{ ...richItem, effort: "low", confidence: "high" }], {});
+    expect(result.frictionPoints[0].effort).toBe("low");
+    expect(result.frictionPoints[0].confidence).toBe("high");
+  });
+
+  it("leaves effort and confidence undefined for older action items that predate this field", () => {
+    const result = buildAnalysisResultFromScan(baseScan, [bareItem], {});
+    expect(result.frictionPoints[0].effort).toBeUndefined();
+    expect(result.frictionPoints[0].confidence).toBeUndefined();
+  });
+
   it("builds per-category benchmark scores from the static category benchmarks", () => {
     const result = buildAnalysisResultFromScan(baseScan, [], {});
     expect(result.benchmark.categoryScores.navigation).toEqual({ score: 70, industryAvg: 58 });

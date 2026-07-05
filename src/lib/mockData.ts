@@ -121,6 +121,9 @@ export interface ABTestRecommendation {
   durationRationale?: string;
 }
 
+export type EffortLevel = "low" | "medium" | "high";
+export type ConfidenceLevel = "low" | "medium" | "high";
+
 export interface FrictionPoint {
   id: string;
   category: FrictionCategory;
@@ -134,6 +137,10 @@ export interface FrictionPoint {
   insightCluster?: string;
   screenshotUrl?: string;
   sourceCitation?: string;
+  /** Implementation effort to ship the fix — independent of the user-facing friction it addresses. */
+  effort?: EffortLevel;
+  /** Confidence in the impact estimate/recommendation, based on evidence strength. */
+  confidence?: ConfidenceLevel;
   benchmark: {
     industryAvg: number;
     topPerformers: number;

@@ -121,6 +121,20 @@ describe("createActionItems — rich evidence fields", () => {
     expect("sourceCitation" in writtenData).toBe(false);
     expect("benchmark" in writtenData).toBe(false);
     expect("abTest" in writtenData).toBe(false);
+    expect("effort" in writtenData).toBe(false);
+    expect("confidence" in writtenData).toBe(false);
+  });
+
+  it("persists effort and confidence when present on the friction point", async () => {
+    addDocMock.mockResolvedValue(undefined);
+    await createActionItems("uid-1", "https://example.com", "homepage", [
+      { category: "ux-clarity", severity: "high", title: "Weak headline", description: "d1", fix: "f1", impactScore: 80, effort: "low", confidence: "high" },
+    ]);
+
+    expect(addDocMock).toHaveBeenCalledWith(
+      { __collection: true },
+      expect.objectContaining({ effort: "low", confidence: "high" })
+    );
   });
 });
 
@@ -267,6 +281,37 @@ describe("getAllActionItems — rich evidence fields", () => {
     expect(items[0].abTest?.testName).toBe("Headline Clarity Test");
   });
 
+  it("passes through effort and confidence when present on the document", async () => {
+    getDocsMock.mockReset();
+    getDocsMock.mockResolvedValue({
+      docs: [
+        {
+          id: "item-1",
+          data: () => ({
+            userId: "uid-1",
+            url: "https://example.com",
+            analysisType: "homepage",
+            category: "ux-clarity",
+            severity: "high",
+            title: "Weak headline",
+            description: "d1",
+            fix: "f1",
+            impactScore: 80,
+            status: "open",
+            createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+            effort: "low",
+            confidence: "high",
+          }),
+        },
+      ],
+    });
+
+    const items = await getAllActionItems("uid-1");
+
+    expect(items[0].effort).toBe("low");
+    expect(items[0].confidence).toBe("high");
+  });
+
   it("leaves the rich evidence fields undefined for older items that predate this schema", async () => {
     getDocsMock.mockReset();
     getDocsMock.mockResolvedValue({
@@ -295,6 +340,8 @@ describe("getAllActionItems — rich evidence fields", () => {
     expect(items[0].selector).toBeUndefined();
     expect(items[0].benchmark).toBeUndefined();
     expect(items[0].abTest).toBeUndefined();
+    expect(items[0].effort).toBeUndefined();
+    expect(items[0].confidence).toBeUndefined();
   });
 });
 

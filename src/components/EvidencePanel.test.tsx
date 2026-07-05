@@ -79,4 +79,18 @@ describe("EvidencePanel", () => {
     render(<EvidencePanel point={buildPoint()} />);
     expect(screen.queryByText("Why this duration?")).not.toBeInTheDocument();
   });
+
+  it("shows the effort and confidence ratings when present", () => {
+    render(<EvidencePanel point={buildPoint({ effort: "medium", confidence: "high" })} />);
+    expect(screen.getByText("Effort to fix")).toBeInTheDocument();
+    expect(screen.getByText("Medium")).toBeInTheDocument();
+    expect(screen.getByText("Confidence")).toBeInTheDocument();
+    expect(screen.getByText("High")).toBeInTheDocument();
+  });
+
+  it("omits the effort/confidence section for older records that predate this field", () => {
+    render(<EvidencePanel point={buildPoint()} />);
+    expect(screen.queryByText("Effort to fix")).not.toBeInTheDocument();
+    expect(screen.queryByText("Confidence")).not.toBeInTheDocument();
+  });
 });

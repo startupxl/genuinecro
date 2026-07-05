@@ -29,6 +29,8 @@ export interface FrictionPointInput {
   insightCluster?: string;
   screenshotUrl?: string;
   sourceCitation?: string;
+  effort?: "low" | "medium" | "high";
+  confidence?: "low" | "medium" | "high";
   benchmark?: EvidenceBenchmark;
   abTest?: EvidenceABTest;
 }
@@ -70,6 +72,8 @@ export async function createActionItems(
         insightCluster: fp.insightCluster,
         screenshotUrl: fp.screenshotUrl,
         sourceCitation: fp.sourceCitation,
+        effort: fp.effort,
+        confidence: fp.confidence,
         benchmark: fp.benchmark,
         abTest: fp.abTest,
       };
@@ -111,6 +115,8 @@ function mapActionItemDoc(docSnap: { id: string; data: () => Record<string, unkn
     insightCluster?: string;
     screenshotUrl?: string;
     sourceCitation?: string;
+    effort?: "low" | "medium" | "high";
+    confidence?: "low" | "medium" | "high";
     benchmark?: EvidenceBenchmark;
     abTest?: EvidenceABTest;
   };
@@ -133,6 +139,8 @@ function mapActionItemDoc(docSnap: { id: string; data: () => Record<string, unkn
     insightCluster: data.insightCluster,
     screenshotUrl: data.screenshotUrl,
     sourceCitation: data.sourceCitation,
+    effort: data.effort,
+    confidence: data.confidence,
     benchmark: data.benchmark,
     abTest: data.abTest,
   };

@@ -154,6 +154,8 @@ For each friction point, provide:
 - impactScore: 1–100 estimated conversion impact
 - roiEstimate: string like "Could increase conversion by 5-12%" or "May reduce bounce by 15%"
 - insightCluster: one of "Trust Gap", "Clarity Gap", "Effort Gap", "Motivation Gap", "Speed Gap"
+- effort: "low" | "medium" | "high" — implementation effort to SHIP the fix (copy/content tweak = low, new component or layout rework = medium, structural/backend change = high). This is about build effort, not the user-facing friction described by insightCluster.
+- confidence: "low" | "medium" | "high" — how confident you are in this recommendation's impact, based on how directly the page evidence supports it (a clearly observed, well-established pattern = high; an inferred or borderline case = low/medium)
 - benchmark: { industryAvg (0-100), topPerformers (0-100), label (what's measured) }
 - abTest: { testName, hypothesis, control, variant, metric, duration, durationRationale (see instruction 8) }
 
@@ -192,6 +194,8 @@ Return ONLY valid JSON:
       "impactScore": 85,
       "roiEstimate": "Could increase click-through by 15-25%",
       "insightCluster": "Clarity Gap",
+      "effort": "low",
+      "confidence": "high",
       "benchmark": { "industryAvg": 60, "topPerformers": 90, "label": "CTA Visibility Score" },
       "abTest": { "testName": "CTA Placement", "hypothesis": "...", "control": "...", "variant": "...", "metric": "...", "duration": "2 weeks", "durationRationale": "Assumes traffic sufficient to reach ~300-350 conversions per variant at the ~2.7% baseline desktop conversion rate over 2 weeks — extend the test if your traffic or conversion volume is lower." }
     }

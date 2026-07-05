@@ -28,6 +28,8 @@ function toFrictionPoint(item: ActionItem): FrictionPoint {
     insightCluster: item.insightCluster,
     screenshotUrl: item.screenshotUrl,
     sourceCitation: item.sourceCitation,
+    effort: item.effort,
+    confidence: item.confidence,
     benchmark: item.benchmark ?? DEFAULT_BENCHMARK,
     abTest: item.abTest ?? DEFAULT_ABTEST,
   };

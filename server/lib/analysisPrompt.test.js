@@ -75,4 +75,10 @@ describe("buildAnalysisPrompt", () => {
     expect(prompt).toContain("never give a bare guess");
     expect(prompt).toContain("conversions per variant");
   });
+
+  it("requires an effort and confidence rating on every friction point", () => {
+    const prompt = buildAnalysisPrompt("homepage", "content", "https://example.com", "desktop");
+    expect(prompt).toContain("effort: \"low\" | \"medium\" | \"high\"");
+    expect(prompt).toContain("confidence: \"low\" | \"medium\" | \"high\"");
+  });
 });

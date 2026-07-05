@@ -88,4 +88,23 @@ describe("FrictionCard", () => {
     render(<FrictionCard point={buildPoint()} index={0} isSelected={false} onClick={() => {}} />);
     expect(screen.queryByText(/Affects \d+ pages?/)).not.toBeInTheDocument();
   });
+
+  it("shows effort and confidence badges when present", () => {
+    render(
+      <FrictionCard
+        point={buildPoint({ effort: "low", confidence: "high" })}
+        index={0}
+        isSelected={false}
+        onClick={() => {}}
+      />
+    );
+    expect(screen.getByText("Low effort")).toBeInTheDocument();
+    expect(screen.getByText("High confidence")).toBeInTheDocument();
+  });
+
+  it("omits the effort/confidence badges when absent (older records)", () => {
+    render(<FrictionCard point={buildPoint()} index={0} isSelected={false} onClick={() => {}} />);
+    expect(screen.queryByText(/effort/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/confidence/i)).not.toBeInTheDocument();
+  });
 });

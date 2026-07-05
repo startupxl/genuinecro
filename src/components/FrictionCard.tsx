@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
-import { Clock, Eye, MousePointer, Code, ScanLine, Copy, Check, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter as FilterIcon, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, Zap, TrendingUp, BarChart3, Globe } from "lucide-react";
+import { Clock, Eye, MousePointer, Code, ScanLine, Copy, Check, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter as FilterIcon, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, Zap, TrendingUp, BarChart3, Globe, Gauge } from "lucide-react";
 import { useState } from "react";
-import type { FrictionPoint, FrictionSeverity } from "@/lib/mockData";
+import type { FrictionPoint, FrictionSeverity, EffortLevel, ConfidenceLevel } from "@/lib/mockData";
 import { categoryLabels } from "@/lib/mockData";
+
+const effortLabel: Record<EffortLevel, string> = { low: "Low effort", medium: "Medium effort", high: "High effort" };
+const confidenceLabel: Record<ConfidenceLevel, string> = { low: "Low confidence", medium: "Medium confidence", high: "High confidence" };
 
 const categoryIconMap: Record<string, React.ElementType> = {
   visual: Eye, technical: Code, ux: MousePointer, accessibility: ScanLine, performance: Clock,
@@ -103,6 +106,24 @@ const FrictionCard = ({ point, index, isSelected, onClick }: FrictionCardProps) 
           <span className="text-[11px] text-muted-foreground font-medium">
             Affects {point.affectedUrls.length} page{point.affectedUrls.length === 1 ? "" : "s"}
           </span>
+        </div>
+      )}
+
+      {/* Effort & confidence */}
+      {(point.effort || point.confidence) && (
+        <div className="flex items-center gap-1.5 mb-3">
+          {point.effort && (
+            <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">
+              <Zap className="h-2.5 w-2.5" />
+              {effortLabel[point.effort]}
+            </span>
+          )}
+          {point.confidence && (
+            <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">
+              <Gauge className="h-2.5 w-2.5" />
+              {confidenceLabel[point.confidence]}
+            </span>
+          )}
         </div>
       )}
 

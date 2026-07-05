@@ -1,8 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, ExternalLink, Clock, Eye, MousePointer, Code, ScanLine, ZoomIn, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, FlaskConical } from "lucide-react";
 import { useState } from "react";
-import type { FrictionPoint, FrictionCategory } from "@/lib/mockData";
+import type { FrictionPoint, FrictionCategory, EffortLevel, ConfidenceLevel } from "@/lib/mockData";
 import { categoryLabels } from "@/lib/mockData";
+
+const effortDisplay: Record<EffortLevel, string> = { low: "Low", medium: "Medium", high: "High" };
+const confidenceDisplay: Record<ConfidenceLevel, string> = { low: "Low", medium: "Medium", high: "High" };
 
 const categoryIconMap: Record<FrictionCategory, React.ElementType> = {
   visual: Eye,
@@ -143,6 +146,24 @@ const EvidencePanel = ({ point }: EvidencePanelProps) => {
                     />
                   </div>
                 </div>
+
+                {/* Effort & confidence */}
+                {(point.effort || point.confidence) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {point.effort && (
+                      <div className="bg-background rounded-md p-2.5 border border-border/50">
+                        <span className="text-[10px] text-muted-foreground block mb-1">Effort to fix</span>
+                        <span className="text-sm font-medium text-foreground">{effortDisplay[point.effort]}</span>
+                      </div>
+                    )}
+                    {point.confidence && (
+                      <div className="bg-background rounded-md p-2.5 border border-border/50">
+                        <span className="text-[10px] text-muted-foreground block mb-1">Confidence</span>
+                        <span className="text-sm font-medium text-foreground">{confidenceDisplay[point.confidence]}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Benchmark comparison */}
                 <div className="bg-background rounded-md p-3 border border-border/50">
