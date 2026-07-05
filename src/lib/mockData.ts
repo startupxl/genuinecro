@@ -136,6 +136,8 @@ export interface FrictionPoint {
     label: string;
   };
   abTest: ABTestRecommendation;
+  /** Set only on domain-aggregated friction points (see SiteDetail) — the distinct pages this issue was found on. */
+  affectedUrls?: string[];
 }
 
 export interface CategoryScore {

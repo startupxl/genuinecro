@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildAnalysisResultFromScan } from "./reconstructAnalysisResult";
+import { buildAnalysisResultFromScan, buildAnalysisResultFromSite } from "./reconstructAnalysisResult";
 import type { AnalysisRecord } from "./firebase/analyses";
 import type { ActionItem } from "./firebase/actionItems";
 
@@ -109,5 +109,50 @@ describe("buildAnalysisResultFromScan", () => {
     const result = buildAnalysisResultFromScan({ ...baseScan, categoryScores: {} }, [], {});
     expect(result.benchmark.industryAvg).toBeGreaterThan(0);
     expect(result.benchmark.topQuartile).toBeGreaterThan(result.benchmark.industryAvg);
+  });
+});
+
+describe("buildAnalysisResultFromSite", () => {
+  const domainRecords: AnalysisRecord[] = [
+    { id: "scan-1", url: "https://a.com/", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-01T00:00:00.000Z", categoryScores: { navigation: 60 } },
+    { id: "scan-2", url: "https://a.com/pricing", analysisType: "landing-marketing", device: "mobile", conversionScore: 70, createdAt: "2026-06-05T00:00:00.000Z", categoryScores: { navigation: 80 } },
+  ];
+
+  it("uses the most recently scanned page as the representative for url/device/analysisType/score", () => {
+    const result = buildAnalysisResultFromSite("a.com", domainRecords, [], {});
+    expect(result.url).toBe("https://a.com");
+    expect(result.timestamp).toBe("2026-06-05T00:00:00.000Z");
+    expect(result.device).toBe("mobile");
+    expect(result.analysisType).toBe("landing-marketing");
+    expect(result.conversionScore).toBe(70);
+  });
+
+  it("averages category scores across every page of the domain", () => {
+    const result = buildAnalysisResultFromSite("a.com", domainRecords, [], {});
+    expect(result.benchmark.categoryScores.navigation?.score).toBe(70);
+  });
+
+  it("merges friction points across pages via buildSiteFrictionSummary, carrying affectedUrls", () => {
+    const items: ActionItem[] = [
+      { id: "i1", userId: "uid-1", url: "https://a.com/", analysisType: "homepage", category: "technical-seo", severity: "high", title: "Missing canonical", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "i2", userId: "uid-1", url: "https://a.com/pricing", analysisType: "landing-marketing", category: "technical-seo", severity: "high", title: "Missing canonical", description: "d", fix: "f", impactScore: 60, status: "open", createdAt: "2026-06-05T00:00:00.000Z" },
+    ];
+
+    const result = buildAnalysisResultFromSite("a.com", domainRecords, items, {});
+
+    expect(result.frictionPoints).toHaveLength(1);
+    expect(result.frictionPoints[0].affectedUrls).toEqual(["https://a.com/", "https://a.com/pricing"]);
+    expect(result.frictionPoints[0].impactScore).toBe(70);
+  });
+
+  it("excludes action items belonging to other domains", () => {
+    const items: ActionItem[] = [
+      { id: "i1", userId: "uid-1", url: "https://a.com/", analysisType: "homepage", category: "navigation", severity: "high", title: "On a.com", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "i2", userId: "uid-1", url: "https://b.com/", analysisType: "homepage", category: "navigation", severity: "high", title: "On b.com", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+    ];
+
+    const result = buildAnalysisResultFromSite("a.com", domainRecords, items, {});
+
+    expect(result.frictionPoints.map((p) => p.title)).toEqual(["On a.com"]);
   });
 });

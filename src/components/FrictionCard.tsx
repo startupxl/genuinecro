@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Clock, Eye, MousePointer, Code, ScanLine, Copy, Check, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter as FilterIcon, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, Zap, TrendingUp, BarChart3 } from "lucide-react";
+import { Clock, Eye, MousePointer, Code, ScanLine, Copy, Check, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter as FilterIcon, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, Zap, TrendingUp, BarChart3, Globe } from "lucide-react";
 import { useState } from "react";
 import type { FrictionPoint, FrictionSeverity } from "@/lib/mockData";
 import { categoryLabels } from "@/lib/mockData";
@@ -93,6 +93,16 @@ const FrictionCard = ({ point, index, isSelected, onClick }: FrictionCardProps) 
         <div className="flex items-center gap-1.5 mb-3 px-2 py-1 rounded-md bg-primary/5 w-fit">
           <TrendingUp className="h-3 w-3 text-primary" />
           <span className="text-[11px] text-primary font-medium">{point.roiEstimate}</span>
+        </div>
+      )}
+
+      {/* Affected pages (domain-aggregated view only) */}
+      {point.affectedUrls && (
+        <div className="flex items-center gap-1.5 mb-3 px-2 py-1 rounded-md bg-secondary w-fit">
+          <Globe className="h-3 w-3 text-muted-foreground" />
+          <span className="text-[11px] text-muted-foreground font-medium">
+            Affects {point.affectedUrls.length} page{point.affectedUrls.length === 1 ? "" : "s"}
+          </span>
         </div>
       )}
 

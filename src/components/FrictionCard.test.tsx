@@ -71,4 +71,21 @@ describe("FrictionCard", () => {
     );
     expect(screen.queryByText("Evidence-based")).not.toBeInTheDocument();
   });
+
+  it("shows an 'Affects N pages' badge when affectedUrls is present (domain-aggregated view)", () => {
+    render(
+      <FrictionCard
+        point={buildPoint({ affectedUrls: ["https://a.com/", "https://a.com/pricing", "https://a.com/checkout"] })}
+        index={0}
+        isSelected={false}
+        onClick={() => {}}
+      />
+    );
+    expect(screen.getByText("Affects 3 pages")).toBeInTheDocument();
+  });
+
+  it("does not show the affected-pages badge for a normal single-page friction point", () => {
+    render(<FrictionCard point={buildPoint()} index={0} isSelected={false} onClick={() => {}} />);
+    expect(screen.queryByText(/Affects \d+ pages?/)).not.toBeInTheDocument();
+  });
 });

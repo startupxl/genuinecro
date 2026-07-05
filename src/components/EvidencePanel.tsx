@@ -197,6 +197,20 @@ const EvidencePanel = ({ point }: EvidencePanelProps) => {
                 </div>
               )}
 
+              {/* Affected pages (domain-aggregated view only) */}
+              {point.affectedUrls && (
+                <div>
+                  <h4 className="text-label text-muted-foreground mb-2" style={{ fontSize: "10px" }}>
+                    Affected Pages ({point.affectedUrls.length})
+                  </h4>
+                  <div className="bg-background rounded-md p-3 border border-border/50 space-y-1 max-h-32 overflow-y-auto">
+                    {point.affectedUrls.map((url) => (
+                      <p key={url} className="text-xs font-mono text-foreground truncate">{url}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Selector */}
               <div>
                 <h4 className="text-label text-muted-foreground mb-2" style={{ fontSize: "10px" }}>

@@ -43,4 +43,20 @@ describe("EvidencePanel", () => {
       screen.getByText("Select a friction point to view evidence and fix recommendations.")
     ).toBeInTheDocument();
   });
+
+  it("lists affected pages when affectedUrls is present (domain-aggregated view)", () => {
+    render(
+      <EvidencePanel
+        point={buildPoint({ affectedUrls: ["https://a.com/", "https://a.com/pricing"] })}
+      />
+    );
+    expect(screen.getByText("Affected Pages (2)")).toBeInTheDocument();
+    expect(screen.getByText("https://a.com/")).toBeInTheDocument();
+    expect(screen.getByText("https://a.com/pricing")).toBeInTheDocument();
+  });
+
+  it("does not show the Affected Pages section for a normal single-page friction point", () => {
+    render(<EvidencePanel point={buildPoint()} />);
+    expect(screen.queryByText(/Affected Pages/)).not.toBeInTheDocument();
+  });
 });

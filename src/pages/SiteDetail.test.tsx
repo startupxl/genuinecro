@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import type { AnalysisResult } from "@/lib/mockData";
 
 const getRecentAnalysesMock = vi.fn();
 const getAllActionItemsMock = vi.fn();
+const getLiveBenchmarksMock = vi.fn();
 const navigateMock = vi.fn();
 
 vi.mock("react-router-dom", async () => {
@@ -19,12 +21,40 @@ vi.mock("@/lib/firebase/actionItems", () => ({
   getAllActionItems: (...args: unknown[]) => getAllActionItemsMock(...args),
 }));
 
+vi.mock("@/lib/firebase/benchmarks", () => ({
+  getLiveBenchmarks: (...args: unknown[]) => getLiveBenchmarksMock(...args),
+}));
+
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: { uid: "uid-1" } }),
 }));
 
-vi.mock("@/hooks/useSubscription", () => ({
-  useSubscription: () => ({ currentPlan: "Free", subscription: null }),
+let capturedResult: AnalysisResult | null = null;
+let capturedOnNewAnalysis: (() => void) | null = null;
+let capturedOnGoHome: (() => void) | null = null;
+vi.mock("@/components/AnalysisView", () => ({
+  default: ({
+    result,
+    onNewAnalysis,
+    onGoHome,
+  }: {
+    result: AnalysisResult;
+    onNewAnalysis: (url: string) => void;
+    onGoHome: () => void;
+  }) => {
+    capturedResult = result;
+    capturedOnNewAnalysis = () => onNewAnalysis("https://example.com");
+    capturedOnGoHome = onGoHome;
+    return (
+      <div data-testid="analysis-view">
+        <span data-testid="av-url">{result.url}</span>
+        <span data-testid="av-score">{result.conversionScore}</span>
+        {result.frictionPoints.map((p) => (
+          <span key={p.id} data-testid="av-issue">{p.title}</span>
+        ))}
+      </div>
+    );
+  },
 }));
 
 import SiteDetail from "./SiteDetail";
@@ -41,8 +71,12 @@ function renderAt(path: string) {
 
 describe("SiteDetail", () => {
   beforeEach(() => {
+    capturedResult = null;
+    capturedOnNewAnalysis = null;
+    capturedOnGoHome = null;
     getRecentAnalysesMock.mockReset();
     getAllActionItemsMock.mockReset().mockResolvedValue([]);
+    getLiveBenchmarksMock.mockReset().mockResolvedValue({});
     navigateMock.mockReset();
   });
 
@@ -56,33 +90,20 @@ describe("SiteDetail", () => {
     });
   });
 
-  it("shows how many pages were audited for the domain", async () => {
+  it("reconstructs and renders the full AnalysisView report for a domain", async () => {
     getRecentAnalysesMock.mockResolvedValue([
       { id: "1", url: "https://a.com/", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-01T00:00:00.000Z" },
-      { id: "2", url: "https://a.com/pricing", analysisType: "landing-marketing", device: "desktop", conversionScore: 70, createdAt: "2026-06-02T00:00:00.000Z" },
     ]);
 
     renderAt("/sites/a.com");
 
     await waitFor(() => {
-      expect(screen.getByText(/2 pages audited/)).toBeInTheDocument();
+      expect(screen.getByTestId("av-url")).toHaveTextContent("https://a.com");
     });
+    expect(screen.getByTestId("av-score")).toHaveTextContent("60");
   });
 
-  it("shows a congratulatory empty state when there are no open issues for the domain", async () => {
-    getRecentAnalysesMock.mockResolvedValue([
-      { id: "1", url: "https://a.com/", analysisType: "homepage", device: "desktop", conversionScore: 90, createdAt: "2026-06-01T00:00:00.000Z" },
-    ]);
-    getAllActionItemsMock.mockResolvedValue([]);
-
-    renderAt("/sites/a.com");
-
-    await waitFor(() => {
-      expect(screen.getByText(/No open issues/)).toBeInTheDocument();
-    });
-  });
-
-  it("merges friction points across pages and renders them", async () => {
+  it("merges friction points across every page of the domain", async () => {
     getRecentAnalysesMock.mockResolvedValue([
       { id: "1", url: "https://a.com/", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-01T00:00:00.000Z" },
       { id: "2", url: "https://a.com/pricing", analysisType: "landing-marketing", device: "desktop", conversionScore: 70, createdAt: "2026-06-02T00:00:00.000Z" },
@@ -97,7 +118,8 @@ describe("SiteDetail", () => {
     await waitFor(() => {
       expect(screen.getByText("Missing canonical")).toBeInTheDocument();
     });
-    expect(screen.getAllByText(/2 pages/)).toHaveLength(2);
+    expect(capturedResult?.frictionPoints).toHaveLength(1);
+    expect(capturedResult?.frictionPoints[0].affectedUrls).toEqual(["https://a.com/", "https://a.com/pricing"]);
   });
 
   it("excludes issues belonging to other domains", async () => {
@@ -105,41 +127,19 @@ describe("SiteDetail", () => {
       { id: "1", url: "https://a.com/", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-01T00:00:00.000Z" },
     ]);
     getAllActionItemsMock.mockResolvedValue([
-      { id: "i1", userId: "uid-1", url: "https://a.com/", analysisType: "homepage", category: "navigation", severity: "high", title: "Nav issue on a.com", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
-      { id: "i2", userId: "uid-1", url: "https://b.com/", analysisType: "homepage", category: "navigation", severity: "high", title: "Nav issue on b.com", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "i1", userId: "uid-1", url: "https://a.com/", analysisType: "homepage", category: "navigation", severity: "high", title: "On a.com", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "i2", userId: "uid-1", url: "https://b.com/", analysisType: "homepage", category: "navigation", severity: "high", title: "On b.com", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
     ]);
 
     renderAt("/sites/a.com");
 
     await waitFor(() => {
-      expect(screen.getByText("Nav issue on a.com")).toBeInTheDocument();
+      expect(screen.getByText("On a.com")).toBeInTheDocument();
     });
-    expect(screen.queryByText("Nav issue on b.com")).not.toBeInTheDocument();
+    expect(screen.queryByText("On b.com")).not.toBeInTheDocument();
   });
 
-  it("filters the list by category tab", async () => {
-    getRecentAnalysesMock.mockResolvedValue([
-      { id: "1", url: "https://a.com/", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-01T00:00:00.000Z" },
-    ]);
-    getAllActionItemsMock.mockResolvedValue([
-      { id: "i1", userId: "uid-1", url: "https://a.com/", analysisType: "homepage", category: "technical-seo", severity: "high", title: "Missing canonical", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
-      { id: "i2", userId: "uid-1", url: "https://a.com/", analysisType: "homepage", category: "navigation", severity: "high", title: "Nav issue", description: "d", fix: "f", impactScore: 70, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
-    ]);
-
-    renderAt("/sites/a.com");
-
-    await waitFor(() => {
-      expect(screen.getByText("Missing canonical")).toBeInTheDocument();
-    });
-    expect(screen.getByText("Nav issue")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Technical" }));
-
-    expect(screen.getByText("Missing canonical")).toBeInTheDocument();
-    expect(screen.queryByText("Nav issue")).not.toBeInTheDocument();
-  });
-
-  it("navigates back to the dashboard", async () => {
+  it("navigates to the dashboard via onGoHome", async () => {
     getRecentAnalysesMock.mockResolvedValue([
       { id: "1", url: "https://a.com/", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-01T00:00:00.000Z" },
     ]);
@@ -147,11 +147,25 @@ describe("SiteDetail", () => {
     renderAt("/sites/a.com");
 
     await waitFor(() => {
-      expect(screen.getByText(/audited/)).toBeInTheDocument();
+      expect(screen.getByTestId("analysis-view")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /Back to Dashboard/i }));
-
+    capturedOnGoHome?.();
     expect(navigateMock).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("navigates home via onNewAnalysis", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { id: "1", url: "https://a.com/", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+
+    renderAt("/sites/a.com");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("analysis-view")).toBeInTheDocument();
+    });
+
+    capturedOnNewAnalysis?.();
+    expect(navigateMock).toHaveBeenCalledWith("/");
   });
 });
