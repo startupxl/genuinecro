@@ -27,10 +27,14 @@ describe("getCategoryTab", () => {
     expect(getCategoryTab("performance")).toBe("Performance");
   });
 
-  it("maps the remaining six conversion-side categories to the Conversion tab", () => {
-    ["visual-friction", "ux-friction", "trust-credibility", "form-friction", "cta-effectiveness", "checkout-friction"].forEach((cat) => {
+  it("maps the remaining five conversion-side categories to the Conversion tab", () => {
+    ["visual-friction", "ux-friction", "form-friction", "cta-effectiveness", "checkout-friction"].forEach((cat) => {
       expect(getCategoryTab(cat)).toBe("Conversion");
     });
+  });
+
+  it("maps trust-credibility to its own standalone tab", () => {
+    expect(getCategoryTab("trust-credibility")).toBe("Trust & Credibility");
   });
 
   it("falls back to the Conversion tab for an unrecognized category", () => {

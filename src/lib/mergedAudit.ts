@@ -15,7 +15,7 @@ export const CATEGORY_TAB: Record<string, string> = {
   accessibility: "Accessibility",
   "visual-friction": "Conversion",
   "ux-friction": "Conversion",
-  "trust-credibility": "Conversion",
+  "trust-credibility": "Trust & Credibility",
   "form-friction": "Conversion",
   "cta-effectiveness": "Conversion",
   "checkout-friction": "Conversion",

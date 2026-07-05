@@ -27,7 +27,7 @@ const sortLabels: Record<SortOption, string> = {
 
 const TABLET_BREAKPOINT = 1024;
 
-const CATEGORY_TABS = ["All", "Technical", "Content", "Conversion", "Navigation", "Accessibility", "Performance"];
+const CATEGORY_TABS = ["All", "Technical", "Content", "Conversion", "Trust & Credibility", "Navigation", "Accessibility", "Performance"];
 
 interface AnalysisViewProps {
   result: AnalysisResult;
