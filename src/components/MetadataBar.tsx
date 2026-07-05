@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { Globe, Monitor, Smartphone, Share2, Search, PanelLeftOpen } from "lucide-react";
+import { Globe, Monitor, Smartphone, Share2, Search, PanelLeftOpen, Target } from "lucide-react";
 import { useState } from "react";
 import type { AnalysisType } from "@/lib/mockData";
 import { analysisTypeLabels } from "@/lib/mockData";
+import { GOAL_LABELS, type ConversionGoal } from "@/lib/conversionGoals";
 
 interface MetadataBarProps {
   url: string;
@@ -10,11 +11,16 @@ interface MetadataBarProps {
   device: "desktop" | "mobile";
   issueCount: number;
   analysisType?: AnalysisType;
+  conversionGoal?: ConversionGoal;
   onNewAnalysis: (url: string) => void;
   onToggleSidebar?: () => void;
 }
 
-const MetadataBar = ({ url, timestamp, device, issueCount, analysisType, onNewAnalysis, onToggleSidebar }: MetadataBarProps) => {
+function goalDisplayLabel(goal: ConversionGoal): string {
+  return goal.type === "custom" && goal.customLabel ? goal.customLabel : GOAL_LABELS[goal.type];
+}
+
+const MetadataBar = ({ url, timestamp, device, issueCount, analysisType, conversionGoal, onNewAnalysis, onToggleSidebar }: MetadataBarProps) => {
   const [newUrl, setNewUrl] = useState(url);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,6 +68,13 @@ const MetadataBar = ({ url, timestamp, device, issueCount, analysisType, onNewAn
         {analysisType && (
           <span className="hidden sm:inline px-1.5 py-0.5 rounded bg-primary/10 text-[10px] font-medium text-primary">
             {analysisTypeLabels[analysisType]}
+          </span>
+        )}
+
+        {conversionGoal && (
+          <span className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-[10px] font-medium text-muted-foreground">
+            <Target className="h-3 w-3" />
+            {goalDisplayLabel(conversionGoal)}
           </span>
         )}
 

@@ -62,6 +62,7 @@ export function buildAnalysisResultFromScan(
     analysisType: scan.analysisType as AnalysisType,
     conversionScore: scan.conversionScore,
     frictionPoints: matchedItems.map(toFrictionPoint),
+    conversionGoal: scan.conversionGoal,
     benchmark: {
       overallScore: scan.conversionScore,
       industryAvg: average(accountAvgs, DEFAULT_INDUSTRY_AVG),
@@ -139,6 +140,7 @@ export function buildAnalysisResultFromSite(
     analysisType: latest.analysisType as AnalysisType,
     conversionScore: latest.conversionScore,
     frictionPoints,
+    conversionGoal: latest.conversionGoal,
     benchmark: {
       overallScore: latest.conversionScore,
       industryAvg: average(accountAvgs, DEFAULT_INDUSTRY_AVG),

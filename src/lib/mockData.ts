@@ -1,3 +1,5 @@
+import type { ConversionGoal } from "./conversionGoals";
+
 export type FrictionSeverity = "high" | "med" | "low";
 
 export type FrictionCategory =
@@ -176,6 +178,7 @@ export interface AnalysisResult {
   grade?: string;
   topIssues?: string[];
   insightSummary?: InsightSummary;
+  conversionGoal?: ConversionGoal;
 }
 
 /** Flattens a BenchmarkSummary's per-category scores down to plain numbers for storage. */

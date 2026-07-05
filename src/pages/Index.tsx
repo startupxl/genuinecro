@@ -12,7 +12,22 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { createActionItems } from "@/lib/firebase/actionItems";
 import { createScanJob, completeScanJob } from "@/lib/firebase/scanJobs";
+import { computeGoalWeightedScore, type ConversionGoal } from "@/lib/conversionGoals";
 import { toast } from "sonner";
+
+function applyGoalWeighting(data: AnalysisResult, goal?: ConversionGoal): AnalysisResult {
+  if (!goal) return data;
+  const categoryScores = extractCategoryScores(data.benchmark);
+  const weightedScore = Object.keys(categoryScores).length > 0
+    ? computeGoalWeightedScore(categoryScores, goal)
+    : (data.conversionScore ?? data.benchmark.overallScore);
+  return {
+    ...data,
+    conversionScore: weightedScore,
+    benchmark: { ...data.benchmark, overallScore: weightedScore },
+    conversionGoal: goal,
+  };
+}
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
@@ -44,7 +59,12 @@ const Index = () => {
     })();
   }, [user, result, comparisonResults, trackAnalysis]);
 
-  const handleAnalyze = useCallback(async (url: string, type: AnalysisType = "homepage", device: "desktop" | "mobile" | "both" = "desktop") => {
+  const handleAnalyze = useCallback(async (
+    url: string,
+    type: AnalysisType = "homepage",
+    device: "desktop" | "mobile" | "both" = "desktop",
+    goal?: ConversionGoal
+  ) => {
     if (usage.requiresAuth) {
       setAuthMessage("You've used your free scan. Create an account to keep going!");
       setShowAuth(true);
@@ -68,22 +88,24 @@ const Index = () => {
     try {
       if (device === "both") {
         setProgress("Analyzing desktop & mobile experiences…");
-        const [desktopData, mobileData] = await Promise.all([
+        const [desktopRaw, mobileRaw] = await Promise.all([
           analyzeUrl(formatted, type, "desktop"),
           analyzeUrl(formatted, type, "mobile"),
         ]);
+        const desktopData = applyGoalWeighting(desktopRaw, goal);
+        const mobileData = applyGoalWeighting(mobileRaw, goal);
         setComparisonResults({ desktop: desktopData, mobile: mobileData });
         if (user) recordedResultRef.current = desktopData;
-        await trackAnalysis(formatted, type, "desktop", desktopData.conversionScore ?? desktopData.benchmark.overallScore, extractCategoryScores(desktopData.benchmark));
+        await trackAnalysis(formatted, type, "desktop", desktopData.conversionScore ?? desktopData.benchmark.overallScore, extractCategoryScores(desktopData.benchmark), undefined, goal);
         if (user) await createActionItems(user.uid, formatted, type, desktopData.frictionPoints);
         toast.success(`Found ${desktopData.frictionPoints.length} desktop + ${mobileData.frictionPoints.length} mobile friction points`);
       } else {
         setProgress(`Analyzing ${device} experience…`);
         setProgress(`Analyzing ${device} view for conversion friction…`);
-        const data = await analyzeUrl(formatted, type, device);
+        const data = applyGoalWeighting(await analyzeUrl(formatted, type, device), goal);
         setResult(data);
         if (user) recordedResultRef.current = data;
-        await trackAnalysis(formatted, type, device, data.conversionScore ?? data.benchmark.overallScore, extractCategoryScores(data.benchmark));
+        await trackAnalysis(formatted, type, device, data.conversionScore ?? data.benchmark.overallScore, extractCategoryScores(data.benchmark), undefined, goal);
         if (user) await createActionItems(user.uid, formatted, type, data.frictionPoints);
         toast.success(`Found ${data.frictionPoints.length} friction points (${device})`);
       }
@@ -146,7 +168,7 @@ const Index = () => {
     return (
       <AnalysisView
         result={result}
-        onNewAnalysis={(url) => handleAnalyze(url, result.analysisType, result.device)}
+        onNewAnalysis={(url) => handleAnalyze(url, result.analysisType, result.device, result.conversionGoal)}
         onGoHome={goHome}
       />
     );

@@ -136,4 +136,81 @@ describe("LandingView", () => {
 
     expect(screen.queryByText(/seconds/i)).not.toBeInTheDocument();
   });
+
+  describe("conversion goal", () => {
+    it("shows a suggested conversion goal derived from the detected page type", () => {
+      render(
+        <MemoryRouter>
+          <LandingView onAnalyze={vi.fn()} usage={usage} user={null} onSignIn={vi.fn()} />
+        </MemoryRouter>
+      );
+
+      // Homepage's default suggested goal is Subscription / Signup.
+      expect(screen.getByText("Subscription / Signup")).toBeInTheDocument();
+      expect(screen.getByText("Suggested")).toBeInTheDocument();
+    });
+
+    it("passes the goal through to onAnalyze on submit", () => {
+      const onAnalyze = vi.fn();
+      render(
+        <MemoryRouter>
+          <LandingView onAnalyze={onAnalyze} usage={usage} user={null} onSignIn={vi.fn()} />
+        </MemoryRouter>
+      );
+
+      fireEvent.change(screen.getByPlaceholderText("https://example.com"), { target: { value: "https://example.com" } });
+      fireEvent.click(screen.getByText("Analyze"));
+
+      expect(onAnalyze).toHaveBeenCalledWith(
+        "https://example.com", "homepage", "desktop", { type: "subscription", isMacro: true }
+      );
+    });
+
+    it("lets the user override the suggested goal", () => {
+      const onAnalyze = vi.fn();
+      render(
+        <MemoryRouter>
+          <LandingView onAnalyze={onAnalyze} usage={usage} user={null} onSignIn={vi.fn()} />
+        </MemoryRouter>
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Change goal" }));
+      const goalSelects = screen.getAllByRole("combobox");
+      fireEvent.change(goalSelects[goalSelects.length - 1], { target: { value: "lead_form" } });
+
+      expect(screen.getByText("Lead Form Submission")).toBeInTheDocument();
+      expect(screen.getByText("Manual")).toBeInTheDocument();
+
+      fireEvent.change(screen.getByPlaceholderText("https://example.com"), { target: { value: "https://example.com" } });
+      fireEvent.click(screen.getByText("Analyze"));
+
+      expect(onAnalyze).toHaveBeenCalledWith(
+        "https://example.com", "homepage", "desktop", { type: "lead_form", isMacro: false }
+      );
+    });
+
+    it("blocks submission for a Custom goal until the custom label is filled in", () => {
+      const onAnalyze = vi.fn();
+      render(
+        <MemoryRouter>
+          <LandingView onAnalyze={onAnalyze} usage={usage} user={null} onSignIn={vi.fn()} />
+        </MemoryRouter>
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Change goal" }));
+      const goalSelects = screen.getAllByRole("combobox");
+      fireEvent.change(goalSelects[goalSelects.length - 1], { target: { value: "custom" } });
+
+      fireEvent.change(screen.getByPlaceholderText("https://example.com"), { target: { value: "https://example.com" } });
+      fireEvent.click(screen.getByText("Analyze"));
+      expect(onAnalyze).not.toHaveBeenCalled();
+
+      fireEvent.change(screen.getByPlaceholderText("Describe the goal…"), { target: { value: "App install" } });
+      fireEvent.click(screen.getByText("Analyze"));
+
+      expect(onAnalyze).toHaveBeenCalledWith(
+        "https://example.com", "homepage", "desktop", { type: "custom", isMacro: false, customLabel: "App install" }
+      );
+    });
+  });
 });

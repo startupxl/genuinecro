@@ -7,7 +7,14 @@ import { extractCategoryScores, detectPageType } from "@/lib/mockData";
 import { runMergedAudit } from "@/lib/mergedAudit";
 import { createActionItems } from "@/lib/firebase/actionItems";
 import { createScanJob, completeScanJob } from "@/lib/firebase/scanJobs";
+import type { ConversionGoal } from "@/lib/conversionGoals";
+import ConversionGoalSelect from "@/components/ConversionGoalSelect";
 import { toast } from "sonner";
+
+function isGoalComplete(goal: ConversionGoal | null): boolean {
+  if (!goal) return false;
+  return goal.type !== "custom" || !!goal.customLabel?.trim();
+}
 
 interface NewAuditModalProps {
   open: boolean;
@@ -20,10 +27,11 @@ const NewAuditModal = ({ open, onOpenChange }: NewAuditModalProps) => {
   const navigate = useNavigate();
   const [url, setUrl] = useState("");
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
+  const [goal, setGoal] = useState<ConversionGoal | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
   const handleAnalyze = async () => {
-    if (!user || !url.trim()) return;
+    if (!user || !url.trim() || !isGoalComplete(goal)) return;
 
     let formatted = url.trim();
     if (!formatted.startsWith("http://") && !formatted.startsWith("https://")) {
@@ -35,7 +43,7 @@ const NewAuditModal = ({ open, onOpenChange }: NewAuditModalProps) => {
     const jobId = await createScanJob(user.uid, formatted, type, device);
 
     try {
-      const result = await runMergedAudit(formatted, type, device);
+      const result = await runMergedAudit(formatted, type, device, goal);
 
       const analysisId = await trackAnalysis(
         formatted,
@@ -43,11 +51,13 @@ const NewAuditModal = ({ open, onOpenChange }: NewAuditModalProps) => {
         device,
         result.conversionScore,
         extractCategoryScores(result.benchmark),
-        result.technicalScore ?? undefined
+        result.technicalScore ?? undefined,
+        goal ?? undefined
       );
       await createActionItems(user.uid, formatted, type, result.frictionPoints);
 
       setUrl("");
+      setGoal(null);
       onOpenChange(false);
       if (analysisId) navigate(`/audits/${analysisId}`);
     } catch (err) {
@@ -98,9 +108,15 @@ const NewAuditModal = ({ open, onOpenChange }: NewAuditModalProps) => {
               Mobile
             </button>
           </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              What's the primary conversion goal for this page?
+            </label>
+            <ConversionGoalSelect value={goal} onChange={setGoal} disabled={isRunning} />
+          </div>
           <button
             onClick={handleAnalyze}
-            disabled={isRunning || !url.trim()}
+            disabled={isRunning || !url.trim() || !isGoalComplete(goal)}
             className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {isRunning ? "Analyzing…" : "Analyze"}

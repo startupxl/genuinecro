@@ -67,6 +67,18 @@ describe("buildAnalysisResultFromScan", () => {
     expect(result.conversionScore).toBe(65);
   });
 
+  it("carries over the scan's conversion goal when present", () => {
+    const result = buildAnalysisResultFromScan(
+      { ...baseScan, conversionGoal: { type: "lead_form", isMacro: false } }, [], {}
+    );
+    expect(result.conversionGoal).toEqual({ type: "lead_form", isMacro: false });
+  });
+
+  it("leaves conversionGoal undefined for older scans that predate this field", () => {
+    const result = buildAnalysisResultFromScan(baseScan, [], {});
+    expect(result.conversionGoal).toBeUndefined();
+  });
+
   it("maps a friction point that has full persisted evidence", () => {
     const result = buildAnalysisResultFromScan(baseScan, [richItem], {});
     const point = result.frictionPoints[0];

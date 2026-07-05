@@ -127,4 +127,53 @@ describe("runMergedAudit", () => {
       "conversion analysis failed"
     );
   });
+
+  it("echoes the conversion goal back on the result", async () => {
+    analyzeUrlMock.mockResolvedValue(mockConversionResult);
+    runTechnicalAuditMock.mockResolvedValue(mockTechnicalResult);
+
+    const result = await runMergedAudit("https://example.com", "homepage", "desktop", { type: "lead_form", isMacro: false });
+
+    expect(result.conversionGoal).toEqual({ type: "lead_form", isMacro: false });
+  });
+
+  it("re-weights the conversion score by the goal's category weights when category scores are present", async () => {
+    const withCategories = {
+      ...mockConversionResult,
+      benchmark: {
+        overallScore: 60,
+        industryAvg: 55,
+        topQuartile: 78,
+        categoryScores: {
+          "content-hierarchy": { score: 50, industryAvg: 50 },
+          navigation: { score: 50, industryAvg: 50 },
+          performance: { score: 50, industryAvg: 50 },
+          accessibility: { score: 50, industryAvg: 50 },
+          "visual-friction": { score: 50, industryAvg: 50 },
+          "ux-friction": { score: 50, industryAvg: 50 },
+          "trust-credibility": { score: 90, industryAvg: 50 },
+          "form-friction": { score: 90, industryAvg: 50 },
+          "cta-effectiveness": { score: 50, industryAvg: 50 },
+          "checkout-friction": { score: 50, industryAvg: 50 },
+        },
+      },
+    };
+    analyzeUrlMock.mockResolvedValue(withCategories);
+    runTechnicalAuditMock.mockRejectedValue(new Error("skip technical for this test"));
+
+    const leadFormResult = await runMergedAudit("https://example.com", "homepage", "desktop", { type: "lead_form", isMacro: false });
+    const noGoalResult = await runMergedAudit("https://example.com", "homepage", "desktop", null);
+
+    // lead_form weights trust-credibility + form-friction (both scoring 90 here) higher than the default table.
+    expect(leadFormResult.conversionScore).toBeGreaterThan(noGoalResult.conversionScore);
+  });
+
+  it("falls back to the AI's own conversion score when no category scores are present", async () => {
+    analyzeUrlMock.mockResolvedValue(mockConversionResult);
+    runTechnicalAuditMock.mockRejectedValue(new Error("skip technical"));
+
+    const result = await runMergedAudit("https://example.com", "homepage", "desktop", { type: "purchase", isMacro: true });
+
+    expect(result.conversionScore).toBe(60);
+  });
 });

@@ -18,15 +18,23 @@ import { toast } from "sonner";
 import type { AnalysisResult, AnalysisType } from "@/lib/mockData";
 import { detectPageType, extractCategoryScores, analysisTypeLabels } from "@/lib/mockData";
 import { generateTemplateCsv, parseCsvText, parseBulkRows } from "@/lib/bulkTemplate";
+import { computeGoalWeightedScore, GOAL_LABELS, type ConversionGoal } from "@/lib/conversionGoals";
+import ConversionGoalSelect from "@/components/ConversionGoalSelect";
 
 interface BulkItem {
   url: string;
   pageType?: AnalysisType;
+  conversionGoal?: ConversionGoal;
   status: "pending" | "running" | "done" | "error";
   result?: AnalysisResult;
   error?: string;
   score?: number;
   frictionCount?: number;
+}
+
+function isGoalComplete(goal: ConversionGoal | null): boolean {
+  if (!goal) return false;
+  return goal.type !== "custom" || !!goal.customLabel?.trim();
 }
 
 const BulkAnalysis = () => {
@@ -41,6 +49,7 @@ const BulkAnalysis = () => {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [analysisType, setAnalysisType] = useState<AnalysisType>("homepage");
   const [autoDetectType, setAutoDetectType] = useState(true);
+  const [defaultGoal, setDefaultGoal] = useState<ConversionGoal | null>(null);
 
   const maxUrls = capabilities.auditLimit > 0 ? Math.min(capabilities.auditLimit, usage.limit - usage.used) : 0;
 
@@ -77,7 +86,7 @@ const BulkAnalysis = () => {
       if (parsed.length > maxUrls) {
         toast.info(`Loaded ${capped.length} of ${parsed.length} URLs (limited by remaining audits)`);
       }
-      setItems(capped.map((row) => ({ url: row.url, pageType: row.pageType, status: "pending" })));
+      setItems(capped.map((row) => ({ url: row.url, pageType: row.pageType, conversionGoal: row.conversionGoal, status: "pending" })));
     } catch (err) {
       console.error("File parse error:", err);
       toast.error("Failed to parse file");
@@ -108,11 +117,16 @@ const BulkAnalysis = () => {
 
       const url = items[i].url;
       const type = items[i].pageType ?? (autoDetectType ? detectPageType(url) : analysisType);
+      const goal = items[i].conversionGoal ?? defaultGoal ?? undefined;
       const jobId = user ? await createScanJob(user.uid, url, type, "desktop") : null;
 
       try {
         const result = await analyzeUrl(url, type, "desktop");
-        await trackAnalysis(url, type, "desktop", result.conversionScore ?? result.benchmark.overallScore, extractCategoryScores(result.benchmark));
+        const categoryScores = extractCategoryScores(result.benchmark);
+        const conversionScore = goal && Object.keys(categoryScores).length > 0
+          ? computeGoalWeightedScore(categoryScores, goal)
+          : (result.conversionScore ?? result.benchmark.overallScore);
+        await trackAnalysis(url, type, "desktop", conversionScore, categoryScores, undefined, goal);
         if (user) await createActionItems(user.uid, url, type, result.frictionPoints);
         const avgScore = result.frictionPoints.length > 0
           ? Math.round(result.frictionPoints.reduce((s, p) => s + p.impactScore, 0) / result.frictionPoints.length)
@@ -141,7 +155,7 @@ const BulkAnalysis = () => {
     setIsRunning(false);
     setCurrentIndex(-1);
     toast.success("Bulk analysis complete");
-  }, [items, autoDetectType, analysisType, trackAnalysis, user]);
+  }, [items, autoDetectType, analysisType, defaultGoal, trackAnalysis, user]);
 
   const downloadResults = useCallback(() => {
     const completed = items.filter((i) => i.status === "done" && i.result);
@@ -264,6 +278,15 @@ const BulkAnalysis = () => {
               )}
             </div>
 
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                Default conversion goal (used for any row that doesn't specify its own)
+              </label>
+              <div className="max-w-sm">
+                <ConversionGoalSelect value={defaultGoal} onChange={setDefaultGoal} disabled={isRunning} />
+              </div>
+            </div>
+
             {maxUrls <= 0 && (
               <p className="text-xs text-destructive">
                 You've reached your audit limit.{" "}
@@ -294,7 +317,7 @@ const BulkAnalysis = () => {
                   <Button
                     size="sm"
                     onClick={runAnalysis}
-                    disabled={isRunning || items.every((i) => i.status === "done")}
+                    disabled={isRunning || items.every((i) => i.status === "done") || !isGoalComplete(defaultGoal)}
                   >
                     {isRunning ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
@@ -323,6 +346,7 @@ const BulkAnalysis = () => {
                       <TableHead className="w-8">#</TableHead>
                       <TableHead>URL</TableHead>
                       <TableHead className="w-36">Page Type</TableHead>
+                      <TableHead className="w-40">Goal</TableHead>
                       <TableHead className="w-24">Status</TableHead>
                       <TableHead className="w-20 text-center">Issues</TableHead>
                       <TableHead className="w-24 text-center">Avg Impact</TableHead>
@@ -348,6 +372,11 @@ const BulkAnalysis = () => {
                         <TableCell className="text-xs font-mono max-w-[300px] truncate">{item.url}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {item.pageType ? analysisTypeLabels[item.pageType] : <span className="italic">Auto-detect</span>}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {item.conversionGoal
+                            ? GOAL_LABELS[item.conversionGoal.type]
+                            : <span className="italic">Default</span>}
                         </TableCell>
                         <TableCell>
                           {item.status === "pending" && <Badge variant="outline" className="text-[10px]">Pending</Badge>}

@@ -121,6 +121,7 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
           device={result.device}
           issueCount={result.frictionPoints.length}
           analysisType={result.analysisType}
+          conversionGoal={result.conversionGoal}
           onNewAnalysis={onNewAnalysis}
           onToggleSidebar={!showSidebarInline ? () => setSidebarOpen(true) : undefined}
         />

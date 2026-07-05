@@ -91,6 +91,22 @@ describe("firebase analyses module", () => {
     );
   });
 
+  it("records conversionGoal when provided", async () => {
+    addDocMock.mockResolvedValue({ id: "doc-1" });
+    await recordAnalysis({
+      userId: "uid-1",
+      url: "https://example.com",
+      analysisType: "homepage",
+      device: "desktop",
+      conversionScore: 72,
+      conversionGoal: { type: "lead_form", isMacro: false },
+    });
+    expect(addDocMock).toHaveBeenCalledWith(
+      { __collection: true },
+      expect.objectContaining({ conversionGoal: { type: "lead_form", isMacro: false } })
+    );
+  });
+
   it("never writes an explicit undefined field (Firestore rejects/hangs on those) when optional fields are omitted", async () => {
     addDocMock.mockResolvedValue({ id: "doc-1" });
     await recordAnalysis({
@@ -191,6 +207,49 @@ describe("getRecentAnalyses", () => {
     const records = await getRecentAnalyses("uid-1");
 
     expect(records[0].technicalScore).toBe(55);
+  });
+
+  it("passes through conversionGoal when present on the document", async () => {
+    getDocsMock.mockResolvedValue({
+      docs: [
+        {
+          id: "doc-1",
+          data: () => ({
+            url: "https://a.example.com",
+            analysisType: "homepage",
+            device: "desktop",
+            conversionScore: 72,
+            createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+            conversionGoal: { type: "purchase", isMacro: true },
+          }),
+        },
+      ],
+    });
+
+    const records = await getRecentAnalyses("uid-1");
+
+    expect(records[0].conversionGoal).toEqual({ type: "purchase", isMacro: true });
+  });
+
+  it("leaves conversionGoal undefined for older records that predate this field", async () => {
+    getDocsMock.mockResolvedValue({
+      docs: [
+        {
+          id: "doc-1",
+          data: () => ({
+            url: "https://a.example.com",
+            analysisType: "homepage",
+            device: "desktop",
+            conversionScore: 72,
+            createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+          }),
+        },
+      ],
+    });
+
+    const records = await getRecentAnalyses("uid-1");
+
+    expect(records[0].conversionGoal).toBeUndefined();
   });
 });
 

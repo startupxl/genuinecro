@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "./useAuth";
 import { useSubscription } from "./useSubscription";
 import { recordAnalysis, countAnalysesSince } from "@/lib/firebase/analyses";
+import type { ConversionGoal } from "@/lib/conversionGoals";
 
 const ANON_STORAGE_KEY = "genuinecro_anon_usage";
 const ANON_RESET_KEY = "genuinecro_anon_reset";
@@ -120,11 +121,12 @@ export function useUsageTracking() {
     device: string,
     conversionScore: number,
     categoryScores?: Record<string, number>,
-    technicalScore?: number
+    technicalScore?: number,
+    conversionGoal?: ConversionGoal
   ): Promise<string | null> => {
     let analysisId: string | null = null;
     if (user) {
-      analysisId = await recordAnalysis({ userId: user.uid, url, analysisType, device, conversionScore, categoryScores, technicalScore });
+      analysisId = await recordAnalysis({ userId: user.uid, url, analysisType, device, conversionScore, categoryScores, technicalScore, conversionGoal });
     } else {
       incrementAnonUsage();
     }

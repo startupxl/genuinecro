@@ -1,7 +1,8 @@
 import { analyzeUrl } from "./api/analyze";
 import { runTechnicalAudit } from "./api/technical";
-import type { AnalysisType, AnalysisResult } from "./mockData";
+import { extractCategoryScores, type AnalysisType, type AnalysisResult } from "./mockData";
 import type { FrictionPointInput } from "./firebase/actionItems";
+import { computeGoalWeightedScore, type ConversionGoal } from "./conversionGoals";
 
 const TECHNICAL_WEIGHT = 0.15;
 const CONVERSION_WEIGHT = 0.85;
@@ -37,14 +38,22 @@ export interface MergedAuditResult {
   technicalScore: number | null;
   benchmark: AnalysisResult["benchmark"];
   frictionPoints: FrictionPointInput[];
+  conversionGoal: ConversionGoal | null;
 }
 
 export async function runMergedAudit(
   url: string,
   type: AnalysisType,
-  device: "desktop" | "mobile"
+  device: "desktop" | "mobile",
+  goal: ConversionGoal | null = null
 ): Promise<MergedAuditResult> {
   const conversionResult = await analyzeUrl(url, type, device);
+
+  const categoryScores = extractCategoryScores(conversionResult.benchmark);
+  const rawConversionScore = conversionResult.conversionScore ?? conversionResult.benchmark.overallScore;
+  const conversionScore = Object.keys(categoryScores).length > 0
+    ? computeGoalWeightedScore(categoryScores, goal)
+    : rawConversionScore;
 
   let technicalScore: number | null = null;
   let technicalIssues: FrictionPointInput[] = [];
@@ -60,9 +69,10 @@ export async function runMergedAudit(
     url,
     analysisType: type,
     device,
-    conversionScore: combineScores(technicalScore, conversionResult.conversionScore ?? conversionResult.benchmark.overallScore),
+    conversionScore: combineScores(technicalScore, conversionScore),
     technicalScore,
     benchmark: conversionResult.benchmark,
     frictionPoints: [...conversionResult.frictionPoints, ...technicalIssues],
+    conversionGoal: goal,
   };
 }

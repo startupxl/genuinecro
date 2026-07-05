@@ -79,15 +79,19 @@ describe("NewAuditModal", () => {
     );
 
     fireEvent.change(screen.getByPlaceholderText("https://example.com"), { target: { value: "example.com" } });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "lead_form" } });
     fireEvent.click(screen.getByText("Analyze"));
 
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith("/audits/new-audit-id");
     });
-    expect(runMergedAuditMock).toHaveBeenCalledWith("https://example.com", "homepage", "desktop");
+    expect(runMergedAuditMock).toHaveBeenCalledWith(
+      "https://example.com", "homepage", "desktop", { type: "lead_form", isMacro: false }
+    );
     expect(createScanJobMock).toHaveBeenCalledWith("uid-1", "https://example.com", "homepage", "desktop");
     expect(trackAnalysisMock).toHaveBeenCalledWith(
-      "https://example.com", "homepage", "desktop", 68, expect.anything(), 50
+      "https://example.com", "homepage", "desktop", 68, expect.anything(), 50,
+      { type: "lead_form", isMacro: false }
     );
     expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
     expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -104,6 +108,7 @@ describe("NewAuditModal", () => {
     );
 
     fireEvent.change(screen.getByPlaceholderText("https://example.com"), { target: { value: "example.com" } });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "purchase" } });
     fireEvent.click(screen.getByText("Analyze"));
 
     await waitFor(() => {
@@ -127,6 +132,7 @@ describe("NewAuditModal", () => {
     );
 
     fireEvent.change(screen.getByPlaceholderText("https://example.com"), { target: { value: "example.com" } });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "purchase" } });
     fireEvent.click(screen.getByText("Analyze"));
 
     await waitFor(() => {
@@ -134,5 +140,34 @@ describe("NewAuditModal", () => {
     });
 
     resolveAudit!(mockMergedResult);
+  });
+
+  it("keeps Analyze disabled until a conversion goal is chosen", () => {
+    render(
+      <MemoryRouter>
+        <NewAuditModal open={true} onOpenChange={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("https://example.com"), { target: { value: "example.com" } });
+    expect(screen.getByText("Analyze")).toBeDisabled();
+
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "purchase" } });
+    expect(screen.getByText("Analyze")).not.toBeDisabled();
+  });
+
+  it("keeps Analyze disabled for a Custom goal until the custom label is filled in", () => {
+    render(
+      <MemoryRouter>
+        <NewAuditModal open={true} onOpenChange={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("https://example.com"), { target: { value: "example.com" } });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "custom" } });
+    expect(screen.getByText("Analyze")).toBeDisabled();
+
+    fireEvent.change(screen.getByPlaceholderText("Describe the goal…"), { target: { value: "App install" } });
+    expect(screen.getByText("Analyze")).not.toBeDisabled();
   });
 });

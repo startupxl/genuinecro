@@ -2,9 +2,15 @@ import { describe, it, expect } from "vitest";
 import { generateTemplateCsv, parseCsvText, parseBulkRows } from "./bulkTemplate";
 
 describe("generateTemplateCsv", () => {
-  it("includes a URL,Page Type header row", () => {
+  it("includes a URL,Page Type,Conversion Goal header row", () => {
     const csv = generateTemplateCsv();
-    expect(csv).toContain("URL,Page Type");
+    expect(csv).toContain("URL,Page Type,Conversion Goal");
+  });
+
+  it("lists every valid conversion goal label as guidance", () => {
+    const csv = generateTemplateCsv();
+    expect(csv).toContain("Purchase / Transaction");
+    expect(csv).toContain("Lead Form Submission");
   });
 
   it("lists every valid page type label as guidance", () => {
@@ -106,6 +112,32 @@ describe("parseBulkRows — structured template with a header row", () => {
       ["https://a.com", "Homepage"],
     ];
     expect(parseBulkRows(rows)).toEqual([{ url: "https://a.com", pageType: "homepage" }]);
+  });
+
+  it("parses a Conversion Goal column, resolving the label to a ConversionGoalType", () => {
+    const rows = [
+      ["URL", "Page Type", "Conversion Goal"],
+      ["https://a.com", "Homepage", "Lead Form Submission"],
+    ];
+    expect(parseBulkRows(rows)[0].conversionGoal).toEqual({ type: "lead_form", isMacro: false });
+  });
+
+  it("resolves a raw ConversionGoalType key for the Conversion Goal column", () => {
+    const rows = [
+      ["URL", "Page Type", "Conversion Goal"],
+      ["https://a.com", "Homepage", "purchase"],
+    ];
+    expect(parseBulkRows(rows)[0].conversionGoal).toEqual({ type: "purchase", isMacro: true });
+  });
+
+  it("leaves conversionGoal undefined when the column is blank or unrecognized", () => {
+    const rows = [
+      ["URL", "Page Type", "Conversion Goal"],
+      ["https://a.com", "Homepage", ""],
+      ["https://b.com", "Homepage", "not-a-real-goal"],
+    ];
+    expect(parseBulkRows(rows)[0].conversionGoal).toBeUndefined();
+    expect(parseBulkRows(rows)[1].conversionGoal).toBeUndefined();
   });
 });
 

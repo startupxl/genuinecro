@@ -4,6 +4,13 @@ import { Search, Monitor, Smartphone, ChevronDown, Lock } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import type { AnalysisType } from "@/lib/mockData";
 import { analysisTypeLabels, detectPageType } from "@/lib/mockData";
+import {
+  CONVERSION_GOAL_OPTIONS,
+  GOAL_LABELS,
+  getDefaultGoalForPageType,
+  type ConversionGoal,
+  type ConversionGoalType,
+} from "@/lib/conversionGoals";
 import type { User } from "firebase/auth";
 import { usePlanCapabilities, getUpgradeMessage } from "@/hooks/usePlanCapabilities";
 import { getUserSettings } from "@/lib/userSettings";
@@ -11,11 +18,19 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 interface LandingViewProps {
-  onAnalyze: (url: string, type: AnalysisType, device: "desktop" | "mobile" | "both") => void;
+  onAnalyze: (url: string, type: AnalysisType, device: "desktop" | "mobile" | "both", goal: ConversionGoal) => void;
   usage: { used: number; limit: number; canAnalyze: boolean; requiresAuth: boolean; requiresPaid: boolean };
   user: User | null;
   onSignIn: () => void;
   initialUrl?: string;
+}
+
+const macroGoalOptions = CONVERSION_GOAL_OPTIONS.filter((o) => o.isMacro);
+const microGoalOptions = CONVERSION_GOAL_OPTIONS.filter((o) => !o.isMacro && o.type !== "custom");
+const customGoalOption = CONVERSION_GOAL_OPTIONS.find((o) => o.type === "custom")!;
+
+function isGoalComplete(goal: ConversionGoal): boolean {
+  return goal.type !== "custom" || !!goal.customLabel?.trim();
 }
 
 const typeDescriptions: Record<AnalysisType, string> = {
@@ -44,9 +59,29 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn, initialUrl }: LandingVi
   const [device, setDevice] = useState<"desktop" | "mobile" | "both">(() => getUserSettings().defaultDevice);
   const [userOverridden, setUserOverridden] = useState(false);
   const [isEditingType, setIsEditingType] = useState(false);
+  const [goal, setGoal] = useState<ConversionGoal>(() => getDefaultGoalForPageType("homepage"));
+  const [goalOverridden, setGoalOverridden] = useState(false);
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const capabilities = usePlanCapabilities();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (goalOverridden) return;
+    setGoal(getDefaultGoalForPageType(analysisType));
+  }, [analysisType, goalOverridden]);
+
+  const handleGoalChange = (type: ConversionGoalType) => {
+    const option = CONVERSION_GOAL_OPTIONS.find((o) => o.type === type)!;
+    setGoal(type === "custom" ? { type, isMacro: option.isMacro, customLabel: "" } : { type, isMacro: option.isMacro });
+    setGoalOverridden(true);
+    setIsEditingGoal(false);
+  };
+
+  const resetGoalToSuggested = () => {
+    setGoalOverridden(false);
+    setGoal(getDefaultGoalForPageType(analysisType));
+  };
 
   useEffect(() => {
     if (!getUserSettings().autoDetectPageType) return;
@@ -98,7 +133,7 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn, initialUrl }: LandingVi
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (url.trim()) onAnalyze(url.trim(), analysisType, device);
+    if (url.trim() && isGoalComplete(goal)) onAnalyze(url.trim(), analysisType, device, goal);
   };
 
   const isDeviceLocked = (d: "desktop" | "mobile" | "both") => {
@@ -203,6 +238,73 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn, initialUrl }: LandingVi
                   </button>
                 )}
               </div>
+            )}
+          </motion.div>
+
+          {/* Conversion goal selector */}
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="flex flex-col items-center justify-center gap-1.5"
+          >
+            {isEditingGoal ? (
+              <div className="relative inline-flex items-center">
+                <select
+                  autoFocus
+                  value={goal.type}
+                  onChange={(e) => handleGoalChange(e.target.value as ConversionGoalType)}
+                  onBlur={() => setIsEditingGoal(false)}
+                  className="appearance-none bg-secondary text-foreground text-xs font-medium pl-3 pr-7 py-1.5 rounded-full border-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <optgroup label="Macro">
+                    {macroGoalOptions.map((o) => (
+                      <option key={o.type} value={o.type}>{o.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Micro">
+                    {microGoalOptions.map((o) => (
+                      <option key={o.type} value={o.type}>{o.label}</option>
+                    ))}
+                  </optgroup>
+                  <option value={customGoalOption.type}>{customGoalOption.label}</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <span className="bg-secondary text-foreground text-xs font-medium px-3 py-1.5 rounded-full">
+                  {GOAL_LABELS[goal.type]}
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  {goalOverridden ? "Manual" : "Suggested"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingGoal(true)}
+                  className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  Change goal
+                </button>
+                {goalOverridden && (
+                  <button
+                    type="button"
+                    onClick={resetGoalToSuggested}
+                    className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            )}
+            {goal.type === "custom" && (
+              <input
+                type="text"
+                value={goal.customLabel ?? ""}
+                onChange={(e) => setGoal({ type: "custom", isMacro: false, customLabel: e.target.value })}
+                placeholder="Describe the goal…"
+                className="w-48 h-8 px-3 rounded-full bg-secondary text-xs text-foreground placeholder:text-muted-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
             )}
           </motion.div>
 

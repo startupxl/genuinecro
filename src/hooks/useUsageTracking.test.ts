@@ -82,6 +82,22 @@ describe("useUsageTracking", () => {
     );
   });
 
+  it("records conversionGoal when provided", async () => {
+    countAnalysesSinceMock.mockResolvedValue(0);
+    recordAnalysisMock.mockResolvedValue("doc-1");
+    const { result } = renderHook(() => useUsageTracking());
+
+    await waitFor(() => expect(result.current.usage).toBeDefined());
+    await result.current.trackAnalysis(
+      "https://example.com", "homepage", "desktop", 72, undefined, undefined,
+      { type: "lead_form", isMacro: false }
+    );
+
+    expect(recordAnalysisMock).toHaveBeenCalledWith(
+      expect.objectContaining({ conversionGoal: { type: "lead_form", isMacro: false } })
+    );
+  });
+
   it("returns null for an anonymous scan", async () => {
     useAuthMock.mockReturnValue({ user: null });
     const { result } = renderHook(() => useUsageTracking());

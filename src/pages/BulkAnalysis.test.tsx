@@ -91,6 +91,7 @@ describe("BulkAnalysis — template-driven upload", () => {
     await waitFor(() => {
       expect(screen.getByText("https://a.com/checkout")).toBeInTheDocument();
     });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "purchase" } });
 
     fireEvent.click(screen.getByRole("button", { name: /Start Analysis/i }));
 
@@ -115,11 +116,66 @@ describe("BulkAnalysis — template-driven upload", () => {
     await waitFor(() => {
       expect(screen.getByText("https://a.com/checkout")).toBeInTheDocument();
     });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "purchase" } });
 
     fireEvent.click(screen.getByRole("button", { name: /Start Analysis/i }));
 
     await waitFor(() => {
       expect(analyzeUrlMock).toHaveBeenCalledWith("https://a.com/checkout", "checkout", "desktop");
     });
+  });
+
+  it("keeps Start Analysis disabled until a default conversion goal is chosen", async () => {
+    renderPage();
+    uploadCsv("URL,Page Type\nhttps://a.com/checkout,Checkout");
+
+    await waitFor(() => {
+      expect(screen.getByText("https://a.com/checkout")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: /Start Analysis/i })).toBeDisabled();
+
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "purchase" } });
+    expect(screen.getByRole("button", { name: /Start Analysis/i })).not.toBeDisabled();
+  });
+
+  it("uses each row's own conversion goal from the template, overriding the default", async () => {
+    analyzeUrlMock.mockResolvedValue({
+      url: "https://a.com/checkout",
+      analysisType: "checkout",
+      device: "desktop",
+      conversionScore: 70,
+      benchmark: {
+        overallScore: 70, industryAvg: 55, topQuartile: 80,
+        categoryScores: {
+          "content-hierarchy": { score: 50, industryAvg: 50 }, navigation: { score: 50, industryAvg: 50 },
+          performance: { score: 50, industryAvg: 50 }, accessibility: { score: 50, industryAvg: 50 },
+          "visual-friction": { score: 50, industryAvg: 50 }, "ux-friction": { score: 50, industryAvg: 50 },
+          "trust-credibility": { score: 50, industryAvg: 50 }, "form-friction": { score: 50, industryAvg: 50 },
+          "cta-effectiveness": { score: 50, industryAvg: 50 }, "checkout-friction": { score: 100, industryAvg: 50 },
+        },
+      },
+      frictionPoints: [],
+    });
+
+    renderPage();
+    uploadCsv("URL,Page Type,Conversion Goal\nhttps://a.com/checkout,Checkout,Purchase / Transaction");
+
+    await waitFor(() => {
+      expect(screen.getByText("https://a.com/checkout")).toBeInTheDocument();
+    });
+    expect(screen.getAllByText("Purchase / Transaction").length).toBeGreaterThan(0);
+
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "lead_form" } });
+    fireEvent.click(screen.getByRole("button", { name: /Start Analysis/i }));
+
+    await waitFor(() => {
+      expect(trackAnalysisMock).toHaveBeenCalled();
+    });
+    // purchase weights checkout-friction (scoring 100 here) higher than lead_form does,
+    // so the row's own goal (purchase) should win over the global default (lead_form).
+    const trackedScore = trackAnalysisMock.mock.calls[0][3];
+    const trackedGoal = trackAnalysisMock.mock.calls[0][6];
+    expect(trackedGoal).toEqual({ type: "purchase", isMacro: true });
+    expect(trackedScore).toBe(60);
   });
 });

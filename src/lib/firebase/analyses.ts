@@ -1,5 +1,6 @@
 import { collection, addDoc, query, where, orderBy, limit, getDocs, getCountFromServer, doc, getDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
+import type { ConversionGoal } from "@/lib/conversionGoals";
 
 export interface AnalysisEntry {
   userId: string | null;
@@ -9,6 +10,7 @@ export interface AnalysisEntry {
   conversionScore: number;
   categoryScores?: Record<string, number>;
   technicalScore?: number;
+  conversionGoal?: ConversionGoal;
 }
 
 export async function recordAnalysis(entry: AnalysisEntry): Promise<string> {
@@ -39,6 +41,7 @@ export interface AnalysisRecord {
   createdAt: string;
   categoryScores?: Record<string, number>;
   technicalScore?: number;
+  conversionGoal?: ConversionGoal;
 }
 
 interface AnalysisDocData {
@@ -49,6 +52,7 @@ interface AnalysisDocData {
   createdAt: { toDate: () => Date } | string;
   categoryScores?: Record<string, number>;
   technicalScore?: number;
+  conversionGoal?: ConversionGoal;
 }
 
 function mapAnalysisDoc(id: string, data: AnalysisDocData): AnalysisRecord {
@@ -61,6 +65,7 @@ function mapAnalysisDoc(id: string, data: AnalysisDocData): AnalysisRecord {
     createdAt: typeof data.createdAt === "string" ? data.createdAt : data.createdAt.toDate().toISOString(),
     categoryScores: data.categoryScores,
     technicalScore: data.technicalScore,
+    conversionGoal: data.conversionGoal,
   };
 }
 
