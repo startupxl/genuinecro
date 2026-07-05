@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { Upload, FileSpreadsheet, Play, Download, Loader2, CheckCircle2, XCircle, AlertTriangle, X, ExternalLink } from "lucide-react";
+import { Upload, FileSpreadsheet, Play, Download, FileDown, Loader2, CheckCircle2, XCircle, AlertTriangle, X, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,23 +16,17 @@ import { createActionItems } from "@/lib/firebase/actionItems";
 import { createScanJob, completeScanJob } from "@/lib/firebase/scanJobs";
 import { toast } from "sonner";
 import type { AnalysisResult, AnalysisType } from "@/lib/mockData";
-import { detectPageType, extractCategoryScores } from "@/lib/mockData";
+import { detectPageType, extractCategoryScores, analysisTypeLabels } from "@/lib/mockData";
+import { generateTemplateCsv, parseCsvText, parseBulkRows } from "@/lib/bulkTemplate";
 
 interface BulkItem {
   url: string;
+  pageType?: AnalysisType;
   status: "pending" | "running" | "done" | "error";
   result?: AnalysisResult;
   error?: string;
   score?: number;
   frictionCount?: number;
-}
-
-function parseUrls(text: string): string[] {
-  return text
-    .split(/[\r\n,]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0 && /^https?:\/\/|^[a-z0-9].*\./i.test(s))
-    .map((u) => (u.startsWith("http") ? u : `https://${u}`));
 }
 
 const BulkAnalysis = () => {
@@ -61,47 +55,29 @@ const BulkAnalysis = () => {
     }
 
     try {
+      let rows: string[][];
       if (ext === "csv") {
         const text = await file.text();
-        const urls = parseUrls(text);
-        if (urls.length === 0) {
-          toast.error("No valid URLs found in file");
-          return;
-        }
-        const capped = urls.slice(0, maxUrls);
-        if (urls.length > maxUrls) {
-          toast.info(`Loaded ${capped.length} of ${urls.length} URLs (limited by remaining audits)`);
-        }
-        setItems(capped.map((url) => ({ url, status: "pending" })));
+        rows = parseCsvText(text);
       } else {
         // XLSX parsing using SheetJS from CDN
         const arrayBuffer = await file.arrayBuffer();
         const XLSX = await import("xlsx");
         const workbook = XLSX.read(arrayBuffer, { type: "array" });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows: string[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-        const urls: string[] = [];
-        for (const row of rows) {
-          for (const cell of row) {
-            if (typeof cell === "string") {
-              const found = parseUrls(cell);
-              urls.push(...found);
-            }
-          }
-        }
-
-        if (urls.length === 0) {
-          toast.error("No valid URLs found in spreadsheet");
-          return;
-        }
-        const unique = [...new Set(urls)];
-        const capped = unique.slice(0, maxUrls);
-        if (unique.length > maxUrls) {
-          toast.info(`Loaded ${capped.length} of ${unique.length} URLs (limited by remaining audits)`);
-        }
-        setItems(capped.map((url) => ({ url, status: "pending" })));
+        rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
       }
+
+      const parsed = parseBulkRows(rows);
+      if (parsed.length === 0) {
+        toast.error("No valid URLs found in file");
+        return;
+      }
+      const capped = parsed.slice(0, maxUrls);
+      if (parsed.length > maxUrls) {
+        toast.info(`Loaded ${capped.length} of ${parsed.length} URLs (limited by remaining audits)`);
+      }
+      setItems(capped.map((row) => ({ url: row.url, pageType: row.pageType, status: "pending" })));
     } catch (err) {
       console.error("File parse error:", err);
       toast.error("Failed to parse file");
@@ -110,6 +86,16 @@ const BulkAnalysis = () => {
     // Reset input
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [maxUrls]);
+
+  const downloadTemplate = useCallback(() => {
+    const blob = new Blob([generateTemplateCsv()], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "genuinecro-bulk-audit-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
 
   const runAnalysis = useCallback(async () => {
     if (items.length === 0) return;
@@ -121,7 +107,7 @@ const BulkAnalysis = () => {
       setItems((prev) => prev.map((item, idx) => idx === i ? { ...item, status: "running" } : item));
 
       const url = items[i].url;
-      const type = autoDetectType ? detectPageType(url) : analysisType;
+      const type = items[i].pageType ?? (autoDetectType ? detectPageType(url) : analysisType);
       const jobId = user ? await createScanJob(user.uid, url, type, "desktop") : null;
 
       try {
@@ -221,11 +207,17 @@ const BulkAnalysis = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Upload URLs</CardTitle>
             <CardDescription>
-              Upload a .csv or .xlsx file containing URLs (one per row or cell). Max {maxUrls > 0 ? maxUrls : 0} URLs based on your remaining audits.
+              Download the template, fill in a URL per row (and optionally its Page Type), then upload it back.
+              Max {maxUrls > 0 ? maxUrls : 0} URLs based on your remaining audits.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <Button variant="outline" onClick={downloadTemplate}>
+                <FileDown className="h-4 w-4 mr-1" />
+                Download Template
+              </Button>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -242,7 +234,9 @@ const BulkAnalysis = () => {
                 <Upload className="h-4 w-4 mr-1" />
                 Choose File
               </Button>
+            </div>
 
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <div className="flex items-center gap-2">
                 <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
                   <input
@@ -252,7 +246,7 @@ const BulkAnalysis = () => {
                     className="rounded border-border"
                     disabled={isRunning}
                   />
-                  Auto-detect page type
+                  Auto-detect page type when not specified in the file
                 </label>
               </div>
 
@@ -263,13 +257,9 @@ const BulkAnalysis = () => {
                   className="h-8 text-xs bg-secondary text-foreground rounded-md px-2 border-none"
                   disabled={isRunning}
                 >
-                  <option value="homepage">Homepage</option>
-                  <option value="blog-content">Blog / Content</option>
-                  <option value="checkout">Checkout</option>
-                  <option value="lead-form">Lead / Form</option>
-                  <option value="product-page">Product Page</option>
-                  <option value="landing-marketing">Landing — Marketing</option>
-                  <option value="landing-paid-media">Landing — Paid Media</option>
+                  {(Object.entries(analysisTypeLabels) as [AnalysisType, string][]).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
                 </select>
               )}
             </div>
@@ -332,6 +322,7 @@ const BulkAnalysis = () => {
                     <TableRow>
                       <TableHead className="w-8">#</TableHead>
                       <TableHead>URL</TableHead>
+                      <TableHead className="w-36">Page Type</TableHead>
                       <TableHead className="w-24">Status</TableHead>
                       <TableHead className="w-20 text-center">Issues</TableHead>
                       <TableHead className="w-24 text-center">Avg Impact</TableHead>
@@ -355,6 +346,9 @@ const BulkAnalysis = () => {
                       >
                         <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="text-xs font-mono max-w-[300px] truncate">{item.url}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {item.pageType ? analysisTypeLabels[item.pageType] : <span className="italic">Auto-detect</span>}
+                        </TableCell>
                         <TableCell>
                           {item.status === "pending" && <Badge variant="outline" className="text-[10px]">Pending</Badge>}
                           {item.status === "running" && (
