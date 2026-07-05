@@ -32,7 +32,6 @@ const Dashboard = () => {
   const [liveBenchmarks, setLiveBenchmarks] = useState<Record<string, LiveBenchmarkStats>>({});
   const [scanJobs, setScanJobs] = useState<ScanJob[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [criticalOnly, setCriticalOnly] = useState(false);
   const [isNewAuditOpen, setIsNewAuditOpen] = useState(false);
@@ -62,17 +61,14 @@ const Dashboard = () => {
   const criticalCount = sites.filter((s) => s.latestScore < 50).length;
   const displayedSites = criticalOnly ? sites.filter((s) => s.latestScore < 50) : sites;
 
-  const scoreTrendData = buildScoreTrendData(records, selectedDomain);
-  const categoryScoreData = buildCategoryScoreBreakdown(records, selectedDomain, liveBenchmarks);
-  const severityData = buildSeverityBreakdown(actionItems, selectedDomain);
-  const issueMomentum = buildIssueMomentum(actionItems, records, selectedDomain);
+  const scoreTrendData = buildScoreTrendData(records, null);
+  const categoryScoreData = buildCategoryScoreBreakdown(records, null, liveBenchmarks);
+  const severityData = buildSeverityBreakdown(actionItems, null);
+  const issueMomentum = buildIssueMomentum(actionItems, records, null);
   const heroSummary = buildHeroScoreSummary(sites, records);
-  const pageData = buildPageBreakdown(records, actionItems).filter(
-    (p) => !selectedDomain || p.domain === selectedDomain
-  );
+  const pageData = buildPageBreakdown(records, actionItems);
   const topIssues = actionItems
     .filter((i) => i.status !== "resolved")
-    .filter((i) => !selectedDomain || getDomain(i.url) === selectedDomain)
     .filter((i) => !selectedCategory || i.category === selectedCategory)
     .slice()
     .sort((a, b) => b.impactScore - a.impactScore)
@@ -173,10 +169,8 @@ const Dashboard = () => {
                 <div
                   key={site.domain}
                   data-testid="site-row"
-                  onClick={() => setSelectedDomain((d) => (d === site.domain ? null : site.domain))}
-                  className={`flex items-center justify-between px-4 py-3 border-b border-border last:border-b-0 cursor-pointer transition-colors hover:bg-secondary/50 ${
-                    selectedDomain === site.domain ? "bg-secondary" : ""
-                  }`}
+                  onClick={() => navigate(`/sites/${encodeURIComponent(site.domain)}`)}
+                  className="flex items-center justify-between px-4 py-3 border-b border-border last:border-b-0 cursor-pointer transition-colors hover:bg-secondary/50"
                 >
                   <div>
                     <p className="text-sm font-medium text-foreground">{site.domain}</p>
@@ -221,32 +215,19 @@ const Dashboard = () => {
             })}
           </div>
 
-          {(selectedDomain || selectedCategory) && (
+          {selectedCategory && (
             <div className="flex items-center gap-3 mb-4 -mt-3">
-              {selectedDomain && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground">Filtered to {selectedDomain}</span>
-                  <button
-                    onClick={() => setSelectedDomain(null)}
-                    className="flex items-center gap-0.5 text-xs text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <X className="h-3 w-3" /> Clear
-                  </button>
-                </div>
-              )}
-              {selectedCategory && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground">
-                    Category: {categoryScoreData.find((c) => c.category === selectedCategory)?.label ?? selectedCategory}
-                  </span>
-                  <button
-                    onClick={() => setSelectedCategory(null)}
-                    className="flex items-center gap-0.5 text-xs text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <X className="h-3 w-3" /> Clear
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">
+                  Category: {categoryScoreData.find((c) => c.category === selectedCategory)?.label ?? selectedCategory}
+                </span>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="flex items-center gap-0.5 text-xs text-primary hover:text-primary/80 transition-colors"
+                >
+                  <X className="h-3 w-3" /> Clear
+                </button>
+              </div>
             </div>
           )}
 

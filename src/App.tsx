@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Audits from "./pages/Audits.tsx";
 import ScanDetail from "./pages/ScanDetail.tsx";
+import SiteDetail from "./pages/SiteDetail.tsx";
 import ActionCenter from "./pages/ActionCenter.tsx";
 import Technical from "./pages/Technical.tsx";
 import AppShell from "@/components/AppShell";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/audits" element={<Audits />} />
             <Route path="/audits/:id" element={<ScanDetail />} />
+            <Route path="/sites/:domain" element={<SiteDetail />} />
             <Route path="/technical" element={<Technical />} />
             <Route path="/content" element={<AppShell><ComingSoon title="Content" /></AppShell>} />
             <Route path="/monitoring" element={<AppShell><ComingSoon title="Monitoring" /></AppShell>} />

@@ -139,7 +139,7 @@ describe("Dashboard", () => {
     expect(sitesTrackedCard).not.toHaveClass("bg-primary");
   });
 
-  it("selects a site when its row is clicked, and deselects on a second click", async () => {
+  it("navigates to the site's aggregated detail page when its row is clicked", async () => {
     getRecentAnalysesMock.mockResolvedValue([
       { url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-01T00:00:00.000Z" },
       { url: "https://b.com", analysisType: "homepage", device: "desktop", conversionScore: 70, createdAt: "2026-06-01T00:00:00.000Z" },
@@ -160,13 +160,9 @@ describe("Dashboard", () => {
     });
 
     const row = screen.getByText("a.com").closest("[data-testid='site-row']");
-    expect(row).not.toHaveClass("bg-secondary");
-
     fireEvent.click(row!);
-    expect(row).toHaveClass("bg-secondary");
 
-    fireEvent.click(row!);
-    expect(row).not.toHaveClass("bg-secondary");
+    expect(navigateMock).toHaveBeenCalledWith("/sites/a.com");
   });
 
   it("filters the site list to critical sites when the Critical card is clicked", async () => {
