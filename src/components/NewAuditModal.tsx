@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
-import { analyzeUrl } from "@/lib/api/analyze";
-import { generateMockAnalysis, extractCategoryScores, detectPageType } from "@/lib/mockData";
+import { extractCategoryScores, detectPageType } from "@/lib/mockData";
+import { runMergedAudit } from "@/lib/mergedAudit";
 import { createActionItems } from "@/lib/firebase/actionItems";
 import { createScanJob, completeScanJob } from "@/lib/firebase/scanJobs";
 import { toast } from "sonner";
@@ -34,21 +34,18 @@ const NewAuditModal = ({ open, onOpenChange }: NewAuditModalProps) => {
     setIsRunning(true);
     const jobId = await createScanJob(user.uid, formatted, type, device);
 
-    let result;
-    try {
-      result = await analyzeUrl(formatted, type, device);
-    } catch (err) {
-      console.error("Real analysis failed, falling back to mock:", err);
+    const result = await runMergedAudit(formatted, type, device);
+    if (result.usedMockData) {
       toast.warning("Live analysis unavailable — showing demo results");
-      result = generateMockAnalysis(formatted, type);
     }
 
     const analysisId = await trackAnalysis(
       formatted,
       type,
       device,
-      result.conversionScore ?? result.benchmark.overallScore,
-      extractCategoryScores(result.benchmark)
+      result.conversionScore,
+      extractCategoryScores(result.benchmark),
+      result.technicalScore ?? undefined
     );
     await createActionItems(user.uid, formatted, type, result.frictionPoints);
     await completeScanJob(jobId);

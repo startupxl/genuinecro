@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 const getAnalysisByIdMock = vi.fn();
@@ -34,7 +34,7 @@ function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/dashboard/scan/:id" element={<ScanDetail />} />
+        <Route path="/audits/:id" element={<ScanDetail />} />
       </Routes>
     </MemoryRouter>
   );
@@ -51,7 +51,7 @@ describe("ScanDetail", () => {
   it("shows a not-found message when the scan doesn't exist", async () => {
     getAnalysisByIdMock.mockResolvedValue(null);
 
-    renderAt("/dashboard/scan/missing-id");
+    renderAt("/audits/missing-id");
 
     await waitFor(() => {
       expect(screen.getByText("Scan not found.")).toBeInTheDocument();
@@ -69,13 +69,14 @@ describe("ScanDetail", () => {
       categoryScores: { navigation: 70 },
     });
 
-    renderAt("/dashboard/scan/scan-1");
+    renderAt("/audits/scan-1");
 
     await waitFor(() => {
       expect(screen.getByText("https://a.com/")).toBeInTheDocument();
     });
     expect(screen.getByText("65")).toBeInTheDocument();
-    expect(screen.getByText("Navigation")).toBeInTheDocument();
+    const categoryPanel = screen.getByText("Category Scores").parentElement!;
+    expect(within(categoryPanel).getByText("Navigation")).toBeInTheDocument();
   });
 
   it("shows only the action items created within this scan's time window", async () => {
@@ -97,11 +98,69 @@ describe("ScanDetail", () => {
       { id: "2", userId: "uid-1", url: "https://a.com/", analysisType: "homepage", category: "navigation", severity: "high", title: "In a later scan", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-11T00:00:00.000Z" },
     ]);
 
-    renderAt("/dashboard/scan/scan-1");
+    renderAt("/audits/scan-1");
 
     await waitFor(() => {
       expect(screen.getByText("In this scan")).toBeInTheDocument();
     });
     expect(screen.queryByText("In a later scan")).not.toBeInTheDocument();
+  });
+
+  it("shows the technical score alongside the overall score when present", async () => {
+    getAnalysisByIdMock.mockResolvedValue({
+      id: "scan-1",
+      url: "https://a.com/",
+      analysisType: "homepage",
+      device: "desktop",
+      conversionScore: 65,
+      technicalScore: 40,
+      createdAt: "2026-06-01T00:00:00.000Z",
+      categoryScores: {},
+    });
+
+    renderAt("/audits/scan-1");
+
+    await waitFor(() => {
+      expect(screen.getByText("65")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Technical: 40")).toBeInTheDocument();
+  });
+
+  it("filters issues by tab, defaulting to All", async () => {
+    getAnalysisByIdMock.mockResolvedValue({
+      id: "scan-1",
+      url: "https://a.com/",
+      analysisType: "homepage",
+      device: "desktop",
+      conversionScore: 65,
+      createdAt: "2026-06-01T00:00:00.000Z",
+      categoryScores: {},
+    });
+    getAllActionItemsMock.mockResolvedValue([
+      { id: "1", userId: "uid-1", url: "https://a.com/", analysisType: "homepage", category: "technical-seo", severity: "high", title: "Missing canonical", description: "d", fix: "f", impactScore: 90, status: "open", createdAt: "2026-06-01T01:00:00.000Z" },
+      { id: "2", userId: "uid-1", url: "https://a.com/", analysisType: "homepage", category: "navigation", severity: "high", title: "Nav issue", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T01:00:00.000Z" },
+    ]);
+
+    renderAt("/audits/scan-1");
+
+    await waitFor(() => {
+      expect(screen.getByText("Missing canonical")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Nav issue")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Technical" }));
+
+    expect(screen.getByText("Missing canonical")).toBeInTheDocument();
+    expect(screen.queryByText("Nav issue")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Navigation" }));
+
+    expect(screen.queryByText("Missing canonical")).not.toBeInTheDocument();
+    expect(screen.getByText("Nav issue")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "All" }));
+
+    expect(screen.getByText("Missing canonical")).toBeInTheDocument();
+    expect(screen.getByText("Nav issue")).toBeInTheDocument();
   });
 });

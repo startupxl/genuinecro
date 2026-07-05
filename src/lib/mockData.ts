@@ -222,6 +222,8 @@ export const categoryLabels: Record<string, string> = {
   "form-friction": "Form Friction",
   "cta-effectiveness": "CTA Effectiveness",
   "checkout-friction": "Checkout Friction",
+  // Technical audit category (separate scoring engine, merged into unified audits)
+  "technical-seo": "Technical SEO",
 };
 
 export const categoryIcons: Record<string, string> = {

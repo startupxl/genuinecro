@@ -75,6 +75,39 @@ describe("firebase analyses module", () => {
     );
   });
 
+  it("records technicalScore when provided", async () => {
+    addDocMock.mockResolvedValue({ id: "doc-1" });
+    await recordAnalysis({
+      userId: "uid-1",
+      url: "https://example.com",
+      analysisType: "homepage",
+      device: "desktop",
+      conversionScore: 72,
+      technicalScore: 55,
+    });
+    expect(addDocMock).toHaveBeenCalledWith(
+      { __collection: true },
+      expect.objectContaining({ technicalScore: 55 })
+    );
+  });
+
+  it("never writes an explicit undefined field (Firestore rejects/hangs on those) when optional fields are omitted", async () => {
+    addDocMock.mockResolvedValue({ id: "doc-1" });
+    await recordAnalysis({
+      userId: "uid-1",
+      url: "https://example.com",
+      analysisType: "homepage",
+      device: "desktop",
+      conversionScore: 72,
+      technicalScore: undefined,
+      categoryScores: undefined,
+    });
+
+    const writtenData = addDocMock.mock.calls[0][1];
+    expect("technicalScore" in writtenData).toBe(false);
+    expect("categoryScores" in writtenData).toBe(false);
+  });
+
   it("counts analyses for a user since a given date", async () => {
     getCountFromServerMock.mockResolvedValue({ data: () => ({ count: 7 }) });
     const count = await countAnalysesSince("uid-1", new Date("2026-06-01T00:00:00.000Z"));
@@ -111,6 +144,7 @@ describe("getRecentAnalyses", () => {
         conversionScore: 72,
         createdAt: "2026-06-01T00:00:00.000Z",
         categoryScores: undefined,
+        technicalScore: undefined,
       },
     ]);
   });
@@ -135,6 +169,28 @@ describe("getRecentAnalyses", () => {
     const records = await getRecentAnalyses("uid-1");
 
     expect(records[0].categoryScores).toEqual({ "content-hierarchy": 65, navigation: 60 });
+  });
+
+  it("passes through technicalScore when present on the document", async () => {
+    getDocsMock.mockResolvedValue({
+      docs: [
+        {
+          id: "doc-1",
+          data: () => ({
+            url: "https://a.example.com",
+            analysisType: "homepage",
+            device: "desktop",
+            conversionScore: 72,
+            createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+            technicalScore: 55,
+          }),
+        },
+      ],
+    });
+
+    const records = await getRecentAnalyses("uid-1");
+
+    expect(records[0].technicalScore).toBe(55);
   });
 });
 

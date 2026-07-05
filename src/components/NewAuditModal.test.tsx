@@ -20,9 +20,9 @@ vi.mock("@/hooks/useUsageTracking", () => ({
   }),
 }));
 
-const analyzeUrlMock = vi.fn();
-vi.mock("@/lib/api/analyze", () => ({
-  analyzeUrl: (...args: unknown[]) => analyzeUrlMock(...args),
+const runMergedAuditMock = vi.fn();
+vi.mock("@/lib/mergedAudit", () => ({
+  runMergedAudit: (...args: unknown[]) => runMergedAuditMock(...args),
 }));
 
 const createActionItemsMock = vi.fn();
@@ -39,20 +39,22 @@ vi.mock("@/lib/firebase/scanJobs", () => ({
 
 import NewAuditModal from "./NewAuditModal";
 
-const mockAnalysisResult = {
+const mockMergedResult = {
   url: "https://example.com",
   analysisType: "homepage",
   device: "desktop",
-  conversionScore: 72,
+  conversionScore: 68,
+  technicalScore: 50,
   benchmark: { overallScore: 72 },
   frictionPoints: [{ category: "ux-clarity", severity: "high", title: "Issue", description: "d", fix: "f", impactScore: 80 }],
+  usedMockData: false,
 };
 
 describe("NewAuditModal", () => {
   beforeEach(() => {
     navigateMock.mockReset();
     trackAnalysisMock.mockReset().mockResolvedValue("new-audit-id");
-    analyzeUrlMock.mockReset();
+    runMergedAuditMock.mockReset();
     createActionItemsMock.mockReset().mockResolvedValue(undefined);
     createScanJobMock.mockReset().mockResolvedValue("job-1");
     completeScanJobMock.mockReset().mockResolvedValue(undefined);
@@ -67,8 +69,8 @@ describe("NewAuditModal", () => {
     expect(screen.queryByText("New Audit")).not.toBeInTheDocument();
   });
 
-  it("runs a scan and navigates to the new audit's detail page on success", async () => {
-    analyzeUrlMock.mockResolvedValue(mockAnalysisResult);
+  it("runs a merged scan and navigates to the new audit's detail page on success", async () => {
+    runMergedAuditMock.mockResolvedValue(mockMergedResult);
     const onOpenChange = vi.fn();
 
     render(
@@ -83,13 +85,17 @@ describe("NewAuditModal", () => {
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith("/audits/new-audit-id");
     });
+    expect(runMergedAuditMock).toHaveBeenCalledWith("https://example.com", "homepage", "desktop");
     expect(createScanJobMock).toHaveBeenCalledWith("uid-1", "https://example.com", "homepage", "desktop");
+    expect(trackAnalysisMock).toHaveBeenCalledWith(
+      "https://example.com", "homepage", "desktop", 68, expect.anything(), 50
+    );
     expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("falls back to mock data and still completes when the real analysis fails", async () => {
-    analyzeUrlMock.mockRejectedValue(new Error("boom"));
+  it("shows a warning toast when the merged audit used mock data, but still completes", async () => {
+    runMergedAuditMock.mockResolvedValue({ ...mockMergedResult, usedMockData: true });
     const onOpenChange = vi.fn();
 
     render(
@@ -109,8 +115,8 @@ describe("NewAuditModal", () => {
   });
 
   it("disables the Analyze button while a scan is running", async () => {
-    let resolveAnalyze: (value: unknown) => void;
-    analyzeUrlMock.mockReturnValue(new Promise((resolve) => { resolveAnalyze = resolve; }));
+    let resolveAudit: (value: unknown) => void;
+    runMergedAuditMock.mockReturnValue(new Promise((resolve) => { resolveAudit = resolve; }));
 
     render(
       <MemoryRouter>
@@ -125,6 +131,6 @@ describe("NewAuditModal", () => {
       expect(screen.getByText("Analyzing…")).toBeInTheDocument();
     });
 
-    resolveAnalyze!(mockAnalysisResult);
+    resolveAudit!(mockMergedResult);
   });
 });

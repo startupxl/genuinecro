@@ -69,6 +69,19 @@ describe("useUsageTracking", () => {
     expect(id).toBe("doc-1");
   });
 
+  it("records technicalScore when provided", async () => {
+    countAnalysesSinceMock.mockResolvedValue(0);
+    recordAnalysisMock.mockResolvedValue("doc-1");
+    const { result } = renderHook(() => useUsageTracking());
+
+    await waitFor(() => expect(result.current.usage).toBeDefined());
+    await result.current.trackAnalysis("https://example.com", "homepage", "desktop", 72, undefined, 55);
+
+    expect(recordAnalysisMock).toHaveBeenCalledWith(
+      expect.objectContaining({ technicalScore: 55 })
+    );
+  });
+
   it("returns null for an anonymous scan", async () => {
     useAuthMock.mockReturnValue({ user: null });
     const { result } = renderHook(() => useUsageTracking());

@@ -8,10 +8,15 @@ export interface AnalysisEntry {
   device: string;
   conversionScore: number;
   categoryScores?: Record<string, number>;
+  technicalScore?: number;
 }
 
 export async function recordAnalysis(entry: AnalysisEntry): Promise<string> {
-  const docRef = await addDoc(collection(db, "analyses"), { ...entry, createdAt: serverTimestamp() });
+  const data: Record<string, unknown> = { createdAt: serverTimestamp() };
+  for (const [key, value] of Object.entries(entry)) {
+    if (value !== undefined) data[key] = value;
+  }
+  const docRef = await addDoc(collection(db, "analyses"), data);
   return docRef.id;
 }
 
@@ -33,6 +38,7 @@ export interface AnalysisRecord {
   conversionScore: number;
   createdAt: string;
   categoryScores?: Record<string, number>;
+  technicalScore?: number;
 }
 
 interface AnalysisDocData {
@@ -42,6 +48,7 @@ interface AnalysisDocData {
   conversionScore: number;
   createdAt: { toDate: () => Date } | string;
   categoryScores?: Record<string, number>;
+  technicalScore?: number;
 }
 
 function mapAnalysisDoc(id: string, data: AnalysisDocData): AnalysisRecord {
@@ -53,6 +60,7 @@ function mapAnalysisDoc(id: string, data: AnalysisDocData): AnalysisRecord {
     conversionScore: data.conversionScore,
     createdAt: typeof data.createdAt === "string" ? data.createdAt : data.createdAt.toDate().toISOString(),
     categoryScores: data.categoryScores,
+    technicalScore: data.technicalScore,
   };
 }
 

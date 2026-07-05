@@ -119,11 +119,12 @@ export function useUsageTracking() {
     analysisType: string,
     device: string,
     conversionScore: number,
-    categoryScores?: Record<string, number>
+    categoryScores?: Record<string, number>,
+    technicalScore?: number
   ): Promise<string | null> => {
     let analysisId: string | null = null;
     if (user) {
-      analysisId = await recordAnalysis({ userId: user.uid, url, analysisType, device, conversionScore, categoryScores });
+      analysisId = await recordAnalysis({ userId: user.uid, url, analysisType, device, conversionScore, categoryScores, technicalScore });
     } else {
       incrementAnonUsage();
     }
