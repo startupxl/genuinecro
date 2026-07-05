@@ -1,6 +1,21 @@
 import { collection, addDoc, query, where, orderBy, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 
+export interface EvidenceBenchmark {
+  industryAvg: number;
+  topPerformers: number;
+  label: string;
+}
+
+export interface EvidenceABTest {
+  testName: string;
+  hypothesis: string;
+  control: string;
+  variant: string;
+  metric: string;
+  duration: string;
+}
+
 export interface FrictionPointInput {
   category: string;
   severity: "high" | "med" | "low";
@@ -8,6 +23,13 @@ export interface FrictionPointInput {
   description: string;
   fix: string;
   impactScore: number;
+  selector?: string;
+  roiEstimate?: string;
+  insightCluster?: string;
+  screenshotUrl?: string;
+  sourceCitation?: string;
+  benchmark?: EvidenceBenchmark;
+  abTest?: EvidenceABTest;
 }
 
 export interface ActionItem extends FrictionPointInput {
@@ -27,8 +49,8 @@ export async function createActionItems(
   frictionPoints: FrictionPointInput[]
 ): Promise<void> {
   await Promise.all(
-    frictionPoints.map((fp) =>
-      addDoc(collection(db, "actionItems"), {
+    frictionPoints.map((fp) => {
+      const data: Record<string, unknown> = {
         userId,
         url,
         analysisType,
@@ -40,8 +62,21 @@ export async function createActionItems(
         impactScore: fp.impactScore,
         status: "open",
         createdAt: serverTimestamp(),
-      })
-    )
+      };
+      const evidence = {
+        selector: fp.selector,
+        roiEstimate: fp.roiEstimate,
+        insightCluster: fp.insightCluster,
+        screenshotUrl: fp.screenshotUrl,
+        sourceCitation: fp.sourceCitation,
+        benchmark: fp.benchmark,
+        abTest: fp.abTest,
+      };
+      for (const [key, value] of Object.entries(evidence)) {
+        if (value !== undefined) data[key] = value;
+      }
+      return addDoc(collection(db, "actionItems"), data);
+    })
   );
 }
 
@@ -70,6 +105,13 @@ function mapActionItemDoc(docSnap: { id: string; data: () => Record<string, unkn
     status: "open" | "in_progress" | "resolved";
     createdAt: { toDate: () => Date } | string;
     resolvedAt?: { toDate: () => Date } | string;
+    selector?: string;
+    roiEstimate?: string;
+    insightCluster?: string;
+    screenshotUrl?: string;
+    sourceCitation?: string;
+    benchmark?: EvidenceBenchmark;
+    abTest?: EvidenceABTest;
   };
   return {
     id: docSnap.id,
@@ -85,6 +127,13 @@ function mapActionItemDoc(docSnap: { id: string; data: () => Record<string, unkn
     status: data.status,
     createdAt: typeof data.createdAt === "string" ? data.createdAt : data.createdAt.toDate().toISOString(),
     resolvedAt: !data.resolvedAt ? undefined : typeof data.resolvedAt === "string" ? data.resolvedAt : data.resolvedAt.toDate().toISOString(),
+    selector: data.selector,
+    roiEstimate: data.roiEstimate,
+    insightCluster: data.insightCluster,
+    screenshotUrl: data.screenshotUrl,
+    sourceCitation: data.sourceCitation,
+    benchmark: data.benchmark,
+    abTest: data.abTest,
   };
 }
 

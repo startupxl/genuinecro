@@ -4,7 +4,7 @@ import { ArrowDownWideNarrow, Filter, X, PanelLeftOpen, ChevronDown, Download, C
 import type { AnalysisResult, FrictionSeverity } from "@/lib/mockData";
 import { exportCSV, copyAsJiraTickets } from "@/lib/exportUtils";
 import { toast } from "sonner";
-import { categoryLabels } from "@/lib/mockData";
+import { getCategoryTab } from "@/lib/mergedAudit";
 import Sidebar from "./Sidebar";
 import MetadataBar from "./MetadataBar";
 import FrictionCard from "./FrictionCard";
@@ -27,6 +27,8 @@ const sortLabels: Record<SortOption, string> = {
 
 const TABLET_BREAKPOINT = 1024;
 
+const CATEGORY_TABS = ["All", "Technical", "Content", "Conversion", "Navigation", "Accessibility", "Performance"];
+
 interface AnalysisViewProps {
   result: AnalysisResult;
   onNewAnalysis: (url: string) => void;
@@ -39,7 +41,7 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
   const [selectedId, setSelectedId] = useState<string | null>(
     result.frictionPoints[0]?.id ?? null
   );
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [categoryTab, setCategoryTab] = useState<string>("All");
   const [severityFilter, setSeverityFilter] = useState<FrictionSeverity | "all">("all");
   const [sortBy, setSortBy] = useState<SortOption>("impact-desc");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -59,27 +61,21 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Derive unique categories from actual friction points
-  const uniqueCategories = useMemo(() => {
-    const cats = new Set(result.frictionPoints.map(p => p.category));
-    return Array.from(cats);
-  }, [result.frictionPoints]);
-
   const filteredPoints = useMemo(() => {
     let pts = result.frictionPoints;
-    if (categoryFilter !== "all") pts = pts.filter((p) => p.category === categoryFilter);
+    if (categoryTab !== "All") pts = pts.filter((p) => getCategoryTab(p.category) === categoryTab);
     if (severityFilter !== "all") pts = pts.filter((p) => p.severity === severityFilter);
     return [...pts].sort((a, b) => {
       if (sortBy === "impact-desc") return b.impactScore - a.impactScore;
       if (sortBy === "impact-asc") return a.impactScore - b.impactScore;
       return severityOrder[a.severity] - severityOrder[b.severity];
     });
-  }, [result.frictionPoints, categoryFilter, severityFilter, sortBy]);
+  }, [result.frictionPoints, categoryTab, severityFilter, sortBy]);
 
   const selectedPoint =
     result.frictionPoints.find((p) => p.id === selectedId) ?? null;
 
-  const hasFilters = categoryFilter !== "all" || severityFilter !== "all";
+  const hasFilters = categoryTab !== "All" || severityFilter !== "all";
 
   const showSidebarInline = !isMobile && !isTablet;
   const showEvidenceInline = !isMobile && !isTablet;
@@ -129,21 +125,27 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
           onToggleSidebar={!showSidebarInline ? () => setSidebarOpen(true) : undefined}
         />
 
+        {/* Category tabs */}
+        <div className="border-b border-border/30 px-3 md:px-4 py-2 flex items-center gap-1 overflow-x-auto">
+          {CATEGORY_TABS.map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setCategoryTab(tab)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+                categoryTab === tab
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
         {/* Filter & Sort Bar */}
         <div className="border-b border-border/30 px-3 md:px-4 py-2 flex items-center gap-1.5 md:gap-2 flex-wrap">
           <Filter className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-
-          {/* Category filter */}
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-7 text-xs bg-secondary text-secondary-foreground rounded-md px-2 border-none outline-none cursor-pointer min-w-0"
-          >
-            <option value="all">All Categories</option>
-            {uniqueCategories.map((cat) => (
-              <option key={cat} value={cat}>{categoryLabels[cat] || cat}</option>
-            ))}
-          </select>
 
           {/* Severity filter */}
           <select
@@ -159,7 +161,7 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
 
           {hasFilters && (
             <button
-              onClick={() => { setCategoryFilter("all"); setSeverityFilter("all"); }}
+              onClick={() => { setCategoryTab("All"); setSeverityFilter("all"); }}
               className="h-7 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 px-1.5 rounded hover:bg-secondary transition-colors"
             >
               <X className="h-3 w-3" />
@@ -230,7 +232,7 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 md:p-4">
-          <div className="max-w-2xl mx-auto space-y-3">
+          <div data-testid="friction-list" className="max-w-2xl mx-auto space-y-3">
             {filteredPoints.length === 0 ? (
               <div className="text-center py-12 text-sm text-muted-foreground">
                 No issues match the current filters.

@@ -2,15 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
+import AnalysisView from "@/components/AnalysisView";
 import { getAnalysisById, getRecentAnalyses, type AnalysisRecord } from "@/lib/firebase/analyses";
 import { getAllActionItems, type ActionItem } from "@/lib/firebase/actionItems";
 import { getLiveBenchmarks, type LiveBenchmarkStats } from "@/lib/firebase/benchmarks";
-import { buildSingleScanCategoryScores, getNextAnalysisCreatedAt, filterActionItemsForScan } from "@/lib/dashboardMetrics";
-import { getCategoryTab } from "@/lib/mergedAudit";
-import CategoryDeltaBar from "@/components/CategoryDeltaBar";
-import TopIssuesList from "@/components/TopIssuesList";
-
-const TABS = ["All", "Technical", "Content", "Conversion", "Navigation", "Accessibility", "Performance"];
+import { getNextAnalysisCreatedAt, filterActionItemsForScan } from "@/lib/dashboardMetrics";
+import { buildAnalysisResultFromScan } from "@/lib/reconstructAnalysisResult";
 
 const ScanDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,7 +18,6 @@ const ScanDetail = () => {
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [liveBenchmarks, setLiveBenchmarks] = useState<Record<string, LiveBenchmarkStats>>({});
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState<string>("All");
 
   useEffect(() => {
     if (!user || !id) {
@@ -72,73 +68,16 @@ const ScanDetail = () => {
     );
   }
 
-  const categoryData = buildSingleScanCategoryScores(scan.categoryScores ?? {}, liveBenchmarks);
   const nextCreatedAt = getNextAnalysisCreatedAt(analyses, scan.url, scan.createdAt);
-  const matchedIssues = filterActionItemsForScan(actionItems, scan.url, scan.createdAt, nextCreatedAt).filter(
-    (item) => selectedTab === "All" || getCategoryTab(item.category) === selectedTab
-  );
+  const matchedItems = filterActionItemsForScan(actionItems, scan.url, scan.createdAt, nextCreatedAt);
+  const result = buildAnalysisResultFromScan(scan, matchedItems, liveBenchmarks);
 
   return (
-    <AppShell>
-      <div className="p-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="text-xs text-muted-foreground hover:text-foreground mb-4"
-        >
-          ← Back
-        </button>
-        <h1 className="text-xl font-semibold text-foreground font-display mb-1">{scan.url}</h1>
-        <p className="text-xs text-muted-foreground mb-6">
-          {scan.analysisType} · {scan.device} · {new Date(scan.createdAt).toLocaleString()}
-        </p>
-
-        <div className="bg-surface border border-border rounded-lg p-4 mb-6">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Score</p>
-          <div className="flex items-baseline gap-3">
-            <p className="text-3xl font-semibold text-foreground">{scan.conversionScore}</p>
-            {scan.technicalScore !== undefined && (
-              <p className="text-xs text-muted-foreground">Technical: {scan.technicalScore}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 mb-4 overflow-x-auto">
-          {TABS.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setSelectedTab(tab)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-                selectedTab === tab
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <div className="bg-surface border border-border rounded-lg overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-              Category Scores
-            </div>
-            <div className="p-4">
-              <CategoryDeltaBar data={categoryData} />
-            </div>
-          </div>
-          <div className="bg-surface border border-border rounded-lg overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-              Issues Found in This Scan
-            </div>
-            <div className="p-4">
-              <TopIssuesList items={matchedIssues} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </AppShell>
+    <AnalysisView
+      result={result}
+      onNewAnalysis={(url) => navigate("/", { state: { prefillUrl: url } })}
+      onGoHome={() => navigate("/audits")}
+    />
   );
 };
 

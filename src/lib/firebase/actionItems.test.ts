@@ -54,6 +54,76 @@ describe("createActionItems", () => {
   });
 });
 
+describe("createActionItems — rich evidence fields", () => {
+  beforeEach(() => {
+    addDocMock.mockReset();
+  });
+
+  it("persists selector, benchmark, and abTest when present on the friction point", async () => {
+    addDocMock.mockResolvedValue(undefined);
+    await createActionItems("uid-1", "https://example.com", "homepage", [
+      {
+        category: "ux-clarity",
+        severity: "high",
+        title: "Weak headline",
+        description: "d1",
+        fix: "f1",
+        impactScore: 80,
+        selector: "header > h1",
+        roiEstimate: "+3% conversion",
+        insightCluster: "Clarity Gap",
+        screenshotUrl: "https://cdn.example.com/shot.png",
+        sourceCitation: "NNGroup heuristic #4",
+        benchmark: { industryAvg: 55, topPerformers: 80, label: "Headline clarity across sites" },
+        abTest: {
+          testName: "Headline Clarity Test",
+          hypothesis: "A clearer headline increases signups",
+          control: "Current headline",
+          variant: "Benefit-led headline",
+          metric: "Signup rate",
+          duration: "2 weeks",
+        },
+      },
+    ]);
+
+    expect(addDocMock).toHaveBeenCalledWith(
+      { __collection: true },
+      expect.objectContaining({
+        selector: "header > h1",
+        roiEstimate: "+3% conversion",
+        insightCluster: "Clarity Gap",
+        screenshotUrl: "https://cdn.example.com/shot.png",
+        sourceCitation: "NNGroup heuristic #4",
+        benchmark: { industryAvg: 55, topPerformers: 80, label: "Headline clarity across sites" },
+        abTest: {
+          testName: "Headline Clarity Test",
+          hypothesis: "A clearer headline increases signups",
+          control: "Current headline",
+          variant: "Benefit-led headline",
+          metric: "Signup rate",
+          duration: "2 weeks",
+        },
+      })
+    );
+  });
+
+  it("never writes explicit undefined fields when optional evidence fields are absent (a Technical issue)", async () => {
+    addDocMock.mockResolvedValue(undefined);
+    await createActionItems("uid-1", "https://example.com", "homepage", [
+      { category: "technical-seo", severity: "high", title: "Missing canonical", description: "d1", fix: "f1", impactScore: 80 },
+    ]);
+
+    const writtenData = addDocMock.mock.calls[0][1];
+    expect("selector" in writtenData).toBe(false);
+    expect("roiEstimate" in writtenData).toBe(false);
+    expect("insightCluster" in writtenData).toBe(false);
+    expect("screenshotUrl" in writtenData).toBe(false);
+    expect("sourceCitation" in writtenData).toBe(false);
+    expect("benchmark" in writtenData).toBe(false);
+    expect("abTest" in writtenData).toBe(false);
+  });
+});
+
 describe("getActiveActionItems", () => {
   beforeEach(() => {
     getDocsMock.mockReset();
@@ -153,6 +223,78 @@ describe("getAllActionItems", () => {
         createdAt: "2026-06-01T00:00:00.000Z",
       },
     ]);
+  });
+});
+
+describe("getAllActionItems — rich evidence fields", () => {
+  it("passes through selector, benchmark, and abTest when present on the document", async () => {
+    getDocsMock.mockReset();
+    getDocsMock.mockResolvedValue({
+      docs: [
+        {
+          id: "item-1",
+          data: () => ({
+            userId: "uid-1",
+            url: "https://example.com",
+            analysisType: "homepage",
+            category: "ux-clarity",
+            severity: "high",
+            title: "Weak headline",
+            description: "d1",
+            fix: "f1",
+            impactScore: 80,
+            status: "open",
+            createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+            selector: "header > h1",
+            benchmark: { industryAvg: 55, topPerformers: 80, label: "Headline clarity across sites" },
+            abTest: {
+              testName: "Headline Clarity Test",
+              hypothesis: "A clearer headline increases signups",
+              control: "Current headline",
+              variant: "Benefit-led headline",
+              metric: "Signup rate",
+              duration: "2 weeks",
+            },
+          }),
+        },
+      ],
+    });
+
+    const items = await getAllActionItems("uid-1");
+
+    expect(items[0].selector).toBe("header > h1");
+    expect(items[0].benchmark).toEqual({ industryAvg: 55, topPerformers: 80, label: "Headline clarity across sites" });
+    expect(items[0].abTest?.testName).toBe("Headline Clarity Test");
+  });
+
+  it("leaves the rich evidence fields undefined for older items that predate this schema", async () => {
+    getDocsMock.mockReset();
+    getDocsMock.mockResolvedValue({
+      docs: [
+        {
+          id: "item-1",
+          data: () => ({
+            userId: "uid-1",
+            url: "https://example.com",
+            analysisType: "homepage",
+            category: "ux-clarity",
+            severity: "high",
+            title: "Weak headline",
+            description: "d1",
+            fix: "f1",
+            impactScore: 80,
+            status: "open",
+            createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+          }),
+        },
+      ],
+    });
+
+    const items = await getAllActionItems("uid-1");
+
+    expect(items[0].selector).toBeUndefined();
+    expect(items[0].benchmark).toBeUndefined();
+    expect(items[0].abTest).toBeUndefined();
   });
 });
 

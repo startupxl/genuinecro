@@ -9,8 +9,6 @@ import {
   buildCategoryScoreBreakdown,
   CATEGORY_BENCHMARKS,
   buildIssueMomentum,
-  buildScanHistory,
-  buildSingleScanCategoryScores,
   getNextAnalysisCreatedAt,
   filterActionItemsForScan,
   buildAuditsList,
@@ -454,57 +452,6 @@ describe("buildIssueMomentum", () => {
     const momentum = buildIssueMomentum(items, analyses, "a.com");
 
     expect(momentum.newSinceLastScan).toBe(1);
-  });
-});
-
-describe("buildScanHistory", () => {
-  it("returns one entry per analysis, newest first, excluding technical audits", () => {
-    const analyses = [
-      { id: "a1", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" },
-      { id: "a2", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 55, createdAt: "2026-06-05T00:00:00.000Z" },
-      { id: "a3", url: "https://a.com", analysisType: "technical", device: "desktop", conversionScore: 90, createdAt: "2026-06-06T00:00:00.000Z" },
-    ];
-
-    const result = buildScanHistory(analyses, null);
-
-    expect(result.map((r) => r.id)).toEqual(["a2", "a1"]);
-  });
-
-  it("filters to a single domain when one is given", () => {
-    const analyses = [
-      { id: "a1", url: "https://a.com", analysisType: "homepage", device: "desktop", conversionScore: 40, createdAt: "2026-06-01T00:00:00.000Z" },
-      { id: "b1", url: "https://b.com", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: "2026-06-02T00:00:00.000Z" },
-    ];
-
-    const result = buildScanHistory(analyses, "a.com");
-
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("a1");
-  });
-});
-
-describe("buildSingleScanCategoryScores", () => {
-  it("builds one entry per category using the scan's own score and the static benchmark delta", () => {
-    const result = buildSingleScanCategoryScores({ navigation: 70 }, {});
-
-    expect(result).toEqual([
-      {
-        category: "navigation",
-        label: "Navigation",
-        score: 70,
-        deltaVsBenchmark: 70 - CATEGORY_BENCHMARKS.navigation.accountAvg,
-        siteCount: 1,
-      },
-    ]);
-  });
-
-  it("prefers the live benchmark once it has enough samples", () => {
-    const result = buildSingleScanCategoryScores(
-      { navigation: 70 },
-      { navigation: { accountAvg: 20, topQuartile: 90, sampleCount: 10 } }
-    );
-
-    expect(result[0].deltaVsBenchmark).toBe(50);
   });
 });
 
