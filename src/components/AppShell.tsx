@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
-import { Menu } from "lucide-react";
+import { Menu, PanelLeftOpen } from "lucide-react";
 import WorkspaceNav from "./WorkspaceNav";
+
+const SIDEBAR_COLLAPSED_KEY = "genuinecro_sidebar_collapsed";
 
 interface AppShellProps {
   children: ReactNode;
@@ -10,6 +12,25 @@ interface AppShellProps {
 
 const AppShell = ({ children, onLogoClick, onSignIn }: AppShellProps) => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isDesktopNavCollapsed, setIsDesktopNavCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleDesktopNav = () => {
+    setIsDesktopNavCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+      } catch {
+        // ignore storage failures (e.g. private browsing)
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="flex min-h-svh bg-background">
@@ -18,6 +39,8 @@ const AppShell = ({ children, onLogoClick, onSignIn }: AppShellProps) => {
         onSignIn={onSignIn}
         isOpen={isMobileNavOpen}
         onNavigate={() => setIsMobileNavOpen(false)}
+        isCollapsed={isDesktopNavCollapsed}
+        onToggleCollapse={toggleDesktopNav}
       />
 
       {isMobileNavOpen && (
@@ -37,6 +60,19 @@ const AppShell = ({ children, onLogoClick, onSignIn }: AppShellProps) => {
         >
           <Menu className="h-4 w-4" />
         </button>
+      )}
+
+      {isDesktopNavCollapsed && (
+        <div className="hidden md:flex w-10 flex-shrink-0 flex-col items-center border-r border-border bg-surface py-4">
+          <button
+            type="button"
+            onClick={toggleDesktopNav}
+            aria-label="Expand sidebar"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+          </button>
+        </div>
       )}
 
       <main className="flex-1 overflow-y-auto min-h-0 relative">{children}</main>

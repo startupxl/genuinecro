@@ -1,7 +1,7 @@
 import { useNavigate, NavLink } from "react-router-dom";
 import {
   LayoutDashboard, ClipboardList, Activity, CheckSquare, FileBarChart,
-  FileSpreadsheet, LogIn, LogOut, UserCog, CreditCard, HelpCircle, Settings, ChevronUp, X,
+  FileSpreadsheet, LogIn, LogOut, UserCog, CreditCard, HelpCircle, Settings, ChevronUp, X, PanelLeftClose,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -36,9 +36,11 @@ interface WorkspaceNavProps {
   onSignIn?: () => void;
   isOpen?: boolean;
   onNavigate?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate }: WorkspaceNavProps) => {
+const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate, isCollapsed = false, onToggleCollapse }: WorkspaceNavProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { currentPlan } = useSubscription();
@@ -60,7 +62,7 @@ const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate }: Wor
     <nav
       className={`fixed inset-y-0 left-0 z-40 w-48 flex-shrink-0 border-r border-border bg-surface py-4 flex flex-col transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${
         isOpen ? "translate-x-0" : "-translate-x-full"
-      }`}
+      } ${isCollapsed ? "md:hidden" : ""}`}
     >
       <div className="flex items-center gap-1 px-3 pb-4 mb-2 border-b border-border">
         <button
@@ -78,6 +80,16 @@ const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate }: Wor
             className="md:hidden flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
           >
             <X className="h-4 w-4" />
+          </button>
+        )}
+        {onToggleCollapse && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label="Collapse sidebar"
+            className="hidden md:flex flex-shrink-0 h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
+          >
+            <PanelLeftClose className="h-4 w-4" />
           </button>
         )}
       </div>

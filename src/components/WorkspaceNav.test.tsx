@@ -148,4 +148,36 @@ describe("WorkspaceNav", () => {
     expect(onNavigate).toHaveBeenCalled();
     expect(onSignIn).toHaveBeenCalled();
   });
+
+  it("renders a desktop collapse toggle when onToggleCollapse is provided, and calls it on click", () => {
+    const onToggleCollapse = vi.fn();
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav onToggleCollapse={onToggleCollapse} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+    expect(onToggleCollapse).toHaveBeenCalled();
+  });
+
+  it("does not render a desktop collapse toggle when onToggleCollapse is absent", () => {
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByRole("button", { name: "Collapse sidebar" })).not.toBeInTheDocument();
+  });
+
+  it("adds md:hidden to the nav element when isCollapsed is true", () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav isCollapsed onToggleCollapse={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    expect(container.querySelector("nav")).toHaveClass("md:hidden");
+  });
 });

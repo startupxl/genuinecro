@@ -17,6 +17,7 @@ import AppShell from "./AppShell";
 describe("AppShell", () => {
   beforeEach(() => {
     mockUser = null;
+    localStorage.clear();
   });
 
   it("shows a mobile menu toggle button", () => {
@@ -75,5 +76,61 @@ describe("AppShell", () => {
     fireEvent.click(screen.getByText("Audits"));
 
     expect(container.querySelector("nav")).toHaveClass("-translate-x-full");
+  });
+
+  it("collapses the sidebar and shows a desktop expand button when the collapse toggle is clicked", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <AppShell>
+          <div>Page content</div>
+        </AppShell>
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByRole("button", { name: "Expand sidebar" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+
+    expect(container.querySelector("nav")).toHaveClass("md:hidden");
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
+  });
+
+  it("expands the sidebar again when the expand button is clicked", () => {
+    const { container } = render(
+      <MemoryRouter>
+        <AppShell>
+          <div>Page content</div>
+        </AppShell>
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand sidebar" }));
+
+    expect(container.querySelector("nav")).not.toHaveClass("md:hidden");
+    expect(screen.queryByRole("button", { name: "Expand sidebar" })).not.toBeInTheDocument();
+  });
+
+  it("persists the collapsed preference to localStorage and restores it on the next mount", () => {
+    const { unmount } = render(
+      <MemoryRouter>
+        <AppShell>
+          <div>Page content</div>
+        </AppShell>
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+    unmount();
+
+    render(
+      <MemoryRouter>
+        <AppShell>
+          <div>Page content</div>
+        </AppShell>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
   });
 });
