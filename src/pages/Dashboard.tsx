@@ -260,53 +260,51 @@ const Dashboard = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <div className="bg-surface border border-border rounded-lg overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-                Score Trend
-              </div>
-              <div className="p-4">
-                <ScoreTrendChart data={scoreTrendData} />
-              </div>
+          <div className="bg-surface border border-border rounded-lg overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+              Score Trend
             </div>
-            <div className="bg-surface border border-border rounded-lg overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-                Category Scores
-              </div>
-              <div className="p-4">
-                <CategoryDeltaBar
-                  data={categoryScoreData}
-                  selectedCategory={selectedCategory}
-                  onCategoryClick={(cat) => setSelectedCategory((c) => (c === cat ? null : cat))}
-                />
-              </div>
+            <div className="p-4">
+              <ScoreTrendChart data={scoreTrendData} />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3 mb-6">
-            <div className="bg-surface border border-border rounded-lg overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-                Issues by Severity
-              </div>
-              <div className="p-4">
-                <CategoryBreakdownChart data={severityData} />
-                {(issueMomentum.newSinceLastScan > 0 || issueMomentum.resolvedSinceLastScan > 0) && (
-                  <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-                    <span className="text-destructive font-medium">+{issueMomentum.newSinceLastScan} new</span>
-                    {" · "}
-                    <span className="text-primary font-medium">−{issueMomentum.resolvedSinceLastScan} resolved</span>
-                    {" since last scan"}
-                  </p>
-                )}
-              </div>
+          <div className="bg-surface border border-border rounded-lg overflow-hidden mt-3">
+            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+              Category Scores
             </div>
-            <div className="bg-surface border border-border rounded-lg overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-                Top Issues
-              </div>
-              <div className="p-4">
-                <TopIssuesList items={topIssues} />
-              </div>
+            <div className="p-4">
+              <CategoryDeltaBar
+                data={categoryScoreData}
+                selectedCategory={selectedCategory}
+                onCategoryClick={(cat) => setSelectedCategory((c) => (c === cat ? null : cat))}
+              />
+            </div>
+          </div>
+
+          <div className="bg-surface border border-border rounded-lg overflow-hidden mt-3">
+            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+              Issues by Severity
+            </div>
+            <div className="p-4">
+              <CategoryBreakdownChart data={severityData} />
+              {(issueMomentum.newSinceLastScan > 0 || issueMomentum.resolvedSinceLastScan > 0) && (
+                <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+                  <span className="text-destructive font-medium">+{issueMomentum.newSinceLastScan} new</span>
+                  {" · "}
+                  <span className="text-primary font-medium">−{issueMomentum.resolvedSinceLastScan} resolved</span>
+                  {" since last scan"}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-surface border border-border rounded-lg overflow-hidden mt-3 mb-6">
+            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+              Top Issues
+            </div>
+            <div className="p-4">
+              <TopIssuesList items={topIssues} />
             </div>
           </div>
 
