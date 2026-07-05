@@ -138,6 +138,31 @@ describe("POST /api/analyze/analyze-url", () => {
     expect(res.body.data.frictionPoints[0].sourceCitation).toBeNull();
   });
 
+  it("passes through effort and confidence when the AI includes them", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { markdown: "# Page content", screenshot: "https://shot.example/a.png" } }),
+    });
+    callOpenAIMock.mockResolvedValue({
+      conversionScore: 72,
+      grade: "Strong",
+      topIssues: ["Issue A"],
+      insightSummary: {},
+      categoryScores: {},
+      frictionPoints: [
+        { category: "ux-clarity", severity: "high", title: "Test issue", impactScore: 80, effort: "low", confidence: "high" },
+      ],
+    });
+
+    const res = await request(buildApp())
+      .post("/api/analyze/analyze-url")
+      .send({ url: "example.com", analysisType: "homepage", device: "desktop" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.frictionPoints[0].effort).toBe("low");
+    expect(res.body.data.frictionPoints[0].confidence).toBe("high");
+  });
+
   it("falls back to the heuristic analysis when the AI call fails", async () => {
     fetchMock.mockResolvedValue({
       ok: true,
