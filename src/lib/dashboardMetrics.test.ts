@@ -12,6 +12,7 @@ import {
   getNextAnalysisCreatedAt,
   filterActionItemsForScan,
   buildAuditsList,
+  buildKeyMetricsSummary,
 } from "./dashboardMetrics";
 import type { AnalysisRecord } from "./firebase/analyses";
 import type { ActionItem } from "./firebase/actionItems";
@@ -552,5 +553,51 @@ describe("buildAuditsList", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("a1");
+  });
+});
+
+describe("buildKeyMetricsSummary", () => {
+  it("counts every friction point ever identified, regardless of status", () => {
+    const items = [
+      { id: "1", userId: "u", url: "https://a.com", analysisType: "homepage", category: "navigation", severity: "high", title: "t1", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "2", userId: "u", url: "https://a.com", analysisType: "homepage", category: "navigation", severity: "med", title: "t2", description: "d", fix: "f", impactScore: 60, status: "resolved", createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "3", userId: "u", url: "https://a.com", analysisType: "homepage", category: "navigation", severity: "low", title: "t3", description: "d", fix: "f", impactScore: 40, status: "in_progress", createdAt: "2026-06-01T00:00:00.000Z" },
+    ];
+
+    expect(buildKeyMetricsSummary(items).totalFrictionPoints).toBe(3);
+  });
+
+  it("counts action items that carry an A/B test recommendation", () => {
+    const items = [
+      { id: "1", userId: "u", url: "https://a.com", analysisType: "homepage", category: "navigation", severity: "high", title: "t1", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z", abTest: { testName: "Nav Test", hypothesis: "h", control: "c", variant: "v", metric: "m", duration: "2 weeks" } },
+      { id: "2", userId: "u", url: "https://a.com", analysisType: "homepage", category: "technical-seo", severity: "med", title: "t2", description: "d", fix: "f", impactScore: 60, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+    ];
+
+    expect(buildKeyMetricsSummary(items).abTestsRecommended).toBe(1);
+  });
+
+  it("does not count an abTest with an empty testName as a recommendation", () => {
+    const items = [
+      { id: "1", userId: "u", url: "https://a.com", analysisType: "homepage", category: "navigation", severity: "high", title: "t1", description: "d", fix: "f", impactScore: 80, status: "open", createdAt: "2026-06-01T00:00:00.000Z", abTest: { testName: "", hypothesis: "", control: "", variant: "", metric: "", duration: "" } },
+    ];
+
+    expect(buildKeyMetricsSummary(items).abTestsRecommended).toBe(0);
+  });
+
+  it("counts resolved issues", () => {
+    const items = [
+      { id: "1", userId: "u", url: "https://a.com", analysisType: "homepage", category: "navigation", severity: "high", title: "t1", description: "d", fix: "f", impactScore: 80, status: "resolved", createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "2", userId: "u", url: "https://a.com", analysisType: "homepage", category: "navigation", severity: "med", title: "t2", description: "d", fix: "f", impactScore: 60, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+    ];
+
+    expect(buildKeyMetricsSummary(items).issuesResolved).toBe(1);
+  });
+
+  it("returns all zeros for an empty list", () => {
+    expect(buildKeyMetricsSummary([])).toEqual({
+      totalFrictionPoints: 0,
+      abTestsRecommended: 0,
+      issuesResolved: 0,
+    });
   });
 });

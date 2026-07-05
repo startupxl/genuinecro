@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Globe, TrendingUp, TrendingDown, AlertTriangle, X, FileText, RefreshCw } from "lucide-react";
+import { Plus, Globe, TrendingUp, TrendingDown, AlertTriangle, X, FileText, RefreshCw, Search, FlaskConical, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
 import { getRecentAnalyses, groupAnalysesByDomain, type AnalysisRecord } from "@/lib/firebase/analyses";
@@ -14,6 +14,7 @@ import {
   buildHeroScoreSummary,
   buildCategoryScoreBreakdown,
   buildIssueMomentum,
+  buildKeyMetricsSummary,
   getDomain,
 } from "@/lib/dashboardMetrics";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
@@ -66,6 +67,7 @@ const Dashboard = () => {
   const severityData = buildSeverityBreakdown(actionItems, null);
   const issueMomentum = buildIssueMomentum(actionItems, records, null);
   const heroSummary = buildHeroScoreSummary(sites, records);
+  const keyMetrics = buildKeyMetricsSummary(actionItems);
   const pageData = buildPageBreakdown(records, actionItems);
   const topIssues = actionItems
     .filter((i) => i.status !== "resolved")
@@ -148,6 +150,33 @@ const Dashboard = () => {
               </div>
               <p className="text-2xl font-semibold text-destructive">{criticalCount}</p>
             </button>
+            <div className="bg-surface border border-border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Friction Points Identified</p>
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Search className="h-3.5 w-3.5 text-primary" />
+                </div>
+              </div>
+              <p className="text-2xl font-semibold text-foreground">{keyMetrics.totalFrictionPoints}</p>
+            </div>
+            <div className="bg-surface border border-border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">A/B Tests Recommended</p>
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                  <FlaskConical className="h-3.5 w-3.5 text-primary" />
+                </div>
+              </div>
+              <p className="text-2xl font-semibold text-foreground">{keyMetrics.abTestsRecommended}</p>
+            </div>
+            <div className="bg-surface border border-border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Issues Resolved</p>
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                </div>
+              </div>
+              <p className="text-2xl font-semibold text-foreground">{keyMetrics.issuesResolved}</p>
+            </div>
           </div>
 
           <div className="bg-surface border border-border rounded-lg overflow-hidden mb-6">

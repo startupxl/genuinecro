@@ -232,6 +232,36 @@ describe("Dashboard", () => {
     expect(screen.getByText("+50")).toBeInTheDocument();
   });
 
+  it("shows all-time friction points identified, A/B tests recommended, and issues resolved", async () => {
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+    getAllActionItemsMock.mockResolvedValue([
+      { id: "1", userId: "uid-1", url: "https://example.com", analysisType: "homepage", category: "navigation", severity: "high", title: "Issue 1", description: "d", fix: "f", impactScore: 90, status: "open", createdAt: "2026-06-01T00:00:00.000Z", abTest: { testName: "Nav Test", hypothesis: "h", control: "c", variant: "v", metric: "m", duration: "2 weeks" } },
+      { id: "2", userId: "uid-1", url: "https://example.com", analysisType: "homepage", category: "navigation", severity: "med", title: "Issue 2", description: "d", fix: "f", impactScore: 60, status: "resolved", createdAt: "2026-06-01T00:00:00.000Z" },
+      { id: "3", userId: "uid-1", url: "https://example.com", analysisType: "homepage", category: "navigation", severity: "low", title: "Issue 3", description: "d", fix: "f", impactScore: 40, status: "open", createdAt: "2026-06-01T00:00:00.000Z" },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Friction Points Identified")).toBeInTheDocument();
+    });
+
+    const frictionCard = screen.getByText("Friction Points Identified").closest("div.bg-surface")!;
+    expect(within(frictionCard).getByText("3")).toBeInTheDocument();
+
+    const abTestCard = screen.getByText("A/B Tests Recommended").closest("div.bg-surface")!;
+    expect(within(abTestCard).getByText("1")).toBeInTheDocument();
+
+    const resolvedCard = screen.getByText("Issues Resolved").closest("div.bg-surface")!;
+    expect(within(resolvedCard).getByText("1")).toBeInTheDocument();
+  });
+
   it("filters Top Issues when a category bar is clicked", async () => {
     getRecentAnalysesMock.mockResolvedValue([
       { url: "https://example.com", analysisType: "homepage", device: "desktop", conversionScore: 50, createdAt: "2026-06-01T00:00:00.000Z", categoryScores: { navigation: 40, "trust-credibility": 70 } },

@@ -325,3 +325,18 @@ export function buildAuditsList(
 
   return entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
+
+export interface KeyMetricsSummary {
+  totalFrictionPoints: number;
+  abTestsRecommended: number;
+  issuesResolved: number;
+}
+
+/** Cumulative, all-time counts for the Dashboard's top stat cards. */
+export function buildKeyMetricsSummary(items: ActionItem[]): KeyMetricsSummary {
+  return {
+    totalFrictionPoints: items.length,
+    abTestsRecommended: items.filter((i) => i.abTest?.testName).length,
+    issuesResolved: items.filter((i) => i.status === "resolved").length,
+  };
+}
