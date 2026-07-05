@@ -6,7 +6,7 @@ const severityLabels: Record<string, string> = { high: "Critical", med: "Warning
 export function exportCSV(result: AnalysisResult, points: FrictionPoint[]) {
   const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
   const rows = [
-    ["Title", "Category", "Severity", "Impact", "Description", "Selector", "Fix", "A/B Test", "Hypothesis", "Metric"].join(","),
+    ["Title", "Category", "Severity", "Impact", "Description", "Selector", "Fix", "A/B Test", "Hypothesis", "Metric", "Duration", "Duration Rationale"].join(","),
     ...points.map((p) =>
       [
         escape(p.title),
@@ -19,6 +19,8 @@ export function exportCSV(result: AnalysisResult, points: FrictionPoint[]) {
         escape(p.abTest.testName),
         escape(p.abTest.hypothesis),
         escape(p.abTest.metric),
+        escape(p.abTest.duration),
+        escape(p.abTest.durationRationale ?? ""),
       ].join(",")
     ),
   ];
@@ -60,6 +62,7 @@ export function copyAsJiraTickets(result: AnalysisResult, points: FrictionPoint[
       `*Variant:* ${p.abTest.variant}`,
       `*Primary Metric:* ${p.abTest.metric}`,
       `*Duration:* ${p.abTest.duration}`,
+      ...(p.abTest.durationRationale ? [`*Why this duration:* ${p.abTest.durationRationale}`] : []),
     ].join("\n");
   });
 

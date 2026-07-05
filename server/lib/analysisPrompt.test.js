@@ -68,4 +68,11 @@ describe("buildAnalysisPrompt", () => {
     expect(prompt).not.toContain('"ux-clarity"');
     expect(prompt).not.toContain('"funnel-health"');
   });
+
+  it("requires a durationRationale grounded in the device's baseline conversion rate, not a bare guess", () => {
+    const prompt = buildAnalysisPrompt("homepage", "content", "https://example.com", "desktop");
+    expect(prompt).toContain("durationRationale");
+    expect(prompt).toContain("never give a bare guess");
+    expect(prompt).toContain("conversions per variant");
+  });
 });

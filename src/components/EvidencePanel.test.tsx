@@ -59,4 +59,24 @@ describe("EvidencePanel", () => {
     render(<EvidencePanel point={buildPoint()} />);
     expect(screen.queryByText(/Affected Pages/)).not.toBeInTheDocument();
   });
+
+  it("shows the duration rationale when the A/B test recommendation carries one", () => {
+    render(
+      <EvidencePanel
+        point={buildPoint({
+          abTest: {
+            testName: "Test", hypothesis: "H", control: "C", variant: "V", metric: "M", duration: "2 weeks",
+            durationRationale: "Assumes ~1,000 weekly visitors and the ~2.7% baseline desktop conversion rate; extend the test if your traffic is lower.",
+          },
+        })}
+      />
+    );
+    expect(screen.getByText("Why this duration?")).toBeInTheDocument();
+    expect(screen.getByText(/Assumes ~1,000 weekly visitors/)).toBeInTheDocument();
+  });
+
+  it("omits the duration rationale line when the A/B test recommendation doesn't carry one", () => {
+    render(<EvidencePanel point={buildPoint()} />);
+    expect(screen.queryByText("Why this duration?")).not.toBeInTheDocument();
+  });
 });

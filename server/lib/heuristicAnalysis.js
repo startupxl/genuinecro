@@ -1,8 +1,10 @@
-import { SCORING_CATEGORIES } from "./analysisPrompt.js";
+import { SCORING_CATEGORIES, DEVICE_BENCHMARKS } from "./analysisPrompt.js";
 
 export function generateHeuristicAnalysis(markdown, url, analysisType, device, screenshotUrl) {
   const points = [];
   const lower = markdown.toLowerCase();
+  const deviceBench = DEVICE_BENCHMARKS[device] || DEVICE_BENCHMARKS.desktop;
+  const durationRationale = `Assumes traffic sufficient to reach ~300-350 conversions per variant at the ~${deviceBench.conversionRate} baseline ${device} conversion rate over 2 weeks — extend the test if your traffic or conversion volume is lower.`;
   const wordCount = markdown.split(/\s+/).length;
   const isMobile = device === "mobile";
   const headingCount = (markdown.match(/^#{1,3}\s/gm) || []).length;
@@ -22,7 +24,7 @@ export function generateHeuristicAnalysis(markdown, url, analysisType, device, s
       id: `fp-${points.length + 1}`, category, severity, title, description, selector, fix,
       impactScore, roiEstimate, insightCluster: cluster, screenshotUrl,
       benchmark: { industryAvg: Math.round(impactScore * 0.6), topPerformers: Math.round(impactScore * 1.1), label: benchLabel },
-      abTest: { testName: `${title} Test`, hypothesis: `Fixing "${title}" improves conversion`, control: "Current state", variant: "Optimized version", metric: "Conversion rate", duration: "2 weeks" },
+      abTest: { testName: `${title} Test`, hypothesis: `Fixing "${title}" improves conversion`, control: "Current state", variant: "Optimized version", metric: "Conversion rate", duration: "2 weeks", durationRationale },
     });
   };
 

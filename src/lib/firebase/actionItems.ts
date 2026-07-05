@@ -14,6 +14,7 @@ export interface EvidenceABTest {
   variant: string;
   metric: string;
   duration: string;
+  durationRationale?: string;
 }
 
 export interface FrictionPointInput {

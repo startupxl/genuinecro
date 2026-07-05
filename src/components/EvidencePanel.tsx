@@ -285,6 +285,12 @@ const EvidencePanel = ({ point }: EvidencePanelProps) => {
                       <span className="text-xs font-mono font-medium text-foreground">{point.abTest.duration}</span>
                     </div>
                   </div>
+                  {point.abTest.durationRationale && (
+                    <div className="pt-2 border-t border-primary/10">
+                      <span className="text-[10px] text-muted-foreground block mb-0.5">Why this duration?</span>
+                      <p className="text-xs text-foreground/70 leading-relaxed">{point.abTest.durationRationale}</p>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="pt-2 border-t border-border/50">

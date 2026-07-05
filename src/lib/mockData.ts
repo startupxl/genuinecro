@@ -115,6 +115,8 @@ export interface ABTestRecommendation {
   variant: string;
   metric: string;
   duration: string;
+  /** Explains the assumption behind the recommended duration (traffic/conversion-rate/sample-size), so the reader can judge whether it fits their real numbers. */
+  durationRationale?: string;
 }
 
 export interface FrictionPoint {

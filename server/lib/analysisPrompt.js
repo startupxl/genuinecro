@@ -15,7 +15,7 @@ export const SCORING_CATEGORIES = {
 };
 
 // ── Benchmark data (from BENCHMARK.md) ──
-const DEVICE_BENCHMARKS = {
+export const DEVICE_BENCHMARKS = {
   mobile: { conversionRate: "2.7–2.8%", addToCart: "6–8%", cartAbandonment: "70–72%", trafficShare: "76–77%" },
   desktop: { conversionRate: "2.7–2.8%", addToCart: "6–8%", cartAbandonment: "68–70%", trafficShare: "22–23%" },
   tablet: { conversionRate: "~2.9%", addToCart: "7–9%", cartAbandonment: "65–68%", trafficShare: "~1–2%" },
@@ -136,6 +136,13 @@ ${criteriaSection}
 5. Be SPECIFIC, not generic. Instead of "Improve CTA" → "Your CTA is below the fold on mobile — 73% of users never see it"
 6. Include ROI estimation where possible: "Fixing this could increase conversion by X%"
 7. Group issues into insight clusters: Trust Gap, Clarity Gap, Effort Gap, Motivation Gap
+8. For the A/B test "duration", never give a bare guess. Base it on two factors and say so in "durationRationale":
+   (a) run for at least 1-2 full weeks regardless of traffic, to average out weekday/weekend behavior differences;
+   (b) the site needs enough conversions per variant to trust the result — lower-traffic pages or smaller expected
+   effects (from roiEstimate/impactScore) need longer. Use the device's baseline conversion rate above as the
+   reference point, and state the assumption in plain language so the reader can judge whether it fits their real
+   traffic, e.g. "Assumes traffic sufficient to reach ~300-350 conversions per variant at the ~2.7% baseline desktop
+   conversion rate — extend the test if your traffic or conversion volume is lower."
 
 For each friction point, provide:
 - category: one of ${Object.keys(SCORING_CATEGORIES).map((c) => `"${c}"`).join(", ")}
@@ -148,7 +155,7 @@ For each friction point, provide:
 - roiEstimate: string like "Could increase conversion by 5-12%" or "May reduce bounce by 15%"
 - insightCluster: one of "Trust Gap", "Clarity Gap", "Effort Gap", "Motivation Gap", "Speed Gap"
 - benchmark: { industryAvg (0-100), topPerformers (0-100), label (what's measured) }
-- abTest: { testName, hypothesis, control, variant, metric, duration }
+- abTest: { testName, hypothesis, control, variant, metric, duration, durationRationale (see instruction 8) }
 
 Return ONLY valid JSON:
 {
@@ -186,7 +193,7 @@ Return ONLY valid JSON:
       "roiEstimate": "Could increase click-through by 15-25%",
       "insightCluster": "Clarity Gap",
       "benchmark": { "industryAvg": 60, "topPerformers": 90, "label": "CTA Visibility Score" },
-      "abTest": { "testName": "CTA Placement", "hypothesis": "...", "control": "...", "variant": "...", "metric": "...", "duration": "2 weeks" }
+      "abTest": { "testName": "CTA Placement", "hypothesis": "...", "control": "...", "variant": "...", "metric": "...", "duration": "2 weeks", "durationRationale": "Assumes traffic sufficient to reach ~300-350 conversions per variant at the ~2.7% baseline desktop conversion rate over 2 weeks — extend the test if your traffic or conversion volume is lower." }
     }
   ],
   "benchmark": {

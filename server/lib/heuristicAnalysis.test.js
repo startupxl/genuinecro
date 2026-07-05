@@ -45,4 +45,12 @@ describe("generateHeuristicAnalysis", () => {
     expect(result.benchmark.categoryScores["checkout-friction"].total).toBe(5);
     expect(result.benchmark.categoryScores["trust-credibility"].total).toBe(15);
   });
+
+  it("includes a duration rationale on every A/B test recommendation, not a bare guess", () => {
+    const result = generateHeuristicAnalysis("Just some plain text with no headings at all.", "https://example.com", "homepage", "desktop", null);
+    expect(result.frictionPoints.length).toBeGreaterThan(0);
+    for (const point of result.frictionPoints) {
+      expect(point.abTest.durationRationale).toBeTruthy();
+    }
+  });
 });

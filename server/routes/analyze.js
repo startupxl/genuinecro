@@ -78,7 +78,7 @@ router.post("/analyze-url", async (req, res) => {
       sourceCitation: fp.sourceCitation || null,
       screenshotUrl,
       benchmark: fp.benchmark || { industryAvg: 50, topPerformers: 80, label: "Score" },
-      abTest: fp.abTest || { testName: "", hypothesis: "", control: "", variant: "", metric: "", duration: "" },
+      abTest: fp.abTest || { testName: "", hypothesis: "", control: "", variant: "", metric: "", duration: "", durationRationale: "" },
     }));
 
     const result = {
