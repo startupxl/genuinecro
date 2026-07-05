@@ -93,4 +93,30 @@ describe("EvidencePanel", () => {
     expect(screen.queryByText("Effort to fix")).not.toBeInTheDocument();
     expect(screen.queryByText("Confidence")).not.toBeInTheDocument();
   });
+
+  it("shows the estimated monthly revenue impact when site settings make it computable", () => {
+    render(
+      <EvidencePanel
+        point={buildPoint({ roiEstimate: "Could increase conversion by 15-30%" })}
+        siteSettings={{ monthlyTraffic: 100000, averageOrderValue: 80, baselineConversionRate: 2.5 }}
+      />
+    );
+    expect(screen.getByText("Estimated Revenue Impact")).toBeInTheDocument();
+    expect(screen.getByText("$30,000 – $60,000 / month")).toBeInTheDocument();
+  });
+
+  it("omits the revenue impact section when there are no site settings", () => {
+    render(<EvidencePanel point={buildPoint({ roiEstimate: "Could increase conversion by 15-30%" })} siteSettings={null} />);
+    expect(screen.queryByText("Estimated Revenue Impact")).not.toBeInTheDocument();
+  });
+
+  it("omits the revenue impact section when the roiEstimate has no parseable percentage", () => {
+    render(
+      <EvidencePanel
+        point={buildPoint({ roiEstimate: "Improves trust" })}
+        siteSettings={{ monthlyTraffic: 100000, averageOrderValue: 80, baselineConversionRate: 2.5 }}
+      />
+    );
+    expect(screen.queryByText("Estimated Revenue Impact")).not.toBeInTheDocument();
+  });
 });

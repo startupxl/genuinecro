@@ -3,6 +3,8 @@ import { Copy, Check, ExternalLink, Clock, Eye, MousePointer, Code, ScanLine, Zo
 import { useState } from "react";
 import type { FrictionPoint, FrictionCategory, EffortLevel, ConfidenceLevel } from "@/lib/mockData";
 import { categoryLabels } from "@/lib/mockData";
+import type { SiteSettings } from "@/lib/firebase/siteSettings";
+import { computeRevenueImpact } from "@/lib/revenueImpact";
 
 const effortDisplay: Record<EffortLevel, string> = { low: "Low", medium: "Medium", high: "High" };
 const confidenceDisplay: Record<ConfidenceLevel, string> = { low: "Low", medium: "Medium", high: "High" };
@@ -48,9 +50,11 @@ const severityLabel: Record<string, string> = {
 
 interface EvidencePanelProps {
   point: FrictionPoint | null;
+  siteSettings?: SiteSettings | null;
 }
 
-const EvidencePanel = ({ point }: EvidencePanelProps) => {
+const EvidencePanel = ({ point, siteSettings }: EvidencePanelProps) => {
+  const revenueImpact = point ? computeRevenueImpact(siteSettings, point.roiEstimate) : null;
   const [copied, setCopied] = useState(false);
   const [imageExpanded, setImageExpanded] = useState(false);
 
@@ -146,6 +150,18 @@ const EvidencePanel = ({ point }: EvidencePanelProps) => {
                     />
                   </div>
                 </div>
+
+                {/* Estimated revenue impact */}
+                {revenueImpact && (
+                  <div className="bg-primary/[0.04] rounded-md p-3 border border-primary/20">
+                    <h4 className="text-label text-primary mb-1.5" style={{ fontSize: "10px" }}>
+                      Estimated Revenue Impact
+                    </h4>
+                    <p className="text-sm font-medium text-foreground">
+                      ${revenueImpact.low.toLocaleString()} – ${revenueImpact.high.toLocaleString()} / month
+                    </p>
+                  </div>
+                )}
 
                 {/* Effort & confidence */}
                 {(point.effort || point.confidence) && (

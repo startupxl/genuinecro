@@ -41,5 +41,15 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "resolvedAt"]);
       allow delete: if false;
     }
+    // Per-site business inputs (monthly traffic, AOV, baseline conversion rate)
+    // used to turn a friction point's estimated % lift into a revenue estimate.
+    // One doc per user+domain, keyed deterministically (see siteSettings.ts).
+    match /siteSettings/{docId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == resource.data.userId;
+      allow delete: if false;
+    }
   }
 }

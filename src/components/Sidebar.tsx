@@ -7,6 +7,8 @@ import { categoryLabels } from "@/lib/mockData";
 
 interface SidebarProps {
   result: AnalysisResult;
+  onEditRevenueSettings?: () => void;
+  hasSiteSettings?: boolean;
 }
 
 const gradeColor: Record<string, string> = {
@@ -17,7 +19,7 @@ const gradeColor: Record<string, string> = {
   "Broken Experience": "text-destructive",
 };
 
-const Sidebar = ({ result }: SidebarProps) => {
+const Sidebar = ({ result, onEditRevenueSettings, hasSiteSettings }: SidebarProps) => {
   const counts: Record<FrictionSeverity, number> = { high: 0, med: 0, low: 0 };
   result.frictionPoints.forEach((p) => counts[p.severity]++);
   const { benchmark } = result;
@@ -98,6 +100,21 @@ const Sidebar = ({ result }: SidebarProps) => {
           </div>
         </div>
       </div>
+
+      {/* Revenue impact settings entry point */}
+      {onEditRevenueSettings && (
+        <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
+          <h2 className="text-label text-muted-foreground" style={{ fontSize: "10px" }}>
+            Revenue Impact
+          </h2>
+          <button
+            onClick={onEditRevenueSettings}
+            className="text-[10px] text-primary hover:text-primary/80 transition-colors"
+          >
+            {hasSiteSettings ? "Edit" : "Set up"}
+          </button>
+        </div>
+      )}
 
       {/* Top Issues */}
       {result.topIssues && result.topIssues.length > 0 && (

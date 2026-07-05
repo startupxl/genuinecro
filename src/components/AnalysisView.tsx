@@ -5,14 +5,18 @@ import type { AnalysisResult, FrictionSeverity } from "@/lib/mockData";
 import { exportCSV, copyAsJiraTickets } from "@/lib/exportUtils";
 import { toast } from "sonner";
 import { getCategoryTab } from "@/lib/mergedAudit";
+import { getDomain } from "@/lib/dashboardMetrics";
+import { getSiteSettings, type SiteSettings } from "@/lib/firebase/siteSettings";
 import Sidebar from "./Sidebar";
 import MetadataBar from "./MetadataBar";
 import FrictionCard from "./FrictionCard";
 import EvidencePanel from "./EvidencePanel";
 import AppShell from "./AppShell";
+import SiteSettingsDialog from "./SiteSettingsDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { usePlanCapabilities, getUpgradeMessage } from "@/hooks/usePlanCapabilities";
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
 type SortOption = "impact-desc" | "impact-asc" | "severity";
@@ -38,6 +42,7 @@ interface AnalysisViewProps {
 const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) => {
   const capabilities = usePlanCapabilities();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedId, setSelectedId] = useState<string | null>(
     result.frictionPoints[0]?.id ?? null
   );
@@ -46,6 +51,14 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
   const [sortBy, setSortBy] = useState<SortOption>("impact-desc");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+  const [revenueSettingsOpen, setRevenueSettingsOpen] = useState(false);
+  const domain = getDomain(result.url);
+
+  useEffect(() => {
+    if (!user) return;
+    getSiteSettings(user.uid, domain).then(setSiteSettings);
+  }, [user, domain]);
 
   const isMobile = useIsMobile();
   const [isTablet, setIsTablet] = useState(() => {
@@ -99,7 +112,11 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
       {/* Left Sidebar - Desktop only */}
       {showSidebarInline && (
         <div className="w-[280px] flex-shrink-0 border-r border-border/30 overflow-y-auto">
-          <Sidebar result={result} />
+          <Sidebar
+            result={result}
+            onEditRevenueSettings={() => setRevenueSettingsOpen(true)}
+            hasSiteSettings={!!siteSettings}
+          />
         </div>
       )}
 
@@ -108,7 +125,11 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent side="left" className="w-[300px] p-0">
             <SheetTitle className="sr-only">Sidebar</SheetTitle>
-            <Sidebar result={result} />
+            <Sidebar
+              result={result}
+              onEditRevenueSettings={() => setRevenueSettingsOpen(true)}
+              hasSiteSettings={!!siteSettings}
+            />
           </SheetContent>
         </Sheet>
       )}
@@ -256,7 +277,7 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
       {/* Right Evidence Panel - Desktop only */}
       {showEvidenceInline && (
         <div className="w-[400px] flex-shrink-0 border-l border-border/30 overflow-y-auto">
-          <EvidencePanel point={selectedPoint} />
+          <EvidencePanel point={selectedPoint} siteSettings={siteSettings} />
         </div>
       )}
 
@@ -273,12 +294,19 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
                 <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
               </div>
             )}
-            <EvidencePanel point={selectedPoint} />
+            <EvidencePanel point={selectedPoint} siteSettings={siteSettings} />
           </SheetContent>
         </Sheet>
       )}
       </div>
       </motion.div>
+      <SiteSettingsDialog
+        open={revenueSettingsOpen}
+        onOpenChange={setRevenueSettingsOpen}
+        domain={domain}
+        initialSettings={siteSettings}
+        onSaved={setSiteSettings}
+      />
     </AppShell>
   );
 };
