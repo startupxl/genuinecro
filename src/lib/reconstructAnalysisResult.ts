@@ -30,6 +30,7 @@ function toFrictionPoint(item: ActionItem): FrictionPoint {
     sourceCitation: item.sourceCitation,
     effort: item.effort,
     confidence: item.confidence,
+    userEvidence: item.userEvidence,
     benchmark: item.benchmark ?? DEFAULT_BENCHMARK,
     abTest: item.abTest ?? DEFAULT_ABTEST,
   };

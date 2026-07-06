@@ -31,6 +31,8 @@ export interface FrictionPointInput {
   sourceCitation?: string;
   effort?: "low" | "medium" | "high";
   confidence?: "low" | "medium" | "high";
+  /** Free-text notes/links a user attaches to back a finding when presenting to a client — separate from the AI's sourceCitation. */
+  userEvidence?: string;
   benchmark?: EvidenceBenchmark;
   abTest?: EvidenceABTest;
 }
@@ -74,6 +76,7 @@ export async function createActionItems(
         sourceCitation: fp.sourceCitation,
         effort: fp.effort,
         confidence: fp.confidence,
+        userEvidence: fp.userEvidence,
         benchmark: fp.benchmark,
         abTest: fp.abTest,
       };
@@ -117,6 +120,7 @@ function mapActionItemDoc(docSnap: { id: string; data: () => Record<string, unkn
     sourceCitation?: string;
     effort?: "low" | "medium" | "high";
     confidence?: "low" | "medium" | "high";
+    userEvidence?: string;
     benchmark?: EvidenceBenchmark;
     abTest?: EvidenceABTest;
   };
@@ -141,6 +145,7 @@ function mapActionItemDoc(docSnap: { id: string; data: () => Record<string, unkn
     sourceCitation: data.sourceCitation,
     effort: data.effort,
     confidence: data.confidence,
+    userEvidence: data.userEvidence,
     benchmark: data.benchmark,
     abTest: data.abTest,
   };
@@ -160,4 +165,8 @@ export async function updateActionItemStatus(itemId: string, status: ActionItem[
   const updates: Record<string, unknown> = { status };
   if (status === "resolved") updates.resolvedAt = serverTimestamp();
   await updateDoc(doc(db, "actionItems", itemId), updates);
+}
+
+export async function updateActionItemEvidence(itemId: string, userEvidence: string): Promise<void> {
+  await updateDoc(doc(db, "actionItems", itemId), { userEvidence });
 }

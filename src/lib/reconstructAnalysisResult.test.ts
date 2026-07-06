@@ -111,6 +111,16 @@ describe("buildAnalysisResultFromScan", () => {
     expect(result.frictionPoints[0].confidence).toBeUndefined();
   });
 
+  it("carries over userEvidence when present on the action item", () => {
+    const result = buildAnalysisResultFromScan(baseScan, [{ ...richItem, userEvidence: "Confirmed with client's analytics team." }], {});
+    expect(result.frictionPoints[0].userEvidence).toBe("Confirmed with client's analytics team.");
+  });
+
+  it("leaves userEvidence undefined for action items that don't have any yet", () => {
+    const result = buildAnalysisResultFromScan(baseScan, [bareItem], {});
+    expect(result.frictionPoints[0].userEvidence).toBeUndefined();
+  });
+
   it("builds per-category benchmark scores from the static category benchmarks", () => {
     const result = buildAnalysisResultFromScan(baseScan, [], {});
     expect(result.benchmark.categoryScores.navigation).toEqual({ score: 70, industryAvg: 58 });

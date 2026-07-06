@@ -107,4 +107,21 @@ describe("FrictionCard", () => {
     expect(screen.queryByText(/effort/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/confidence/i)).not.toBeInTheDocument();
   });
+
+  it("shows a 'Noted' badge when userEvidence is present", () => {
+    render(
+      <FrictionCard
+        point={buildPoint({ userEvidence: "Confirmed in user testing session #3." })}
+        index={0}
+        isSelected={false}
+        onClick={() => {}}
+      />
+    );
+    expect(screen.getByText("Noted")).toBeInTheDocument();
+  });
+
+  it("does not show the 'Noted' badge when userEvidence is absent", () => {
+    render(<FrictionCard point={buildPoint()} index={0} isSelected={false} onClick={() => {}} />);
+    expect(screen.queryByText("Noted")).not.toBeInTheDocument();
+  });
 });

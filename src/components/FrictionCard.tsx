@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Clock, Eye, MousePointer, Code, ScanLine, Copy, Check, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter as FilterIcon, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, Zap, TrendingUp, BarChart3, Globe, Gauge } from "lucide-react";
+import { Clock, Eye, MousePointer, Code, ScanLine, Copy, Check, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter as FilterIcon, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, Zap, TrendingUp, BarChart3, Globe, Gauge, StickyNote } from "lucide-react";
 import { useState } from "react";
 import type { FrictionPoint, FrictionSeverity, EffortLevel, ConfidenceLevel } from "@/lib/mockData";
 import { categoryLabels } from "@/lib/mockData";
@@ -78,6 +78,12 @@ const FrictionCard = ({ point, index, isSelected, onClick }: FrictionCardProps) 
             <span className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
               <ShieldCheck className="h-2.5 w-2.5" />
               Evidence-based
+            </span>
+          )}
+          {point.userEvidence && (
+            <span className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">
+              <StickyNote className="h-2.5 w-2.5" />
+              Noted
             </span>
           )}
         </div>

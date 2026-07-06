@@ -1,10 +1,12 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, ExternalLink, Clock, Eye, MousePointer, Code, ScanLine, ZoomIn, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, FlaskConical } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FrictionPoint, FrictionCategory, EffortLevel, ConfidenceLevel } from "@/lib/mockData";
 import { categoryLabels } from "@/lib/mockData";
 import type { SiteSettings } from "@/lib/firebase/siteSettings";
 import { computeRevenueImpact } from "@/lib/revenueImpact";
+import { updateActionItemEvidence } from "@/lib/firebase/actionItems";
+import { toast } from "sonner";
 
 const effortDisplay: Record<EffortLevel, string> = { low: "Low", medium: "Medium", high: "High" };
 const confidenceDisplay: Record<ConfidenceLevel, string> = { low: "Low", medium: "Medium", high: "High" };
@@ -57,12 +59,33 @@ const EvidencePanel = ({ point, siteSettings }: EvidencePanelProps) => {
   const revenueImpact = point ? computeRevenueImpact(siteSettings, point.roiEstimate) : null;
   const [copied, setCopied] = useState(false);
   const [imageExpanded, setImageExpanded] = useState(false);
+  const [evidenceDraft, setEvidenceDraft] = useState(point?.userEvidence ?? "");
+  const [savingEvidence, setSavingEvidence] = useState(false);
+
+  useEffect(() => {
+    setEvidenceDraft(point?.userEvidence ?? "");
+  }, [point?.id]);
 
   const handleCopy = () => {
     if (!point) return;
     navigator.clipboard.writeText(point.fix);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const handleSaveEvidence = async () => {
+    if (!point) return;
+    setSavingEvidence(true);
+    try {
+      await updateActionItemEvidence(point.id, evidenceDraft);
+      toast.success("Evidence saved");
+    } catch (err) {
+      toast.error("Failed to save evidence", {
+        description: err instanceof Error ? err.message : "Unknown error",
+      });
+    } finally {
+      setSavingEvidence(false);
+    }
   };
 
   return (
@@ -233,6 +256,32 @@ const EvidencePanel = ({ point, siteSettings }: EvidencePanelProps) => {
                   <p className="text-xs text-foreground/80 leading-relaxed">{point.sourceCitation}</p>
                 </div>
               )}
+
+              {/* Your Supporting Evidence */}
+              <div>
+                <label
+                  htmlFor="user-evidence"
+                  className="text-label text-muted-foreground mb-2 block"
+                  style={{ fontSize: "10px" }}
+                >
+                  Your Supporting Evidence
+                </label>
+                <textarea
+                  id="user-evidence"
+                  value={evidenceDraft}
+                  onChange={(e) => setEvidenceDraft(e.target.value)}
+                  placeholder="Add your own notes, links, or screenshots backing this finding — useful when presenting to a client."
+                  rows={3}
+                  className="w-full text-xs text-foreground bg-background rounded-md p-3 border border-border/50 resize-none placeholder:text-muted-foreground"
+                />
+                <button
+                  onClick={handleSaveEvidence}
+                  disabled={savingEvidence}
+                  className="mt-2 text-xs text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+                >
+                  {savingEvidence ? "Saving…" : "Save note"}
+                </button>
+              </div>
 
               {/* Affected pages (domain-aggregated view only) */}
               {point.affectedUrls && (

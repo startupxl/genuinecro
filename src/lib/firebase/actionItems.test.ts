@@ -23,7 +23,7 @@ vi.mock("firebase/firestore", () => ({
 
 vi.mock("@/integrations/firebase/client", () => ({ db: {} }));
 
-import { createActionItems, getActiveActionItems, getAllActionItems, updateActionItemStatus } from "./actionItems";
+import { createActionItems, getActiveActionItems, getAllActionItems, updateActionItemStatus, updateActionItemEvidence } from "./actionItems";
 
 describe("createActionItems", () => {
   beforeEach(() => {
@@ -342,6 +342,51 @@ describe("getAllActionItems — rich evidence fields", () => {
     expect(items[0].abTest).toBeUndefined();
     expect(items[0].effort).toBeUndefined();
     expect(items[0].confidence).toBeUndefined();
+    expect(items[0].userEvidence).toBeUndefined();
+  });
+
+  it("passes through userEvidence when present on the document", async () => {
+    getDocsMock.mockReset();
+    getDocsMock.mockResolvedValue({
+      docs: [
+        {
+          id: "item-1",
+          data: () => ({
+            userId: "uid-1",
+            url: "https://example.com",
+            analysisType: "homepage",
+            category: "ux-clarity",
+            severity: "high",
+            title: "Weak headline",
+            description: "d1",
+            fix: "f1",
+            impactScore: 80,
+            status: "open",
+            createdAt: { toDate: () => new Date("2026-06-01T00:00:00.000Z") },
+            userEvidence: "Saw this exact issue in user testing session #3.",
+          }),
+        },
+      ],
+    });
+
+    const items = await getAllActionItems("uid-1");
+
+    expect(items[0].userEvidence).toBe("Saw this exact issue in user testing session #3.");
+  });
+});
+
+describe("updateActionItemEvidence", () => {
+  beforeEach(() => {
+    updateDocMock.mockReset();
+  });
+
+  it("writes the userEvidence field to the action item's doc", async () => {
+    updateDocMock.mockResolvedValue(undefined);
+    await updateActionItemEvidence("item-1", "Client confirmed this in their analytics.");
+    expect(updateDocMock).toHaveBeenCalledWith(
+      { __doc: true },
+      { userEvidence: "Client confirmed this in their analytics." }
+    );
   });
 });
 

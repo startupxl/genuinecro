@@ -1,7 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import EvidencePanel from "./EvidencePanel";
 import type { FrictionPoint } from "@/lib/mockData";
+
+const updateActionItemEvidenceMock = vi.fn();
+vi.mock("@/lib/firebase/actionItems", () => ({
+  updateActionItemEvidence: (...args: unknown[]) => updateActionItemEvidenceMock(...args),
+}));
 
 function buildPoint(overrides: Partial<FrictionPoint> = {}): FrictionPoint {
   return {
@@ -118,5 +123,34 @@ describe("EvidencePanel", () => {
       />
     );
     expect(screen.queryByText("Estimated Revenue Impact")).not.toBeInTheDocument();
+  });
+
+  describe("Your Supporting Evidence", () => {
+    beforeEach(() => {
+      updateActionItemEvidenceMock.mockReset();
+      updateActionItemEvidenceMock.mockResolvedValue(undefined);
+    });
+
+    it("pre-fills the textarea with existing userEvidence", () => {
+      render(<EvidencePanel point={buildPoint({ userEvidence: "Confirmed in user testing session #3." })} />);
+      expect(screen.getByLabelText(/Your Supporting Evidence/i)).toHaveValue("Confirmed in user testing session #3.");
+    });
+
+    it("starts blank when there is no existing userEvidence", () => {
+      render(<EvidencePanel point={buildPoint()} />);
+      expect(screen.getByLabelText(/Your Supporting Evidence/i)).toHaveValue("");
+    });
+
+    it("saves the edited note by calling updateActionItemEvidence with the point's id", async () => {
+      render(<EvidencePanel point={buildPoint({ id: "item-42" })} />);
+      fireEvent.change(screen.getByLabelText(/Your Supporting Evidence/i), {
+        target: { value: "Client's analytics confirm this drop-off." },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /Save note/i }));
+
+      await waitFor(() => {
+        expect(updateActionItemEvidenceMock).toHaveBeenCalledWith("item-42", "Client's analytics confirm this drop-off.");
+      });
+    });
   });
 });

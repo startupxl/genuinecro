@@ -141,6 +141,8 @@ export interface FrictionPoint {
   effort?: EffortLevel;
   /** Confidence in the impact estimate/recommendation, based on evidence strength. */
   confidence?: ConfidenceLevel;
+  /** Free-text notes/links a user attaches to back this finding when presenting to a client — separate from the AI's sourceCitation. */
+  userEvidence?: string;
   benchmark: {
     industryAvg: number;
     topPerformers: number;
