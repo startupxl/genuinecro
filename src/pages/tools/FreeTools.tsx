@@ -4,19 +4,19 @@ import PublicToolLayout from "@/components/PublicToolLayout";
 
 const TOOLS = [
   {
-    path: "/tools/sample-size-calculator",
+    path: "/free-cro-tools/sample-size-calculator",
     label: "Sample Size Calculator",
     description: "Figure out how many visitors each variant needs before you can trust your test's results.",
     icon: Calculator,
   },
   {
-    path: "/tools/significance-calculator",
+    path: "/free-cro-tools/significance-calculator",
     label: "Significance Calculator",
     description: "Paste your test results from any platform and find out whether the difference is real or just noise.",
     icon: TrendingUp,
   },
   {
-    path: "/tools/aa-test-checker",
+    path: "/free-cro-tools/aa-test-checker",
     label: "A/A Test Checker",
     description: "Run two identical variants against each other to sanity-check your test setup before trusting real results.",
     icon: ShieldQuestion,

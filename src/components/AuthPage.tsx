@@ -250,12 +250,14 @@ const AuthPage = ({ onBack, message, initialMode = "login" }: AuthPageProps) => 
       >
         <div className="max-w-sm text-center">
           <p className="text-2xl font-semibold text-primary-foreground font-display mb-8">
-            See exactly where visitors drop off.
+            See exactly where visitors drop off — and what it's costing you.
           </p>
           <div className="bg-surface rounded-lg shadow-lg p-4 text-left relative">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Conversion Score</span>
-              <span className="text-2xl font-semibold text-foreground">72</span>
+              <span className="text-2xl font-semibold text-foreground">
+                72<span className="text-xs font-normal text-muted-foreground">/100</span>
+              </span>
             </div>
             <div data-testid="auth-preview-chart" className="flex items-end gap-1 h-10 mb-3">
               <div className="flex-1 bg-primary/30 rounded-sm" style={{ height: "40%" }} />
@@ -266,10 +268,14 @@ const AuthPage = ({ onBack, message, initialMode = "login" }: AuthPageProps) => 
             </div>
             <div className="space-y-2">
               <div className="border-l-4 border-l-friction-high bg-background rounded p-2">
-                <p className="text-xs font-medium text-foreground">Weak call-to-action</p>
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground">CTA Effectiveness</span>
+                <p className="text-xs font-medium text-foreground mt-0.5">Weak call-to-action</p>
+                <p className="text-[10px] text-primary font-medium mt-0.5">↑ Could increase conversion by 15–30%</p>
               </div>
               <div className="border-l-4 border-l-friction-med bg-background rounded p-2">
-                <p className="text-xs font-medium text-foreground">Slow page load</p>
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Performance</span>
+                <p className="text-xs font-medium text-foreground mt-0.5">Slow page load</p>
+                <p className="text-[10px] text-primary font-medium mt-0.5">↑ Could reduce bounce by 12–20%</p>
               </div>
             </div>
             <div className="absolute -top-3 -right-3 bg-background border border-border rounded-lg shadow-lg px-3 py-2 text-left">

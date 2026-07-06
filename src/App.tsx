@@ -61,10 +61,10 @@ const App = () => (
             <Route path="/content" element={<AppShell><ComingSoon title="Content" /></AppShell>} />
             <Route path="/monitoring" element={<AppShell><ComingSoon title="Monitoring" /></AppShell>} />
             <Route path="/competitor-analysis" element={<CompetitorComparison />} />
-            <Route path="/tools" element={<FreeTools />} />
-            <Route path="/tools/sample-size-calculator" element={<SampleSizeCalculator />} />
-            <Route path="/tools/significance-calculator" element={<SignificanceCalculator />} />
-            <Route path="/tools/aa-test-checker" element={<AATestChecker />} />
+            <Route path="/free-cro-tools" element={<FreeTools />} />
+            <Route path="/free-cro-tools/sample-size-calculator" element={<SampleSizeCalculator />} />
+            <Route path="/free-cro-tools/significance-calculator" element={<SignificanceCalculator />} />
+            <Route path="/free-cro-tools/aa-test-checker" element={<AATestChecker />} />
             <Route path="/action-center" element={<ActionCenter />} />
             <Route path="/reports" element={<AppShell><ComingSoon title="Reports" /></AppShell>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

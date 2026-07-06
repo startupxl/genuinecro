@@ -220,6 +220,6 @@ describe("LandingView", () => {
         <LandingView onAnalyze={vi.fn()} usage={usage} user={null} onSignIn={vi.fn()} />
       </MemoryRouter>
     );
-    expect(screen.getByRole("link", { name: /Free Tools/i })).toHaveAttribute("href", "/tools");
+    expect(screen.getByRole("link", { name: /Free CRO Tools/i })).toHaveAttribute("href", "/free-cro-tools");
   });
 });

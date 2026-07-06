@@ -16,13 +16,16 @@ describe("FreeTools", () => {
     renderPage();
     expect(screen.getByRole("link", { name: /Sample Size Calculator/i })).toHaveAttribute(
       "href",
-      "/tools/sample-size-calculator"
+      "/free-cro-tools/sample-size-calculator"
     );
     expect(screen.getByRole("link", { name: /Significance Calculator/i })).toHaveAttribute(
       "href",
-      "/tools/significance-calculator"
+      "/free-cro-tools/significance-calculator"
     );
-    expect(screen.getByRole("link", { name: /A\/A Test Checker/i })).toHaveAttribute("href", "/tools/aa-test-checker");
+    expect(screen.getByRole("link", { name: /A\/A Test Checker/i })).toHaveAttribute(
+      "href",
+      "/free-cro-tools/aa-test-checker"
+    );
   });
 
   it("does not require sign-in or show any gated app navigation", () => {
