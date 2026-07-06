@@ -1,11 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Check, ExternalLink, Clock, Eye, MousePointer, Code, ScanLine, ZoomIn, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, FlaskConical } from "lucide-react";
+import { Copy, Check, ExternalLink, Clock, Eye, MousePointer, Code, ScanLine, ZoomIn, Sparkles, LayoutGrid, DoorOpen, MessageSquareDiff, Filter, ArrowUpFromLine, Compass, Layers, BookOpen, ListTree, Search, Heart, ShoppingCart, CreditCard, ShieldCheck, LogOut, TextCursorInput, BadgeCheck, Target, FlaskConical, Wand2, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { FrictionPoint, FrictionCategory, EffortLevel, ConfidenceLevel } from "@/lib/mockData";
 import { categoryLabels } from "@/lib/mockData";
 import type { SiteSettings } from "@/lib/firebase/siteSettings";
 import { computeRevenueImpact } from "@/lib/revenueImpact";
 import { updateActionItemEvidence } from "@/lib/firebase/actionItems";
+import { generateVariantCopy, type CopyVariant } from "@/lib/api/variantCopy";
+import { usePlanCapabilities, getUpgradeMessage } from "@/hooks/usePlanCapabilities";
 import { toast } from "sonner";
 
 const effortDisplay: Record<EffortLevel, string> = { low: "Low", medium: "Medium", high: "High" };
@@ -56,14 +58,18 @@ interface EvidencePanelProps {
 }
 
 const EvidencePanel = ({ point, siteSettings }: EvidencePanelProps) => {
+  const capabilities = usePlanCapabilities();
   const revenueImpact = point ? computeRevenueImpact(siteSettings, point.roiEstimate) : null;
   const [copied, setCopied] = useState(false);
   const [imageExpanded, setImageExpanded] = useState(false);
   const [evidenceDraft, setEvidenceDraft] = useState(point?.userEvidence ?? "");
   const [savingEvidence, setSavingEvidence] = useState(false);
+  const [variants, setVariants] = useState<CopyVariant[] | null>(null);
+  const [generatingVariants, setGeneratingVariants] = useState(false);
 
   useEffect(() => {
     setEvidenceDraft(point?.userEvidence ?? "");
+    setVariants(null);
   }, [point?.id]);
 
   const handleCopy = () => {
@@ -85,6 +91,26 @@ const EvidencePanel = ({ point, siteSettings }: EvidencePanelProps) => {
       });
     } finally {
       setSavingEvidence(false);
+    }
+  };
+
+  const handleGenerateVariants = async () => {
+    if (!point) return;
+    setGeneratingVariants(true);
+    try {
+      const result = await generateVariantCopy({
+        category: point.category,
+        title: point.title,
+        description: point.description,
+        fix: point.fix,
+      });
+      setVariants(result.variants);
+    } catch (err) {
+      toast.error("Failed to generate copy variants", {
+        description: err instanceof Error ? err.message : "Unknown error",
+      });
+    } finally {
+      setGeneratingVariants(false);
     }
   };
 
@@ -333,6 +359,58 @@ const EvidencePanel = ({ point, siteSettings }: EvidencePanelProps) => {
                     {point.fix}
                   </code>
                 </div>
+              </div>
+
+              {/* Test Copy Variant Generator */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Wand2 className="h-3.5 w-3.5 text-primary" />
+                  <h4 className="text-label text-muted-foreground" style={{ fontSize: "10px" }}>
+                    Test Copy Variants
+                  </h4>
+                </div>
+                {capabilities.canGenerateVariants ? (
+                  <>
+                    <button
+                      onClick={handleGenerateVariants}
+                      disabled={generatingVariants}
+                      className="flex items-center gap-1.5 h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    >
+                      <Wand2 className="h-3 w-3" />
+                      {generatingVariants ? "Generating…" : "Generate Test Copy"}
+                    </button>
+                    {variants && (
+                      <div className="mt-3 space-y-2">
+                        {variants.map((variant) => (
+                          <div key={variant.label} className="bg-background rounded-md p-3 border border-border/50">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] font-medium text-primary uppercase tracking-wider">
+                                {variant.label}
+                              </span>
+                              <button
+                                onClick={() => navigator.clipboard.writeText(variant.copy)}
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                                aria-label={`Copy ${variant.label}`}
+                              >
+                                <Copy className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <p className="text-sm text-foreground mb-1">{variant.copy}</p>
+                            <p className="text-xs text-muted-foreground">{variant.rationale}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="bg-secondary rounded-md p-3 flex items-start gap-2">
+                    <Lock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-medium text-foreground">{getUpgradeMessage("variants").title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{getUpgradeMessage("variants").description}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* A/B Test Recommendation */}

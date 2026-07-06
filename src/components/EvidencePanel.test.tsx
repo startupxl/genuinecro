@@ -8,6 +8,21 @@ vi.mock("@/lib/firebase/actionItems", () => ({
   updateActionItemEvidence: (...args: unknown[]) => updateActionItemEvidenceMock(...args),
 }));
 
+const generateVariantCopyMock = vi.fn();
+vi.mock("@/lib/api/variantCopy", () => ({
+  generateVariantCopy: (...args: unknown[]) => generateVariantCopyMock(...args),
+}));
+
+let mockCanGenerateVariants = true;
+vi.mock("@/hooks/usePlanCapabilities", () => ({
+  usePlanCapabilities: () => ({ canGenerateVariants: mockCanGenerateVariants }),
+  getUpgradeMessage: () => ({
+    title: "Variant copy generation requires Pro plan",
+    description: "Upgrade to Pro ($199/mo) to generate ready-to-test copy variants for any friction point.",
+    requiredPlan: "Pro",
+  }),
+}));
+
 function buildPoint(overrides: Partial<FrictionPoint> = {}): FrictionPoint {
   return {
     id: "fp-1",
@@ -151,6 +166,46 @@ describe("EvidencePanel", () => {
       await waitFor(() => {
         expect(updateActionItemEvidenceMock).toHaveBeenCalledWith("item-42", "Client's analytics confirm this drop-off.");
       });
+    });
+  });
+
+  describe("Test Copy Variant Generator", () => {
+    beforeEach(() => {
+      generateVariantCopyMock.mockReset();
+      mockCanGenerateVariants = true;
+    });
+
+    it("generates and displays copy variants for a Pro-plan user", async () => {
+      generateVariantCopyMock.mockResolvedValue({
+        variants: [
+          { label: "Variant A", copy: "Get Started Free", rationale: "Lowers perceived risk" },
+          { label: "Variant B", copy: "Start Your Trial", rationale: "Implies urgency" },
+        ],
+      });
+
+      render(<EvidencePanel point={buildPoint({ category: "cta-effectiveness", title: "Weak CTA", fix: "Use a stronger verb" })} />);
+      fireEvent.click(screen.getByRole("button", { name: /Generate Test Copy/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText("Get Started Free")).toBeInTheDocument();
+      });
+      expect(screen.getByText("Start Your Trial")).toBeInTheDocument();
+      expect(screen.getByText("Lowers perceived risk")).toBeInTheDocument();
+      expect(generateVariantCopyMock).toHaveBeenCalledWith({
+        category: "cta-effectiveness",
+        title: "Weak CTA",
+        description: "A description of the issue.",
+        fix: "Use a stronger verb",
+      });
+    });
+
+    it("shows an upgrade prompt instead of the generator for a non-Pro plan, without calling the API", () => {
+      mockCanGenerateVariants = false;
+      render(<EvidencePanel point={buildPoint()} />);
+
+      expect(screen.getByText(/Variant copy generation requires Pro plan/i)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Generate Test Copy/i })).not.toBeInTheDocument();
+      expect(generateVariantCopyMock).not.toHaveBeenCalled();
     });
   });
 });

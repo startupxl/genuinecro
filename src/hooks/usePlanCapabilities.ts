@@ -10,6 +10,7 @@ export interface PlanCapabilities {
   canTeamSharing: boolean;
   canApiAccess: boolean;
   canWhiteLabel: boolean;
+  canGenerateVariants: boolean;
   auditLimit: number;
 }
 
@@ -23,6 +24,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canTeamSharing: false,
     canApiAccess: false,
     canWhiteLabel: false,
+    canGenerateVariants: false,
     auditLimit: 10,
   },
   starter: {
@@ -34,6 +36,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canTeamSharing: false,
     canApiAccess: false,
     canWhiteLabel: false,
+    canGenerateVariants: false,
     auditLimit: 20,
   },
   growth: {
@@ -45,6 +48,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canTeamSharing: false,
     canApiAccess: false,
     canWhiteLabel: false,
+    canGenerateVariants: false,
     auditLimit: 75,
   },
   pro: {
@@ -56,6 +60,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canTeamSharing: true,
     canApiAccess: true,
     canWhiteLabel: false,
+    canGenerateVariants: true,
     auditLimit: 250,
   },
   agency: {
@@ -67,6 +72,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canTeamSharing: true,
     canApiAccess: true,
     canWhiteLabel: true,
+    canGenerateVariants: true,
     auditLimit: 800,
   },
 };
@@ -95,6 +101,11 @@ export function getUpgradeMessage(feature: string): { title: string; description
     export: {
       title: "Report exports require Pro plan",
       description: "Upgrade to Pro ($199/mo) to export reports, download assets, and get developer tokens.",
+      requiredPlan: "Pro",
+    },
+    variants: {
+      title: "Variant copy generation requires Pro plan",
+      description: "Upgrade to Pro ($199/mo) to generate ready-to-test copy variants for any friction point.",
       requiredPlan: "Pro",
     },
     whitelabel: {
