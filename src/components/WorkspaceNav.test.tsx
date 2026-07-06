@@ -92,6 +92,18 @@ describe("WorkspaceNav", () => {
     expect(profileButton).toHaveClass("border-t");
   });
 
+  it("constrains the profile button to the sidebar's width so a long email truncates instead of overflowing", () => {
+    mockUser = { uid: "uid-1", email: "experiments@genuinecro.com", displayName: null };
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav />
+      </MemoryRouter>
+    );
+
+    const profileButton = screen.getByText("experiments@genuinecro.com").closest("button");
+    expect(profileButton).toHaveClass("w-full");
+  });
+
   it("positions the Sign in button after the nav sections (right after Experiment Workbench) when signed out", () => {
     mockUser = null;
     render(

@@ -122,7 +122,7 @@ const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate, isCol
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 px-4 py-2.5 mt-2 border-t border-border hover:bg-secondary/50 transition-colors">
+              <button className="flex items-center gap-2 px-4 py-2.5 mt-2 border-t border-border hover:bg-secondary/50 transition-colors w-full">
                 <Avatar className="h-6 w-6 flex-shrink-0">
                   <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-medium">
                     {initials}
@@ -163,7 +163,7 @@ const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate, isCol
         ) : (
           <button
             onClick={handleSignIn}
-            className="flex items-center gap-2 px-4 py-3 mt-2 border-t border-border text-sm text-foreground hover:bg-secondary/50 transition-colors"
+            className="flex items-center gap-2 px-4 py-3 mt-2 border-t border-border text-sm text-foreground hover:bg-secondary/50 transition-colors w-full"
           >
             <span className="h-1.5 w-1.5 flex-shrink-0" />
             <LogIn className="h-3.5 w-3.5 flex-shrink-0" />
