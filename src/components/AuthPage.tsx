@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, MousePointerClick, Zap, Search, TrendingUp } from "lucide-react";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -246,41 +246,117 @@ const AuthPage = ({ onBack, message, initialMode = "login" }: AuthPageProps) => 
 
       <div
         data-testid="auth-preview-panel"
-        className="hidden md:flex flex-1 items-center justify-center bg-gradient-to-br from-primary to-primary/80 p-10"
+        className="hidden md:flex flex-1 items-center justify-center relative overflow-hidden bg-gradient-to-br from-primary via-primary to-[#062e26] p-10"
       >
-        <div className="max-w-sm text-center">
-          <p className="text-2xl font-semibold text-primary-foreground font-display mb-8">
+        <div
+          className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "24px 24px" }}
+        />
+        <div className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-16 h-64 w-64 rounded-full bg-black/10 blur-3xl pointer-events-none" />
+
+        <div className="max-w-md w-full relative">
+          <p className="text-2xl font-semibold text-primary-foreground font-display mb-8 leading-snug">
             See exactly where visitors drop off — and what it's costing you.
           </p>
-          <div className="bg-surface rounded-lg shadow-lg p-4 text-left relative">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Conversion Score</span>
-              <span className="text-2xl font-semibold text-foreground">
-                72<span className="text-xs font-normal text-muted-foreground">/100</span>
-              </span>
-            </div>
-            <div data-testid="auth-preview-chart" className="flex items-end gap-1 h-10 mb-3">
-              <div className="flex-1 bg-primary/30 rounded-sm" style={{ height: "40%" }} />
-              <div className="flex-1 bg-primary/30 rounded-sm" style={{ height: "70%" }} />
-              <div className="flex-1 bg-primary rounded-sm" style={{ height: "90%" }} />
-              <div className="flex-1 bg-primary/30 rounded-sm" style={{ height: "55%" }} />
-              <div className="flex-1 bg-primary/30 rounded-sm" style={{ height: "65%" }} />
-            </div>
-            <div className="space-y-2">
-              <div className="border-l-4 border-l-friction-high bg-background rounded p-2">
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground">CTA Effectiveness</span>
-                <p className="text-xs font-medium text-foreground mt-0.5">Weak call-to-action</p>
-                <p className="text-[10px] text-primary font-medium mt-0.5">↑ Could increase conversion by 15–30%</p>
+
+          <div className="relative" style={{ perspective: "1200px" }}>
+            <div
+              className="bg-surface rounded-xl shadow-2xl shadow-black/40 border border-white/10 overflow-hidden text-left"
+              style={{ transform: "rotateY(-3deg) rotateX(1.5deg)" }}
+            >
+              <div className="flex items-center gap-1.5 px-3 py-2 bg-secondary/60 border-b border-border">
+                <span className="h-2 w-2 rounded-full bg-friction-high/70" />
+                <span className="h-2 w-2 rounded-full bg-friction-med/70" />
+                <span className="h-2 w-2 rounded-full bg-friction-low/70" />
+                <span className="ml-2 flex items-center gap-1 text-[9px] text-muted-foreground bg-background rounded-full px-2 py-0.5">
+                  <Lock className="h-2.5 w-2.5" />
+                  stripe.com/pricing
+                </span>
               </div>
-              <div className="border-l-4 border-l-friction-med bg-background rounded p-2">
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Performance</span>
-                <p className="text-xs font-medium text-foreground mt-0.5">Slow page load</p>
-                <p className="text-[10px] text-primary font-medium mt-0.5">↑ Could reduce bounce by 12–20%</p>
+
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Conversion Score</span>
+                    <p className="text-[10px] text-muted-foreground/70 mt-0.5">stripe.com · Homepage</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-semibold text-foreground">
+                      72<span className="text-xs font-normal text-muted-foreground">/100</span>
+                    </span>
+                    <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-friction-med/10 text-friction-med">
+                      Needs work
+                    </span>
+                  </div>
+                </div>
+
+                <div data-testid="auth-preview-chart" className="mb-3">
+                  <svg viewBox="0 0 240 64" className="w-full h-16" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="authPreviewGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.35" />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <line x1="0" y1="16" x2="240" y2="16" stroke="hsl(var(--border))" strokeDasharray="2 3" strokeWidth="1" />
+                    <line x1="0" y1="32" x2="240" y2="32" stroke="hsl(var(--border))" strokeDasharray="2 3" strokeWidth="1" />
+                    <line x1="0" y1="48" x2="240" y2="48" stroke="hsl(var(--border))" strokeDasharray="2 3" strokeWidth="1" />
+                    <path
+                      d="M0,46 C20,44 40,50 60,40 C80,30 100,38 120,26 C140,14 160,24 180,16 C200,8 220,14 240,6 L240,64 L0,64 Z"
+                      fill="url(#authPreviewGradient)"
+                    />
+                    <path
+                      d="M0,46 C20,44 40,50 60,40 C80,30 100,38 120,26 C140,14 160,24 180,16 C200,8 220,14 240,6"
+                      fill="none"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                    <circle cx="240" cy="6" r="3.5" fill="hsl(var(--primary))" stroke="hsl(var(--surface))" strokeWidth="1.5" />
+                  </svg>
+                  <div className="flex justify-between text-[8px] text-muted-foreground/60 mt-0.5 px-0.5">
+                    <span>4 weeks ago</span>
+                    <span>Today</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2 border-l-2 border-l-friction-high bg-background rounded p-2">
+                    <MousePointerClick className="h-3.5 w-3.5 text-friction-high mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">CTA Effectiveness</span>
+                      <p className="text-xs font-medium text-foreground mt-0.5">Weak call-to-action</p>
+                      <span className="inline-block text-[9px] font-medium text-primary bg-primary/10 rounded-full px-1.5 py-0.5 mt-1">
+                        +15–30% potential lift
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 border-l-2 border-l-friction-med bg-background rounded p-2">
+                    <Zap className="h-3.5 w-3.5 text-friction-med mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Performance</span>
+                      <p className="text-xs font-medium text-foreground mt-0.5">Slow page load</p>
+                      <span className="inline-block text-[9px] font-medium text-primary bg-primary/10 rounded-full px-1.5 py-0.5 mt-1">
+                        −12–20% bounce
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+
             <div className="absolute -top-3 -right-3 bg-background border border-border rounded-lg shadow-lg px-3 py-2 text-left">
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Trend</p>
+              <p className="text-[9px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <TrendingUp className="h-2.5 w-2.5" />
+                Trend
+              </p>
               <p className="text-xs font-semibold text-primary">+8 pts</p>
+            </div>
+
+            <div className="absolute -bottom-3 -left-3 bg-background border border-border rounded-lg shadow-lg px-3 py-2 flex items-center gap-1.5">
+              <Search className="h-3 w-3 text-primary flex-shrink-0" />
+              <p className="text-[10px] font-medium text-foreground whitespace-nowrap">108 friction points found</p>
             </div>
           </div>
         </div>
