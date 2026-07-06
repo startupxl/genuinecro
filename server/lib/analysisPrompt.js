@@ -143,6 +143,13 @@ ${criteriaSection}
    reference point, and state the assumption in plain language so the reader can judge whether it fits their real
    traffic, e.g. "Assumes traffic sufficient to reach ~300-350 conversions per variant at the ~2.7% baseline desktop
    conversion rate — extend the test if your traffic or conversion volume is lower."
+9. MESSAGE CONSISTENCY CHECK — separately from everything else, evaluate whether this page's own headline, subheadline,
+   value proposition, and primary CTA tell ONE coherent story. Does the subheadline actually support the promise made
+   in the headline? Does the CTA follow logically from the value proposition, or does it feel bolted on? Is the same
+   core benefit restated consistently, or does the messaging drift/contradict itself as the visitor scrolls? File any
+   internal inconsistency you find as a normal friction point (usually under "content-hierarchy" or "cta-effectiveness",
+   insightCluster "Clarity Gap") — quote the actual headline/subheadline/CTA copy you're comparing, don't describe this
+   generically.
 
 For each friction point, provide:
 - category: one of ${Object.keys(SCORING_CATEGORIES).map((c) => `"${c}"`).join(", ")}

@@ -81,4 +81,12 @@ describe("buildAnalysisPrompt", () => {
     expect(prompt).toContain("effort: \"low\" | \"medium\" | \"high\"");
     expect(prompt).toContain("confidence: \"low\" | \"medium\" | \"high\"");
   });
+
+  it("instructs the AI to check internal message consistency across headline, subheadline, CTA, and value prop", () => {
+    const prompt = buildAnalysisPrompt("homepage", "content", "https://example.com", "desktop");
+    expect(prompt).toContain("MESSAGE CONSISTENCY");
+    expect(prompt).toContain("headline");
+    expect(prompt).toContain("subheadline");
+    expect(prompt).toContain("value proposition");
+  });
 });
