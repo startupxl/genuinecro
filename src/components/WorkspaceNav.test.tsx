@@ -21,7 +21,7 @@ describe("WorkspaceNav", () => {
     signOutMock.mockReset();
   });
 
-  it("renders all eight sections with Dashboard, Audits, Action Center, Bulk, Message Match, and Competitor Comparison marked real", () => {
+  it("renders all seven sections with Dashboard, Audits, Action Center, Message Match, and Competitor Comparison marked real", () => {
     mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Jane" };
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
@@ -29,7 +29,7 @@ describe("WorkspaceNav", () => {
       </MemoryRouter>
     );
 
-    ["Dashboard", "Audits", "Action Center", "Monitoring", "Bulk", "Reports", "Message Match", "Competitor Comparison"].forEach((label) => {
+    ["Dashboard", "Audits", "Action Center", "Monitoring", "Reports", "Message Match", "Competitor Comparison"].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
     ["Technical", "Content", "Conversion", "Analysis"].forEach((label) => {
@@ -75,7 +75,7 @@ describe("WorkspaceNav", () => {
     expect(onSignIn).toHaveBeenCalled();
   });
 
-  it("positions the profile row after the nav sections (right after Bulk), in its own bordered section", () => {
+  it("positions the profile row after the nav sections (right after Competitor Comparison), in its own bordered section", () => {
     mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Jane" };
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
@@ -84,15 +84,15 @@ describe("WorkspaceNav", () => {
     );
 
     const profileEl = screen.getByText("Jane");
-    const bulkEl = screen.getByText("Bulk");
+    const lastNavEl = screen.getByText("Competitor Comparison");
     // eslint-disable-next-line no-bitwise
-    expect(bulkEl.compareDocumentPosition(profileEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(lastNavEl.compareDocumentPosition(profileEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     const profileButton = profileEl.closest("button");
     expect(profileButton).toHaveClass("border-t");
   });
 
-  it("positions the Sign in button after the nav sections (right after Bulk) when signed out", () => {
+  it("positions the Sign in button after the nav sections (right after Competitor Comparison) when signed out", () => {
     mockUser = null;
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
@@ -101,9 +101,9 @@ describe("WorkspaceNav", () => {
     );
 
     const signInEl = screen.getByText("Sign in");
-    const bulkEl = screen.getByText("Bulk");
+    const lastNavEl = screen.getByText("Competitor Comparison");
     // eslint-disable-next-line no-bitwise
-    expect(bulkEl.compareDocumentPosition(signInEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(lastNavEl.compareDocumentPosition(signInEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("is off-screen by default on mobile and slides in when isOpen is true", () => {

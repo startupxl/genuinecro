@@ -15,7 +15,6 @@ import TermsConditions from "./pages/TermsConditions.tsx";
 import CancellationRefunds from "./pages/CancellationRefunds.tsx";
 import DeliveryPolicy from "./pages/DeliveryPolicy.tsx";
 import ContactUs from "./pages/ContactUs.tsx";
-import BulkAnalysis from "./pages/BulkAnalysis.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Audits from "./pages/Audits.tsx";
@@ -48,7 +47,6 @@ const App = () => (
             <Route path="/terms" element={<TermsConditions />} />
             <Route path="/cancellation" element={<CancellationRefunds />} />
             <Route path="/delivery" element={<DeliveryPolicy />} />
-            <Route path="/bulk" element={<BulkAnalysis />} />
             <Route path="/contact" element={<ContactUs />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/audits" element={<Audits />} />
