@@ -13,6 +13,7 @@ import {
   filterActionItemsForScan,
   buildAuditsList,
   buildKeyMetricsSummary,
+  isAuditDue,
 } from "./dashboardMetrics";
 import type { AnalysisRecord } from "./firebase/analyses";
 import type { ActionItem } from "./firebase/actionItems";
@@ -599,5 +600,26 @@ describe("buildKeyMetricsSummary", () => {
       abTestsRecommended: 0,
       issuesResolved: 0,
     });
+  });
+});
+
+describe("isAuditDue", () => {
+  const now = new Date("2026-07-31T00:00:00.000Z");
+
+  it("returns false when fewer days have passed than the cadence", () => {
+    expect(isAuditDue("2026-07-15T00:00:00.000Z", 30, now)).toBe(false);
+  });
+
+  it("returns true when exactly the cadence has passed", () => {
+    expect(isAuditDue("2026-07-01T00:00:00.000Z", 30, now)).toBe(true);
+  });
+
+  it("returns true when more than the cadence has passed", () => {
+    expect(isAuditDue("2026-06-01T00:00:00.000Z", 30, now)).toBe(true);
+  });
+
+  it("uses DEFAULT_AUDIT_CADENCE_DAYS (30) when no cadence is passed", () => {
+    expect(isAuditDue("2026-06-01T00:00:00.000Z", undefined, now)).toBe(true);
+    expect(isAuditDue("2026-07-20T00:00:00.000Z", undefined, now)).toBe(false);
   });
 });

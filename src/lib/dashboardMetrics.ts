@@ -340,3 +340,11 @@ export function buildKeyMetricsSummary(items: ActionItem[]): KeyMetricsSummary {
     issuesResolved: items.filter((i) => i.status === "resolved").length,
   };
 }
+
+export const DEFAULT_AUDIT_CADENCE_DAYS = 30;
+
+/** True once at least `cadenceDays` have passed since a site's last audit — surfaces a re-audit nudge. */
+export function isAuditDue(lastAnalyzedAt: string, cadenceDays: number = DEFAULT_AUDIT_CADENCE_DAYS, now: Date = new Date()): boolean {
+  const daysSince = (now.getTime() - new Date(lastAnalyzedAt).getTime()) / (1000 * 60 * 60 * 24);
+  return daysSince >= cadenceDays;
+}

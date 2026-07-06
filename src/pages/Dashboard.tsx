@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Globe, TrendingUp, TrendingDown, AlertTriangle, X, FileText, RefreshCw, Search, FlaskConical, CheckCircle2 } from "lucide-react";
+import { Plus, Globe, TrendingUp, TrendingDown, AlertTriangle, X, FileText, RefreshCw, Search, FlaskConical, CheckCircle2, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
 import { getRecentAnalyses, groupAnalysesByDomain, type AnalysisRecord } from "@/lib/firebase/analyses";
@@ -16,6 +16,7 @@ import {
   buildIssueMomentum,
   buildKeyMetricsSummary,
   getDomain,
+  isAuditDue,
 } from "@/lib/dashboardMetrics";
 import ScoreTrendChart from "@/components/ScoreTrendChart";
 import CategoryBreakdownChart from "@/components/CategoryBreakdownChart";
@@ -202,7 +203,15 @@ const Dashboard = () => {
                   className="flex items-center justify-between px-4 py-3 border-b border-border last:border-b-0 cursor-pointer transition-colors hover:bg-secondary/50"
                 >
                   <div>
-                    <p className="text-sm font-medium text-foreground">{site.domain}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-foreground">{site.domain}</p>
+                      {!isScanning && isAuditDue(site.lastAnalyzedAt) && (
+                        <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-friction-med/10 text-friction-med">
+                          <Clock className="h-2.5 w-2.5" />
+                          Due for re-audit
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {site.analysisCount} audit{site.analysisCount === 1 ? "" : "s"}
                       {worstCategory && <> · Worst: {worstCategory.label}</>}

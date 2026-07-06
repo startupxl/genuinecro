@@ -165,6 +165,35 @@ describe("Dashboard", () => {
     expect(navigateMock).toHaveBeenCalledWith("/sites/a.com");
   });
 
+  it("shows a 'Due for re-audit' badge for a site last audited over 30 days ago", async () => {
+    const overdueDate = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
+    const recentDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+    getRecentAnalysesMock.mockResolvedValue([
+      { url: "https://overdue.com", analysisType: "homepage", device: "desktop", conversionScore: 60, createdAt: overdueDate },
+      { url: "https://fresh.com", analysisType: "homepage", device: "desktop", conversionScore: 70, createdAt: recentDate },
+    ]);
+    groupAnalysesByDomainMock.mockReturnValue([
+      { domain: "overdue.com", latestScore: 60, previousScore: null, scoreDelta: null, lastAnalyzedAt: overdueDate, analysisCount: 1 },
+      { domain: "fresh.com", latestScore: 70, previousScore: null, scoreDelta: null, lastAnalyzedAt: recentDate, analysisCount: 1 },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("overdue.com")).toBeInTheDocument();
+    });
+
+    const overdueRow = within(screen.getByText("overdue.com").closest("[data-testid='site-row']")!);
+    expect(overdueRow.getByText("Due for re-audit")).toBeInTheDocument();
+
+    const freshRow = within(screen.getByText("fresh.com").closest("[data-testid='site-row']")!);
+    expect(freshRow.queryByText("Due for re-audit")).not.toBeInTheDocument();
+  });
+
   it("filters the site list to critical sites when the Critical card is clicked", async () => {
     getRecentAnalysesMock.mockResolvedValue([
       { url: "https://critical.com", analysisType: "homepage", device: "desktop", conversionScore: 30, createdAt: "2026-06-01T00:00:00.000Z" },
