@@ -24,6 +24,10 @@ import ActionCenter from "./pages/ActionCenter.tsx";
 import Technical from "./pages/Technical.tsx";
 import MessageMatchChecker from "./pages/MessageMatchChecker.tsx";
 import CompetitorComparison from "./pages/CompetitorComparison.tsx";
+import FreeTools from "./pages/tools/FreeTools.tsx";
+import SampleSizeCalculator from "./pages/tools/SampleSizeCalculator.tsx";
+import SignificanceCalculator from "./pages/tools/SignificanceCalculator.tsx";
+import AATestChecker from "./pages/tools/AATestChecker.tsx";
 import AppShell from "@/components/AppShell";
 import ComingSoon from "@/components/ComingSoon";
 
@@ -57,6 +61,10 @@ const App = () => (
             <Route path="/content" element={<AppShell><ComingSoon title="Content" /></AppShell>} />
             <Route path="/monitoring" element={<AppShell><ComingSoon title="Monitoring" /></AppShell>} />
             <Route path="/competitor-analysis" element={<CompetitorComparison />} />
+            <Route path="/tools" element={<FreeTools />} />
+            <Route path="/tools/sample-size-calculator" element={<SampleSizeCalculator />} />
+            <Route path="/tools/significance-calculator" element={<SignificanceCalculator />} />
+            <Route path="/tools/aa-test-checker" element={<AATestChecker />} />
             <Route path="/action-center" element={<ActionCenter />} />
             <Route path="/reports" element={<AppShell><ComingSoon title="Reports" /></AppShell>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

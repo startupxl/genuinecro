@@ -213,4 +213,13 @@ describe("LandingView", () => {
       );
     });
   });
+
+  it("links to the free tools hub in the footer", () => {
+    render(
+      <MemoryRouter>
+        <LandingView onAnalyze={vi.fn()} usage={usage} user={null} onSignIn={vi.fn()} />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole("link", { name: /Free Tools/i })).toHaveAttribute("href", "/tools");
+  });
 });

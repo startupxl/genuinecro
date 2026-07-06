@@ -370,6 +370,8 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn, initialUrl }: LandingVi
       {/* Footer with legal links */}
       <div className="flex-shrink-0 flex justify-center py-4">
         <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
+          <a href="/tools" className="hover:text-foreground transition-colors">Free Tools</a>
+          <span className="hidden sm:inline">·</span>
           <a href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</a>
           <span className="hidden sm:inline">·</span>
           <a href="/terms" className="hover:text-foreground transition-colors">Terms & Conditions</a>
