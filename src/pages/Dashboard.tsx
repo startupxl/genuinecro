@@ -278,20 +278,31 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-surface border border-border rounded-lg overflow-hidden mt-3">
-            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-              Category Scores
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+            <div className="bg-surface border border-border rounded-lg overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+                Category Scores
+              </div>
+              <div className="p-4">
+                <CategoryDeltaBar
+                  data={categoryScoreData}
+                  selectedCategory={selectedCategory}
+                  onCategoryClick={(cat) => setSelectedCategory((c) => (c === cat ? null : cat))}
+                />
+              </div>
             </div>
-            <div className="p-4">
-              <CategoryDeltaBar
-                data={categoryScoreData}
-                selectedCategory={selectedCategory}
-                onCategoryClick={(cat) => setSelectedCategory((c) => (c === cat ? null : cat))}
-              />
+
+            <div className="bg-surface border border-border rounded-lg overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+                Top Issues
+              </div>
+              <div className="p-4">
+                <TopIssuesList items={topIssues} />
+              </div>
             </div>
           </div>
 
-          <div className="bg-surface border border-border rounded-lg overflow-hidden mt-3">
+          <div className="bg-surface border border-border rounded-lg overflow-hidden mt-3 mb-6">
             <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
               Issues by Severity
             </div>
@@ -305,15 +316,6 @@ const Dashboard = () => {
                   {" since last scan"}
                 </p>
               )}
-            </div>
-          </div>
-
-          <div className="bg-surface border border-border rounded-lg overflow-hidden mt-3 mb-6">
-            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-              Top Issues
-            </div>
-            <div className="p-4">
-              <TopIssuesList items={topIssues} />
             </div>
           </div>
 
