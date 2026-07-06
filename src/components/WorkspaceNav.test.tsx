@@ -21,7 +21,7 @@ describe("WorkspaceNav", () => {
     signOutMock.mockReset();
   });
 
-  it("renders all seven sections with Dashboard, Audits, Action Center, Bulk, and Message Match marked real", () => {
+  it("renders all eight sections with Dashboard, Audits, Action Center, Bulk, Message Match, and Competitor Comparison marked real", () => {
     mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Jane" };
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
@@ -29,7 +29,7 @@ describe("WorkspaceNav", () => {
       </MemoryRouter>
     );
 
-    ["Dashboard", "Audits", "Action Center", "Monitoring", "Bulk", "Reports", "Message Match"].forEach((label) => {
+    ["Dashboard", "Audits", "Action Center", "Monitoring", "Bulk", "Reports", "Message Match", "Competitor Comparison"].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
     ["Technical", "Content", "Conversion", "Analysis"].forEach((label) => {

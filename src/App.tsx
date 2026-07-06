@@ -24,6 +24,7 @@ import SiteDetail from "./pages/SiteDetail.tsx";
 import ActionCenter from "./pages/ActionCenter.tsx";
 import Technical from "./pages/Technical.tsx";
 import MessageMatchChecker from "./pages/MessageMatchChecker.tsx";
+import CompetitorComparison from "./pages/CompetitorComparison.tsx";
 import AppShell from "@/components/AppShell";
 import ComingSoon from "@/components/ComingSoon";
 
@@ -57,7 +58,7 @@ const App = () => (
             <Route path="/message-match" element={<MessageMatchChecker />} />
             <Route path="/content" element={<AppShell><ComingSoon title="Content" /></AppShell>} />
             <Route path="/monitoring" element={<AppShell><ComingSoon title="Monitoring" /></AppShell>} />
-            <Route path="/competitor-analysis" element={<AppShell><ComingSoon title="Analysis" /></AppShell>} />
+            <Route path="/competitor-analysis" element={<CompetitorComparison />} />
             <Route path="/action-center" element={<ActionCenter />} />
             <Route path="/reports" element={<AppShell><ComingSoon title="Reports" /></AppShell>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
