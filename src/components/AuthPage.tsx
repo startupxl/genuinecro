@@ -271,7 +271,7 @@ const AuthPage = ({ onBack, message, initialMode = "login" }: AuthPageProps) => 
                 <span className="h-2 w-2 rounded-full bg-friction-low/70" />
                 <span className="ml-2 flex items-center gap-1 text-[9px] text-muted-foreground bg-background rounded-full px-2 py-0.5">
                   <Lock className="h-2.5 w-2.5" />
-                  stripe.com/pricing
+                  startupxl.com/pricing
                 </span>
               </div>
 
@@ -279,7 +279,7 @@ const AuthPage = ({ onBack, message, initialMode = "login" }: AuthPageProps) => 
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Conversion Score</span>
-                    <p className="text-[10px] text-muted-foreground/70 mt-0.5">stripe.com · Homepage</p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-0.5">startupxl.com · Homepage</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-2xl font-semibold text-foreground">

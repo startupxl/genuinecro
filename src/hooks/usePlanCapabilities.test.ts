@@ -24,6 +24,22 @@ describe("usePlanCapabilities", () => {
       expect(result.current.canGenerateVariants).toBe(true);
     }
   });
+
+  it("disables canExperimentWorkbench on free, starter, and growth plans", () => {
+    for (const plan of ["free", "starter", "growth"]) {
+      mockPlan = plan;
+      const { result } = renderHook(() => usePlanCapabilities());
+      expect(result.current.canExperimentWorkbench).toBe(false);
+    }
+  });
+
+  it("enables canExperimentWorkbench on pro and agency plans", () => {
+    for (const plan of ["pro", "agency"]) {
+      mockPlan = plan;
+      const { result } = renderHook(() => usePlanCapabilities());
+      expect(result.current.canExperimentWorkbench).toBe(true);
+    }
+  });
 });
 
 describe("getUpgradeMessage", () => {
@@ -31,5 +47,11 @@ describe("getUpgradeMessage", () => {
     const msg = getUpgradeMessage("variants");
     expect(msg.requiredPlan).toBe("Pro");
     expect(msg.title.toLowerCase()).toContain("variant");
+  });
+
+  it("returns a dedicated message for the 'workbench' feature", () => {
+    const msg = getUpgradeMessage("workbench");
+    expect(msg.requiredPlan).toBe("Pro");
+    expect(msg.title.toLowerCase()).toContain("workbench");
   });
 });

@@ -28,6 +28,9 @@ import FreeTools from "./pages/tools/FreeTools.tsx";
 import SampleSizeCalculator from "./pages/tools/SampleSizeCalculator.tsx";
 import SignificanceCalculator from "./pages/tools/SignificanceCalculator.tsx";
 import AATestChecker from "./pages/tools/AATestChecker.tsx";
+import Workbench from "./pages/workbench/Workbench.tsx";
+import MultivariateIdeaExpander from "./pages/workbench/MultivariateIdeaExpander.tsx";
+import TestBriefWriter from "./pages/workbench/TestBriefWriter.tsx";
 import AppShell from "@/components/AppShell";
 import ComingSoon from "@/components/ComingSoon";
 
@@ -65,6 +68,9 @@ const App = () => (
             <Route path="/free-cro-tools/sample-size-calculator" element={<SampleSizeCalculator />} />
             <Route path="/free-cro-tools/significance-calculator" element={<SignificanceCalculator />} />
             <Route path="/free-cro-tools/aa-test-checker" element={<AATestChecker />} />
+            <Route path="/workbench" element={<Workbench />} />
+            <Route path="/workbench/multivariate-idea-expander" element={<MultivariateIdeaExpander />} />
+            <Route path="/workbench/test-brief-writer" element={<TestBriefWriter />} />
             <Route path="/action-center" element={<ActionCenter />} />
             <Route path="/reports" element={<AppShell><ComingSoon title="Reports" /></AppShell>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

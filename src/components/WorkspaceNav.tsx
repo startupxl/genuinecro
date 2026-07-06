@@ -1,7 +1,7 @@
 import { useNavigate, NavLink } from "react-router-dom";
 import {
   LayoutDashboard, ClipboardList, Activity, CheckSquare, FileBarChart,
-  LogIn, LogOut, UserCog, CreditCard, HelpCircle, Settings, ChevronUp, X, PanelLeftClose, Target, Swords,
+  LogIn, LogOut, UserCog, CreditCard, HelpCircle, Settings, ChevronUp, X, PanelLeftClose, Target, Swords, FlaskConical,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -30,6 +30,7 @@ const sections: NavSection[] = [
   { label: "Reports", path: "/reports", icon: FileBarChart, real: false },
   { label: "Message Match", path: "/message-match", icon: Target, real: true },
   { label: "Competitor Comparison", path: "/competitor-analysis", icon: Swords, real: true },
+  { label: "Experiment Workbench", path: "/workbench", icon: FlaskConical, real: true },
 ];
 
 interface WorkspaceNavProps {

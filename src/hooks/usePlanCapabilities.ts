@@ -11,6 +11,7 @@ export interface PlanCapabilities {
   canApiAccess: boolean;
   canWhiteLabel: boolean;
   canGenerateVariants: boolean;
+  canExperimentWorkbench: boolean;
   auditLimit: number;
 }
 
@@ -25,6 +26,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canApiAccess: false,
     canWhiteLabel: false,
     canGenerateVariants: false,
+    canExperimentWorkbench: false,
     auditLimit: 10,
   },
   starter: {
@@ -37,6 +39,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canApiAccess: false,
     canWhiteLabel: false,
     canGenerateVariants: false,
+    canExperimentWorkbench: false,
     auditLimit: 20,
   },
   growth: {
@@ -49,6 +52,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canApiAccess: false,
     canWhiteLabel: false,
     canGenerateVariants: false,
+    canExperimentWorkbench: false,
     auditLimit: 75,
   },
   pro: {
@@ -61,6 +65,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canApiAccess: true,
     canWhiteLabel: false,
     canGenerateVariants: true,
+    canExperimentWorkbench: true,
     auditLimit: 250,
   },
   agency: {
@@ -73,6 +78,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canApiAccess: true,
     canWhiteLabel: true,
     canGenerateVariants: true,
+    canExperimentWorkbench: true,
     auditLimit: 800,
   },
 };
@@ -112,6 +118,11 @@ export function getUpgradeMessage(feature: string): { title: string; description
       title: "White-label requires Agency plan",
       description: "Upgrade to Agency ($399/mo) for white-label reports and client-ready dashboards.",
       requiredPlan: "Agency",
+    },
+    workbench: {
+      title: "Experiment Workbench requires Pro plan",
+      description: "Upgrade to Pro ($199/mo) to expand hypotheses into multivariate test ideas and generate ready-to-share test briefs.",
+      requiredPlan: "Pro",
     },
   };
   return messages[feature] ?? messages.export;
