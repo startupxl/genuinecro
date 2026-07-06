@@ -63,7 +63,7 @@ describe("SiteSettingsDialog", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("disables Save until all three fields have a value", () => {
+  it("disables Save until all three revenue fields have a value", () => {
     render(
       <SiteSettingsDialog open={true} onOpenChange={() => {}} domain="example.com" initialSettings={null} onSaved={() => {}} />
     );
@@ -75,5 +75,41 @@ describe("SiteSettingsDialog", () => {
     fireEvent.change(screen.getByLabelText(/Average order value/i), { target: { value: "80" } });
     fireEvent.change(screen.getByLabelText(/Baseline conversion rate/i), { target: { value: "2.5" } });
     expect(screen.getByRole("button", { name: /Save/i })).not.toBeDisabled();
+  });
+
+  it("pre-fills the site type when present in initialSettings", () => {
+    render(
+      <SiteSettingsDialog
+        open={true}
+        onOpenChange={() => {}}
+        domain="example.com"
+        initialSettings={{ siteType: "saas" }}
+        onSaved={() => {}}
+      />
+    );
+    expect(screen.getByLabelText(/Site type/i)).toHaveValue("saas");
+  });
+
+  it("enables Save based on site type alone, without requiring the revenue fields", () => {
+    render(
+      <SiteSettingsDialog open={true} onOpenChange={() => {}} domain="example.com" initialSettings={null} onSaved={() => {}} />
+    );
+    expect(screen.getByRole("button", { name: /Save/i })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(/Site type/i), { target: { value: "ecommerce" } });
+    expect(screen.getByRole("button", { name: /Save/i })).not.toBeDisabled();
+  });
+
+  it("saves site type alone without touching the revenue fields", async () => {
+    const onSaved = vi.fn();
+    render(
+      <SiteSettingsDialog open={true} onOpenChange={() => {}} domain="example.com" initialSettings={null} onSaved={onSaved} />
+    );
+    fireEvent.change(screen.getByLabelText(/Site type/i), { target: { value: "ecommerce" } });
+    fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+    await waitFor(() => {
+      expect(saveSiteSettingsMock).toHaveBeenCalledWith("uid-1", "example.com", { siteType: "ecommerce" });
+    });
+    expect(onSaved).toHaveBeenCalledWith({ siteType: "ecommerce" });
   });
 });

@@ -90,6 +90,15 @@ describe("runMergedAudit", () => {
     runTechnicalAuditMock.mockReset();
   });
 
+  it("passes siteType through to analyzeUrl when provided", async () => {
+    analyzeUrlMock.mockResolvedValue(mockConversionResult);
+    runTechnicalAuditMock.mockResolvedValue(mockTechnicalResult);
+
+    await runMergedAudit("https://example.com", "homepage", "desktop", null, "ecommerce");
+
+    expect(analyzeUrlMock).toHaveBeenCalledWith("https://example.com", "homepage", "desktop", "ecommerce");
+  });
+
   it("runs both audits and combines the scores", async () => {
     analyzeUrlMock.mockResolvedValue(mockConversionResult);
     runTechnicalAuditMock.mockResolvedValue(mockTechnicalResult);

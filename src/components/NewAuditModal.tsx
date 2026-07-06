@@ -7,6 +7,8 @@ import { extractCategoryScores, detectPageType } from "@/lib/mockData";
 import { runMergedAudit } from "@/lib/mergedAudit";
 import { createActionItems } from "@/lib/firebase/actionItems";
 import { createScanJob, completeScanJob } from "@/lib/firebase/scanJobs";
+import { getSiteSettings } from "@/lib/firebase/siteSettings";
+import { getDomain } from "@/lib/dashboardMetrics";
 import type { ConversionGoal } from "@/lib/conversionGoals";
 import ConversionGoalSelect from "@/components/ConversionGoalSelect";
 import { toast } from "sonner";
@@ -43,7 +45,8 @@ const NewAuditModal = ({ open, onOpenChange }: NewAuditModalProps) => {
     const jobId = await createScanJob(user.uid, formatted, type, device);
 
     try {
-      const result = await runMergedAudit(formatted, type, device, goal);
+      const siteSettings = await getSiteSettings(user.uid, getDomain(formatted));
+      const result = await runMergedAudit(formatted, type, device, goal, siteSettings?.siteType);
 
       const analysisId = await trackAnalysis(
         formatted,

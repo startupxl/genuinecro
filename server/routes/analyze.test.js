@@ -138,6 +138,22 @@ describe("POST /api/analyze/analyze-url", () => {
     expect(res.body.data.frictionPoints[0].sourceCitation).toBeNull();
   });
 
+  it("passes the siteType through to buildAnalysisPrompt when provided", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { markdown: "# Page content", screenshot: null } }),
+    });
+    callOpenAIMock.mockResolvedValue({
+      conversionScore: 72, grade: "Strong", topIssues: [], insightSummary: {}, categoryScores: {}, frictionPoints: [],
+    });
+
+    await request(buildApp())
+      .post("/api/analyze/analyze-url")
+      .send({ url: "example.com", analysisType: "homepage", device: "desktop", siteType: "ecommerce" });
+
+    expect(buildAnalysisPromptMock).toHaveBeenCalledWith("homepage", "# Page content", "https://example.com", "desktop", "ecommerce");
+  });
+
   it("passes through effort and confidence when the AI includes them", async () => {
     fetchMock.mockResolvedValue({
       ok: true,

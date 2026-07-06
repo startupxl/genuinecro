@@ -1,10 +1,13 @@
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 
+export type SiteType = "ecommerce" | "saas" | "lead-gen" | "content" | "marketplace" | "other";
+
 export interface SiteSettings {
   monthlyTraffic?: number;
   averageOrderValue?: number;
   baselineConversionRate?: number;
+  siteType?: SiteType;
 }
 
 function docId(userId: string, domain: string): string {
@@ -19,6 +22,7 @@ export async function getSiteSettings(userId: string, domain: string): Promise<S
     monthlyTraffic: data.monthlyTraffic,
     averageOrderValue: data.averageOrderValue,
     baselineConversionRate: data.baselineConversionRate,
+    siteType: data.siteType,
   };
 }
 

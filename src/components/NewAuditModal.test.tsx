@@ -37,6 +37,11 @@ vi.mock("@/lib/firebase/scanJobs", () => ({
   completeScanJob: (...args: unknown[]) => completeScanJobMock(...args),
 }));
 
+const getSiteSettingsMock = vi.fn();
+vi.mock("@/lib/firebase/siteSettings", () => ({
+  getSiteSettings: (...args: unknown[]) => getSiteSettingsMock(...args),
+}));
+
 import NewAuditModal from "./NewAuditModal";
 
 const mockMergedResult = {
@@ -57,6 +62,7 @@ describe("NewAuditModal", () => {
     createActionItemsMock.mockReset().mockResolvedValue(undefined);
     createScanJobMock.mockReset().mockResolvedValue("job-1");
     completeScanJobMock.mockReset().mockResolvedValue(undefined);
+    getSiteSettingsMock.mockReset().mockResolvedValue(null);
   });
 
   it("does not render its content when closed", () => {
@@ -86,7 +92,7 @@ describe("NewAuditModal", () => {
       expect(navigateMock).toHaveBeenCalledWith("/audits/new-audit-id");
     });
     expect(runMergedAuditMock).toHaveBeenCalledWith(
-      "https://example.com", "homepage", "desktop", { type: "lead_form", isMacro: false }
+      "https://example.com", "homepage", "desktop", { type: "lead_form", isMacro: false }, undefined
     );
     expect(createScanJobMock).toHaveBeenCalledWith("uid-1", "https://example.com", "homepage", "desktop");
     expect(trackAnalysisMock).toHaveBeenCalledWith(
@@ -95,6 +101,28 @@ describe("NewAuditModal", () => {
     );
     expect(completeScanJobMock).toHaveBeenCalledWith("job-1");
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("looks up the domain's saved site type and passes it through to runMergedAudit", async () => {
+    getSiteSettingsMock.mockResolvedValue({ siteType: "ecommerce" });
+    runMergedAuditMock.mockResolvedValue(mockMergedResult);
+
+    render(
+      <MemoryRouter>
+        <NewAuditModal open={true} onOpenChange={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText("https://example.com"), { target: { value: "example.com" } });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "purchase" } });
+    fireEvent.click(screen.getByText("Analyze"));
+
+    await waitFor(() => {
+      expect(runMergedAuditMock).toHaveBeenCalledWith(
+        "https://example.com", "homepage", "desktop", { type: "purchase", isMacro: true }, "ecommerce"
+      );
+    });
+    expect(getSiteSettingsMock).toHaveBeenCalledWith("uid-1", "example.com");
   });
 
   it("shows an error and re-enables the form when the scan fails, without navigating away", async () => {

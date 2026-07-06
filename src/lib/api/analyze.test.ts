@@ -27,6 +27,22 @@ describe("analyzeUrl", () => {
     );
   });
 
+  it("includes siteType in the request body when provided", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: { conversionScore: 65 } }),
+    });
+
+    await analyzeUrl("https://example.com", "homepage", "desktop", "ecommerce");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/analyze/analyze-url",
+      expect.objectContaining({
+        body: JSON.stringify({ url: "https://example.com", analysisType: "homepage", device: "desktop", siteType: "ecommerce" }),
+      })
+    );
+  });
+
   it("throws when the response is not ok", async () => {
     fetchMock.mockResolvedValue({ ok: false, json: async () => ({ success: false, error: "Scrape failed" }) });
     await expect(analyzeUrl("https://example.com", "homepage", "desktop")).rejects.toThrow("Scrape failed");

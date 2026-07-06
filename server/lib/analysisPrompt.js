@@ -71,6 +71,11 @@ const ANALYSIS_TYPE_LABELS = {
   "landing-marketing": "Landing Page — Marketing", "landing-paid-media": "Landing Page — Paid Media",
 };
 
+const SITE_TYPE_LABELS = {
+  ecommerce: "E-commerce", saas: "SaaS / Subscription", "lead-gen": "Lead Generation",
+  content: "Content / Media", marketplace: "Marketplace", other: "Other",
+};
+
 function buildCriteriaSection(analysisType) {
   const criteria = CRITERIA_LIBRARY[analysisType];
   if (!criteria) return "";
@@ -86,11 +91,12 @@ Check the page specifically against each of these named, sourced criteria. When 
 ${list}`;
 }
 
-export function buildAnalysisPrompt(analysisType, markdown, url, device) {
+export function buildAnalysisPrompt(analysisType, markdown, url, device, siteType) {
   const typeLabel = ANALYSIS_TYPE_LABELS[analysisType] || analysisType;
   const emphasis = ANALYSIS_TYPE_EMPHASIS[analysisType] || ANALYSIS_TYPE_EMPHASIS.homepage;
   const deviceBench = DEVICE_BENCHMARKS[device] || DEVICE_BENCHMARKS.desktop;
   const criteriaSection = buildCriteriaSection(analysisType);
+  const siteTypeLabel = SITE_TYPE_LABELS[siteType];
 
   const deviceContext = device === "mobile"
     ? "You are analyzing the MOBILE experience. Focus on touch targets (44px min), thumb-zone accessibility, mobile viewport issues, responsive layout, tap target spacing, text readability on small screens, mobile keyboard optimization, and cellular performance."
@@ -101,6 +107,7 @@ export function buildAnalysisPrompt(analysisType, markdown, url, device) {
 URL: ${url}
 Page Type: ${typeLabel}
 Device: ${device.toUpperCase()}
+${siteTypeLabel ? `BUSINESS TYPE: ${siteTypeLabel} — weigh your findings and fix recommendations for what actually matters to this kind of business (e.g. checkout/payment trust matters more for e-commerce, lead capture and social proof matter more for lead-gen, pricing/plan clarity matters more for SaaS).\n` : ""}
 
 ${deviceContext}
 

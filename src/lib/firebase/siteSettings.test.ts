@@ -47,6 +47,15 @@ describe("getSiteSettings", () => {
     await getSiteSettings("uid-1", "example.com");
     expect(docMock).toHaveBeenCalledWith({}, "siteSettings", "uid-1_example.com");
   });
+
+  it("reads back siteType when present", async () => {
+    getDocMock.mockResolvedValue({
+      exists: () => true,
+      data: () => ({ userId: "uid-1", domain: "example.com", siteType: "ecommerce" }),
+    });
+    const result = await getSiteSettings("uid-1", "example.com");
+    expect(result?.siteType).toBe("ecommerce");
+  });
 });
 
 describe("saveSiteSettings", () => {
@@ -60,6 +69,15 @@ describe("saveSiteSettings", () => {
     expect(setDocMock).toHaveBeenCalledWith(
       { __ref: true },
       { userId: "uid-1", domain: "example.com", monthlyTraffic: 50000, averageOrderValue: 80, baselineConversionRate: 2.5, updatedAt: "server-timestamp" },
+      { merge: true }
+    );
+  });
+
+  it("writes siteType when provided", async () => {
+    await saveSiteSettings("uid-1", "example.com", { siteType: "saas" });
+    expect(setDocMock).toHaveBeenCalledWith(
+      { __ref: true },
+      { userId: "uid-1", domain: "example.com", siteType: "saas", updatedAt: "server-timestamp" },
       { merge: true }
     );
   });

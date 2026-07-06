@@ -89,4 +89,15 @@ describe("buildAnalysisPrompt", () => {
     expect(prompt).toContain("subheadline");
     expect(prompt).toContain("value proposition");
   });
+
+  it("includes the business type context when siteType is provided", () => {
+    const prompt = buildAnalysisPrompt("homepage", "content", "https://example.com", "desktop", "ecommerce");
+    expect(prompt).toContain("BUSINESS TYPE");
+    expect(prompt).toContain("E-commerce");
+  });
+
+  it("omits the business type context when siteType is not provided", () => {
+    const prompt = buildAnalysisPrompt("homepage", "content", "https://example.com", "desktop");
+    expect(prompt).not.toContain("BUSINESS TYPE");
+  });
 });

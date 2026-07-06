@@ -3,6 +3,7 @@ import { runTechnicalAudit } from "./api/technical";
 import { extractCategoryScores, type AnalysisType, type AnalysisResult } from "./mockData";
 import type { FrictionPointInput } from "./firebase/actionItems";
 import { computeGoalWeightedScore, type ConversionGoal } from "./conversionGoals";
+import type { SiteType } from "./firebase/siteSettings";
 
 const TECHNICAL_WEIGHT = 0.15;
 const CONVERSION_WEIGHT = 0.85;
@@ -45,9 +46,10 @@ export async function runMergedAudit(
   url: string,
   type: AnalysisType,
   device: "desktop" | "mobile",
-  goal: ConversionGoal | null = null
+  goal: ConversionGoal | null = null,
+  siteType?: SiteType
 ): Promise<MergedAuditResult> {
-  const conversionResult = await analyzeUrl(url, type, device);
+  const conversionResult = await analyzeUrl(url, type, device, siteType);
 
   const categoryScores = extractCategoryScores(conversionResult.benchmark);
   const rawConversionScore = conversionResult.conversionScore ?? conversionResult.benchmark.overallScore;

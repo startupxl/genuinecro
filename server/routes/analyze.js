@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post("/analyze-url", async (req, res) => {
   try {
-    const { url, analysisType = "homepage", device = "desktop" } = req.body;
+    const { url, analysisType = "homepage", device = "desktop", siteType } = req.body;
 
     if (!url) {
       return res.status(400).json({ success: false, error: "URL is required" });
@@ -53,7 +53,7 @@ router.post("/analyze-url", async (req, res) => {
       return res.status(422).json({ success: false, error: "No content extracted from URL" });
     }
 
-    const prompt = buildAnalysisPrompt(analysisType, markdown, formattedUrl, device);
+    const prompt = buildAnalysisPrompt(analysisType, markdown, formattedUrl, device, siteType);
 
     let aiData;
     try {
