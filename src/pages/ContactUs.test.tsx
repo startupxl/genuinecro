@@ -12,8 +12,11 @@ vi.mock("sonner", () => ({
   },
 }));
 
+let mockUser: { email: string } | null = null;
+let mockProfile: { displayName: string | null } | null = null;
+
 vi.mock("@/hooks/useAuth", () => ({
-  useAuth: () => ({ user: null }),
+  useAuth: () => ({ user: mockUser, profile: mockProfile }),
 }));
 
 vi.mock("@/hooks/useSubscription", () => ({
@@ -38,6 +41,21 @@ describe("ContactUs", () => {
     fetchMock.mockReset();
     toastSuccessMock.mockReset();
     toastErrorMock.mockReset();
+    mockUser = null;
+    mockProfile = null;
+  });
+
+  it("pre-fills the name field from the Firestore profile, not any stale Firebase Auth displayName", () => {
+    mockUser = { email: "person@example.com" };
+    mockProfile = { displayName: "Real Name" };
+
+    render(
+      <MemoryRouter>
+        <ContactUs />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByLabelText("Name")).toHaveValue("Real Name");
   });
 
   it("submits the message to Formspree and shows a success toast", async () => {

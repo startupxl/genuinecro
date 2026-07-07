@@ -4,9 +4,10 @@ import { MemoryRouter } from "react-router-dom";
 
 const signOutMock = vi.fn();
 let mockUser: { uid: string; email: string; displayName: string | null } | null = null;
+let mockProfile: { displayName: string | null } | null = null;
 
 vi.mock("@/hooks/useAuth", () => ({
-  useAuth: () => ({ user: mockUser, signOut: signOutMock, loading: false }),
+  useAuth: () => ({ user: mockUser, profile: mockProfile, signOut: signOutMock, loading: false }),
 }));
 
 vi.mock("@/hooks/useSubscription", () => ({
@@ -18,11 +19,13 @@ import WorkspaceNav from "./WorkspaceNav";
 describe("WorkspaceNav", () => {
   beforeEach(() => {
     mockUser = null;
+    mockProfile = null;
     signOutMock.mockReset();
   });
 
   it("renders all eight sections with Dashboard, Audits, Action Center, Message Match, Competitor Comparison, and Experiment Workbench marked real", () => {
-    mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Jane" };
+    mockUser = { uid: "uid-1", email: "user@example.com", displayName: null };
+    mockProfile = { displayName: "Jane" };
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
         <WorkspaceNav />
@@ -38,7 +41,8 @@ describe("WorkspaceNav", () => {
   });
 
   it("highlights the active section based on the current route", () => {
-    mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Jane" };
+    mockUser = { uid: "uid-1", email: "user@example.com", displayName: null };
+    mockProfile = { displayName: "Jane" };
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
         <WorkspaceNav />
@@ -49,8 +53,9 @@ describe("WorkspaceNav", () => {
     expect(dashboardLink).toHaveClass("bg-secondary");
   });
 
-  it("shows a profile row with the user's name and plan when signed in", () => {
-    mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Jane" };
+  it("shows a profile row with the account's name (from the Firestore profile) and plan when signed in", () => {
+    mockUser = { uid: "uid-1", email: "user@example.com", displayName: null };
+    mockProfile = { displayName: "Jane" };
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
         <WorkspaceNav />
@@ -59,6 +64,19 @@ describe("WorkspaceNav", () => {
 
     expect(screen.getByText("Jane")).toBeInTheDocument();
     expect(screen.getByText("Growth plan")).toBeInTheDocument();
+  });
+
+  it("falls back to the email only while the profile name hasn't been set yet, ignoring any stale Firebase Auth displayName", () => {
+    mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Stale Auth Name" };
+    mockProfile = { displayName: null };
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText("user@example.com")).toBeInTheDocument();
+    expect(screen.queryByText("Stale Auth Name")).not.toBeInTheDocument();
   });
 
   it("shows a Sign in button instead of a profile row when signed out", () => {
@@ -76,7 +94,8 @@ describe("WorkspaceNav", () => {
   });
 
   it("positions the profile row after the nav sections (right after Experiment Workbench), in its own bordered section", () => {
-    mockUser = { uid: "uid-1", email: "user@example.com", displayName: "Jane" };
+    mockUser = { uid: "uid-1", email: "user@example.com", displayName: null };
+    mockProfile = { displayName: "Jane" };
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
         <WorkspaceNav />

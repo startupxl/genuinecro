@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 const getUserProfileMock = vi.fn();
+const updateUserProfileMock = vi.fn();
+const refreshProfileMock = vi.fn();
 
 vi.mock("@/lib/firebase/users", () => ({
   getUserProfile: (...args: unknown[]) => getUserProfileMock(...args),
-  updateUserProfile: vi.fn(),
+  updateUserProfile: (...args: unknown[]) => updateUserProfileMock(...args),
 }));
 
 vi.mock("firebase/auth", () => ({
@@ -14,7 +16,7 @@ vi.mock("firebase/auth", () => ({
 }));
 
 vi.mock("@/hooks/useAuth", () => ({
-  useAuth: () => ({ user: { uid: "uid-1", email: "person@example.com" } }),
+  useAuth: () => ({ user: { uid: "uid-1", email: "person@example.com" }, refreshProfile: refreshProfileMock }),
 }));
 
 vi.mock("@/hooks/useUsageTracking", () => ({
@@ -30,6 +32,8 @@ import Account from "./Account";
 describe("Account page", () => {
   beforeEach(() => {
     getUserProfileMock.mockReset();
+    updateUserProfileMock.mockReset();
+    refreshProfileMock.mockReset();
   });
 
   it("loads the Firestore profile into the form fields", async () => {
@@ -45,5 +49,26 @@ describe("Account page", () => {
       expect(screen.getByDisplayValue("Person Name")).toBeInTheDocument();
     });
     expect(getUserProfileMock).toHaveBeenCalledWith("uid-1");
+  });
+
+  it("refreshes the shared auth profile after saving, so the sidebar picks up the new name immediately", async () => {
+    getUserProfileMock.mockResolvedValue({ displayName: "Old Name", email: "person@example.com", avatarUrl: null });
+    updateUserProfileMock.mockResolvedValue(undefined);
+
+    render(
+      <MemoryRouter>
+        <Account />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByDisplayValue("Old Name")).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText("Display Name"), { target: { value: "New Name" } });
+    fireEvent.click(screen.getByRole("button", { name: /Save Changes/i }));
+
+    await waitFor(() => {
+      expect(updateUserProfileMock).toHaveBeenCalledWith("uid-1", { displayName: "New Name", avatarUrl: "" });
+    });
+    expect(refreshProfileMock).toHaveBeenCalled();
   });
 });

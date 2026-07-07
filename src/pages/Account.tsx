@@ -17,7 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const Account = () => {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { usage } = useUsageTracking();
   const navigate = useNavigate();
 
@@ -48,6 +48,7 @@ const Account = () => {
     setSaving(true);
     try {
       await updateUserProfile(user.uid, { displayName, avatarUrl });
+      await refreshProfile();
 
       if (email !== user.email) {
         await updateEmail(user, email);

@@ -44,11 +44,11 @@ interface WorkspaceNavProps {
 
 const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate, isCollapsed = false, onToggleCollapse }: WorkspaceNavProps) => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { currentPlan } = useSubscription();
 
-  const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : "U";
-  const displayName = user?.displayName || user?.email || "User";
+  const displayName = profile?.displayName || user?.email || "User";
+  const initials = (profile?.displayName || user?.email || "U").slice(0, 2).toUpperCase();
 
   const handleLogoClick = () => {
     onNavigate?.();

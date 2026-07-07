@@ -11,8 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const ContactUs = () => {
-  const { user } = useAuth();
-  const [name, setName] = useState(user?.displayName || "");
+  const { user, profile } = useAuth();
+  const [name, setName] = useState(profile?.displayName || "");
   const [email, setEmail] = useState(user?.email || "");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
