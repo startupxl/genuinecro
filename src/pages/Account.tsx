@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
+import { useSubscription } from "@/hooks/useSubscription";
 import { updateEmail } from "firebase/auth";
 import { getUserProfile, updateUserProfile } from "@/lib/firebase/users";
 import AppShell from "@/components/AppShell";
@@ -19,6 +20,7 @@ import { toast } from "sonner";
 const Account = () => {
   const { user, refreshProfile } = useAuth();
   const { usage } = useUsageTracking();
+  const { currentPlan } = useSubscription();
   const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState("");
@@ -63,7 +65,6 @@ const Account = () => {
     }
   };
 
-  const currentPlan = "Free";
   const usagePercent = usage.limit > 0 ? Math.round((usage.used / usage.limit) * 100) : 0;
 
   if (!user) {

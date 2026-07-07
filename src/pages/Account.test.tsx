@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 const getUserProfileMock = vi.fn();
 const updateUserProfileMock = vi.fn();
 const refreshProfileMock = vi.fn();
+let mockCurrentPlan = "Free";
 
 vi.mock("@/lib/firebase/users", () => ({
   getUserProfile: (...args: unknown[]) => getUserProfileMock(...args),
@@ -24,7 +25,7 @@ vi.mock("@/hooks/useUsageTracking", () => ({
 }));
 
 vi.mock("@/hooks/useSubscription", () => ({
-  useSubscription: () => ({ currentPlan: "Free", subscription: null }),
+  useSubscription: () => ({ currentPlan: mockCurrentPlan, subscription: null }),
 }));
 
 import Account from "./Account";
@@ -34,6 +35,23 @@ describe("Account page", () => {
     getUserProfileMock.mockReset();
     updateUserProfileMock.mockReset();
     refreshProfileMock.mockReset();
+    mockCurrentPlan = "Free";
+  });
+
+  it("shows the real plan from useSubscription, not a hardcoded Free badge", async () => {
+    mockCurrentPlan = "Agency";
+    getUserProfileMock.mockResolvedValue({ displayName: "Person Name", email: "person@example.com", avatarUrl: null });
+
+    render(
+      <MemoryRouter>
+        <Account />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Agency Plan")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Free Plan")).not.toBeInTheDocument();
   });
 
   it("loads the Firestore profile into the form fields", async () => {
