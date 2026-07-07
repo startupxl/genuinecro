@@ -26,9 +26,11 @@ vi.mock("@/hooks/useAuth", () => ({
 }));
 
 let capturedResult: AnalysisResult | null = null;
+let capturedAnalysisId: string | undefined;
 vi.mock("@/components/AnalysisView", () => ({
-  default: ({ result }: { result: AnalysisResult }) => {
+  default: ({ result, analysisId }: { result: AnalysisResult; analysisId?: string }) => {
     capturedResult = result;
+    capturedAnalysisId = analysisId;
     return (
       <div data-testid="analysis-view">
         <span data-testid="av-url">{result.url}</span>
@@ -89,6 +91,7 @@ describe("ScanDetail", () => {
       expect(screen.getByTestId("av-url")).toHaveTextContent("https://a.com/");
     });
     expect(screen.getByTestId("av-score")).toHaveTextContent("65");
+    expect(capturedAnalysisId).toBe("scan-1");
   });
 
   it("shows only the action items created within this scan's time window", async () => {

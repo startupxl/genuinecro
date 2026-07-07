@@ -14,13 +14,14 @@ interface MetadataBarProps {
   conversionGoal?: ConversionGoal;
   onNewAnalysis: (url: string) => void;
   onToggleSidebar?: () => void;
+  onShare?: () => void;
 }
 
 function goalDisplayLabel(goal: ConversionGoal): string {
   return goal.type === "custom" && goal.customLabel ? goal.customLabel : GOAL_LABELS[goal.type];
 }
 
-const MetadataBar = ({ url, timestamp, device, issueCount, analysisType, conversionGoal, onNewAnalysis, onToggleSidebar }: MetadataBarProps) => {
+const MetadataBar = ({ url, timestamp, device, issueCount, analysisType, conversionGoal, onNewAnalysis, onToggleSidebar, onShare }: MetadataBarProps) => {
   const [newUrl, setNewUrl] = useState(url);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -92,10 +93,15 @@ const MetadataBar = ({ url, timestamp, device, issueCount, analysisType, convers
           <span className="hidden sm:inline">{issueCount} Friction Points</span>
         </span>
 
-        <button className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-secondary">
-          <Share2 className="h-3 w-3" />
-          Share
-        </button>
+        {onShare && (
+          <button
+            onClick={onShare}
+            className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-secondary"
+          >
+            <Share2 className="h-3 w-3" />
+            Share
+          </button>
+        )}
       </div>
     </motion.div>
   );

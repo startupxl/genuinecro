@@ -32,6 +32,8 @@ import Workbench from "./pages/workbench/Workbench.tsx";
 import MultivariateIdeaExpander from "./pages/workbench/MultivariateIdeaExpander.tsx";
 import TestBriefWriter from "./pages/workbench/TestBriefWriter.tsx";
 import Monitoring from "./pages/Monitoring.tsx";
+import Reports from "./pages/Reports.tsx";
+import SharedReport from "./pages/SharedReport.tsx";
 import AppShell from "@/components/AppShell";
 import ComingSoon from "@/components/ComingSoon";
 
@@ -73,7 +75,8 @@ const App = () => (
             <Route path="/workbench/multivariate-idea-expander" element={<MultivariateIdeaExpander />} />
             <Route path="/workbench/test-brief-writer" element={<TestBriefWriter />} />
             <Route path="/action-center" element={<ActionCenter />} />
-            <Route path="/reports" element={<AppShell><ComingSoon title="Reports" /></AppShell>} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/reports/shared/:shareId" element={<SharedReport />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

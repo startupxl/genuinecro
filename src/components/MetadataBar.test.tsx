@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import MetadataBar from "./MetadataBar";
 
 const baseProps = {
@@ -29,5 +29,19 @@ describe("MetadataBar — conversion goal", () => {
   it("omits the goal chip when no goal is present (older records)", () => {
     render(<MetadataBar {...baseProps} />);
     expect(screen.queryByText("Lead Form Submission")).not.toBeInTheDocument();
+  });
+});
+
+describe("MetadataBar — share", () => {
+  it("calls onShare when the Share button is clicked", () => {
+    const onShare = vi.fn();
+    render(<MetadataBar {...baseProps} onShare={onShare} />);
+    fireEvent.click(screen.getByRole("button", { name: /Share/i }));
+    expect(onShare).toHaveBeenCalled();
+  });
+
+  it("does not render the Share button when onShare is absent (e.g. anonymous view)", () => {
+    render(<MetadataBar {...baseProps} />);
+    expect(screen.queryByRole("button", { name: /Share/i })).not.toBeInTheDocument();
   });
 });

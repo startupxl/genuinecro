@@ -75,6 +75,7 @@ const ScanDetail = () => {
   return (
     <AnalysisView
       result={result}
+      analysisId={scan.id}
       onNewAnalysis={(url) => navigate("/", { state: { prefillUrl: url } })}
       onGoHome={() => navigate("/audits")}
     />

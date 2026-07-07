@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowDownWideNarrow, Filter, X, PanelLeftOpen, ChevronDown, Download, ClipboardList, Lock } from "lucide-react";
+import { ArrowDownWideNarrow, Filter, X, PanelLeftOpen, ChevronDown, Download, ClipboardList, Lock, FileText } from "lucide-react";
 import type { AnalysisResult, FrictionSeverity } from "@/lib/mockData";
-import { exportCSV, copyAsJiraTickets } from "@/lib/exportUtils";
+import { exportCSV, copyAsJiraTickets, exportPDF } from "@/lib/exportUtils";
 import { toast } from "sonner";
 import { getCategoryTab } from "@/lib/mergedAudit";
 import { getDomain } from "@/lib/dashboardMetrics";
 import { getSiteSettings, type SiteSettings } from "@/lib/firebase/siteSettings";
+import { createSharedReport } from "@/lib/firebase/sharedReports";
 import Sidebar from "./Sidebar";
 import MetadataBar from "./MetadataBar";
 import FrictionCard from "./FrictionCard";
@@ -37,9 +38,10 @@ interface AnalysisViewProps {
   result: AnalysisResult;
   onNewAnalysis: (url: string) => void;
   onGoHome?: () => void;
+  analysisId?: string;
 }
 
-const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) => {
+const AnalysisView = ({ result, onNewAnalysis, onGoHome, analysisId }: AnalysisViewProps) => {
   const capabilities = usePlanCapabilities();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -100,6 +102,31 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
     }
   };
 
+  const canShare = !!user && !!analysisId;
+
+  const handleShare = async () => {
+    if (!user || !analysisId) return;
+    try {
+      const shareId = await createSharedReport(user.uid, analysisId, {
+        url: result.url,
+        analysisType: result.analysisType,
+        device: result.device,
+        conversionScore: result.conversionScore ?? result.benchmark.overallScore,
+        categoryScores: Object.fromEntries(
+          Object.entries(result.benchmark.categoryScores ?? {}).map(([k, v]) => [k, v?.score ?? 0])
+        ),
+        frictionPoints: result.frictionPoints,
+      });
+      const link = `${window.location.origin}/reports/shared/${shareId}`;
+      await navigator.clipboard.writeText(link);
+      toast.success("Share link copied to clipboard");
+    } catch (err) {
+      toast.error("Couldn't create a share link", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    }
+  };
+
   return (
     <AppShell onLogoClick={onGoHome}>
       <motion.div
@@ -145,6 +172,7 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
           conversionGoal={result.conversionGoal}
           onNewAnalysis={onNewAnalysis}
           onToggleSidebar={!showSidebarInline ? () => setSidebarOpen(true) : undefined}
+          onShare={canShare ? handleShare : undefined}
         />
 
         {/* Category tabs */}
@@ -233,6 +261,26 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome }: AnalysisViewProps) =>
           >
             <Download className="h-3 w-3" />
             <span className="hidden md:inline">CSV</span>
+            {!capabilities.canExport && <Lock className="h-2.5 w-2.5 ml-0.5" />}
+          </button>
+          <button
+            onClick={() => {
+              if (!capabilities.canExport) {
+                const msg = getUpgradeMessage("export");
+                toast.error(msg.title, {
+                  description: msg.description,
+                  action: { label: "Upgrade", onClick: () => navigate("/subscription") },
+                });
+                return;
+              }
+              exportPDF(result, filteredPoints);
+              toast.success("PDF downloaded");
+            }}
+            className="h-7 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 rounded hover:bg-secondary transition-colors"
+            title="Download PDF"
+          >
+            <FileText className="h-3 w-3" />
+            <span className="hidden md:inline">PDF</span>
             {!capabilities.canExport && <Lock className="h-2.5 w-2.5 ml-0.5" />}
           </button>
 

@@ -23,7 +23,7 @@ describe("WorkspaceNav", () => {
     signOutMock.mockReset();
   });
 
-  it("renders all eight sections with Dashboard, Audits, Action Center, Monitoring, Message Match, Competitor Comparison, and Experiment Workbench marked real", () => {
+  it("renders all eight sections with Dashboard, Audits, Action Center, Monitoring, Reports, Message Match, Competitor Comparison, and Experiment Workbench marked real", () => {
     mockUser = { uid: "uid-1", email: "user@example.com", displayName: null };
     mockProfile = { displayName: "Jane" };
     render(
