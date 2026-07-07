@@ -81,4 +81,15 @@ describe("ContactUs", () => {
       expect(toastErrorMock).toHaveBeenCalledWith("Couldn't send your message. Please try again or email us directly.");
     });
   });
+
+  it("never displays the internal support email address in plain text, to avoid scraping/spam", () => {
+    render(
+      <MemoryRouter>
+        <ContactUs />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByText(/experiments@genuinecro\.com/i)).not.toBeInTheDocument();
+    expect(document.body.innerHTML).not.toContain("experiments@genuinecro.com");
+  });
 });

@@ -104,7 +104,7 @@ const ContactUs = () => {
                   <h2 className="text-sm font-semibold text-foreground">Email Us</h2>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  For general inquiries & support: <span className="text-foreground font-medium">experiments@genuinecro.com</span>
+                  For general inquiries &amp; support, use the form — it reaches the same team and gets tracked so nothing slips through.
                 </p>
               </CardContent>
             </Card>

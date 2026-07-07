@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 
 const PrivacyPolicy = () => {
@@ -46,7 +47,7 @@ const PrivacyPolicy = () => {
           <section className="space-y-2">
             <h2 className="text-base font-semibold text-foreground">6. Your Rights</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              You have the right to access, correct, or delete your personal data. You may also request a copy of your data or ask us to restrict processing. Contact us at experiments@genuinecro.com for any data-related requests.
+              You have the right to access, correct, or delete your personal data. You may also request a copy of your data or ask us to restrict processing. <Link to="/contact" className="text-primary hover:underline">Contact us</Link> for any data-related requests.
             </p>
           </section>
 

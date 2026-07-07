@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 
 const CancellationRefunds = () => {
@@ -32,7 +33,7 @@ const CancellationRefunds = () => {
           <section className="space-y-2">
             <h2 className="text-base font-semibold text-foreground">4. How to Request a Refund</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              To request a refund, contact us at experiments@genuinecro.com with your account email and reason for the refund. We aim to process all refund requests within 5–7 business days.
+              To request a refund, <Link to="/contact" className="text-primary hover:underline">contact us</Link> with your account email and reason for the refund. We aim to process all refund requests within 5–7 business days.
             </p>
           </section>
 
