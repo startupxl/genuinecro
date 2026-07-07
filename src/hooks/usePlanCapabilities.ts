@@ -6,10 +6,6 @@ export interface PlanCapabilities {
   canExport: boolean;
   canMobileAnalysis: boolean;
   canComparisonAnalysis: boolean;
-  canFunnelAnalysis: boolean;
-  canTeamSharing: boolean;
-  canApiAccess: boolean;
-  canWhiteLabel: boolean;
   canGenerateVariants: boolean;
   canExperimentWorkbench: boolean;
   auditLimit: number;
@@ -21,49 +17,15 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canExport: false,
     canMobileAnalysis: false,
     canComparisonAnalysis: false,
-    canFunnelAnalysis: false,
-    canTeamSharing: false,
-    canApiAccess: false,
-    canWhiteLabel: false,
     canGenerateVariants: false,
     canExperimentWorkbench: false,
-    auditLimit: 10,
-  },
-  starter: {
-    planKey: "starter",
-    canExport: false,
-    canMobileAnalysis: false,
-    canComparisonAnalysis: false,
-    canFunnelAnalysis: false,
-    canTeamSharing: false,
-    canApiAccess: false,
-    canWhiteLabel: false,
-    canGenerateVariants: false,
-    canExperimentWorkbench: false,
-    auditLimit: 20,
-  },
-  growth: {
-    planKey: "growth",
-    canExport: false,
-    canMobileAnalysis: true,
-    canComparisonAnalysis: true,
-    canFunnelAnalysis: true,
-    canTeamSharing: false,
-    canApiAccess: false,
-    canWhiteLabel: false,
-    canGenerateVariants: false,
-    canExperimentWorkbench: false,
-    auditLimit: 75,
+    auditLimit: 3,
   },
   pro: {
     planKey: "pro",
     canExport: true,
     canMobileAnalysis: true,
     canComparisonAnalysis: true,
-    canFunnelAnalysis: true,
-    canTeamSharing: true,
-    canApiAccess: true,
-    canWhiteLabel: false,
     canGenerateVariants: true,
     canExperimentWorkbench: true,
     auditLimit: 250,
@@ -73,10 +35,6 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canExport: true,
     canMobileAnalysis: true,
     canComparisonAnalysis: true,
-    canFunnelAnalysis: true,
-    canTeamSharing: true,
-    canApiAccess: true,
-    canWhiteLabel: true,
     canGenerateVariants: true,
     canExperimentWorkbench: true,
     auditLimit: 800,
@@ -95,29 +53,24 @@ export function usePlanCapabilities(): PlanCapabilities {
 export function getUpgradeMessage(feature: string): { title: string; description: string; requiredPlan: string } {
   const messages: Record<string, { title: string; description: string; requiredPlan: string }> = {
     mobile: {
-      title: "Mobile analysis requires Growth plan",
-      description: "Upgrade to Growth ($79/mo) to unlock mobile + responsive previews and comparison analysis.",
-      requiredPlan: "Growth",
+      title: "Mobile analysis requires Pro plan",
+      description: "Upgrade to Pro ($199/mo) to unlock mobile + responsive previews and comparison analysis.",
+      requiredPlan: "Pro",
     },
     comparison: {
-      title: "Comparison mode requires Growth plan",
-      description: "Upgrade to Growth ($79/mo) to compare pages side-by-side and run competitor analysis.",
-      requiredPlan: "Growth",
+      title: "Comparison mode requires Pro plan",
+      description: "Upgrade to Pro ($199/mo) to compare pages side-by-side and run competitor analysis.",
+      requiredPlan: "Pro",
     },
     export: {
       title: "Report exports require Pro plan",
-      description: "Upgrade to Pro ($199/mo) to export reports, download assets, and get developer tokens.",
+      description: "Upgrade to Pro ($199/mo) to export reports and download assets.",
       requiredPlan: "Pro",
     },
     variants: {
       title: "Variant copy generation requires Pro plan",
       description: "Upgrade to Pro ($199/mo) to generate ready-to-test copy variants for any friction point.",
       requiredPlan: "Pro",
-    },
-    whitelabel: {
-      title: "White-label requires Agency plan",
-      description: "Upgrade to Agency ($399/mo) for white-label reports and client-ready dashboards.",
-      requiredPlan: "Agency",
     },
     workbench: {
       title: "Experiment Workbench requires Pro plan",

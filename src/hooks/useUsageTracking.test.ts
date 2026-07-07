@@ -14,7 +14,7 @@ vi.mock("./useAuth", () => ({
   useAuth: () => useAuthMock(),
 }));
 
-const useSubscriptionMock = vi.fn(() => ({ currentPlan: "Growth", subscription: null }));
+const useSubscriptionMock = vi.fn(() => ({ currentPlan: "Pro", subscription: null }));
 vi.mock("./useSubscription", () => ({
   useSubscription: () => useSubscriptionMock(),
 }));
@@ -26,7 +26,7 @@ describe("useUsageTracking", () => {
     countAnalysesSinceMock.mockReset();
     recordAnalysisMock.mockReset();
     useAuthMock.mockReturnValue({ user: { uid: "uid-1" } });
-    useSubscriptionMock.mockReturnValue({ currentPlan: "Growth", subscription: null });
+    useSubscriptionMock.mockReturnValue({ currentPlan: "Pro", subscription: null });
     localStorage.clear();
   });
 
@@ -37,7 +37,7 @@ describe("useUsageTracking", () => {
     await waitFor(() => {
       expect(result.current.usage.used).toBe(12);
     });
-    expect(result.current.usage.limit).toBe(75);
+    expect(result.current.usage.limit).toBe(250);
     expect(result.current.usage.requiresPaid).toBe(false);
   });
 
@@ -120,6 +120,28 @@ describe("useUsageTracking", () => {
     expect(recordAnalysisMock).toHaveBeenCalledWith(
       expect.objectContaining({ categoryScores: { "content-hierarchy": 65 } })
     );
+  });
+
+  it("limits the agency plan to 800 audits", async () => {
+    useSubscriptionMock.mockReturnValue({ currentPlan: "Agency", subscription: null });
+    countAnalysesSinceMock.mockResolvedValue(0);
+    const { result } = renderHook(() => useUsageTracking());
+
+    await waitFor(() => {
+      expect(countAnalysesSinceMock).toHaveBeenCalled();
+    });
+    expect(result.current.usage.limit).toBe(800);
+  });
+
+  it("gives an enterprise plan the same allowance as agency until custom limits are supported", async () => {
+    useSubscriptionMock.mockReturnValue({ currentPlan: "Enterprise", subscription: null });
+    countAnalysesSinceMock.mockResolvedValue(0);
+    const { result } = renderHook(() => useUsageTracking());
+
+    await waitFor(() => {
+      expect(countAnalysesSinceMock).toHaveBeenCalled();
+    });
+    expect(result.current.usage.limit).toBe(800);
   });
 
   it("limits the free signed-in plan to 3 audits", async () => {

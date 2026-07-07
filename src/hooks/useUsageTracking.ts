@@ -10,10 +10,11 @@ const FREE_LIMIT_ANON = 1;
 
 const PLAN_LIMITS: Record<string, number> = {
   free: 3,
-  starter: 20,
-  growth: 75,
   pro: 250,
   agency: 800,
+  // Enterprise is custom-provisioned (Contact Sales), not self-serve; use
+  // agency's allowance as a safe default until per-account limits exist.
+  enterprise: 800,
 };
 
 interface UsageInfo {

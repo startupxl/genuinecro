@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Check, X, Zap, Crown, Rocket, Building2, Loader2, CalendarDays } from "lucide-react";
+import { Check, X, Gift, Crown, Building2, Globe2, Loader2, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { useSubscription } from "@/hooks/useSubscription";
 import AppShell from "@/components/AppShell";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const PAYPAL_PLAN_IDS: Record<string, string> = {
-  starter: "PAYPAL_STARTER_PLAN_ID",
-  growth: "PAYPAL_GROWTH_PLAN_ID",
   pro: "PAYPAL_PRO_PLAN_ID",
   agency: "PAYPAL_AGENCY_PLAN_ID",
 };
@@ -36,20 +34,20 @@ interface PlanDef {
   extras: PlanFeature[];
   highlighted: boolean;
   badge: string | null;
+  cta: "subscribe" | "contact" | "default";
 }
 
 const plans: PlanDef[] = [
   {
-    key: "starter",
-    name: "Starter",
-    price: "$29",
+    key: "free",
+    name: "Free",
+    price: "$0",
     period: "/mo",
-    bestFor: "Individuals getting started with CRO",
-    description: "Full analysis engine, web-only",
-    audits: "20 page audits / month",
+    bestFor: "Trying GenuineCRO before committing",
+    description: "Core conversion audit, no card required",
+    audits: "3 page audits total",
     includes: [
-      { text: "Web analysis only", included: true },
-      { text: "Conversion friction analysis", included: true },
+      { text: "Web conversion friction analysis", included: true },
       { text: "Trust signal analysis", included: true },
       { text: "CTA clarity scoring", included: true },
     ],
@@ -58,47 +56,28 @@ const plans: PlanDef[] = [
     ],
     highlighted: false,
     badge: null,
-  },
-  {
-    key: "growth",
-    name: "Growth",
-    price: "$79",
-    period: "/mo",
-    bestFor: "Marketers and small teams scaling experimentation",
-    description: "Unlock mobile, comparison & funnel tools",
-    audits: "75 page audits / month",
-    includes: [
-      { text: "Web + Mobile analysis", included: true },
-      { text: "Comparison analysis (page vs page)", included: true },
-      { text: "Funnel analysis", included: true },
-      { text: "Issue prioritization", included: true },
-    ],
-    extras: [
-      { text: "Report exports", included: false },
-    ],
-    highlighted: true,
-    badge: "Most Popular",
+    cta: "default",
   },
   {
     key: "pro",
     name: "Pro",
     price: "$199",
     period: "/mo",
-    bestFor: "Advanced teams running structured CRO programs",
-    description: "Full export & team collaboration",
+    bestFor: "Individual CRO practitioners running structured programs",
+    description: "The full analysis suite for a single user",
     audits: "250 page audits / month",
     includes: [
       { text: "Web + Mobile + Comparison analysis", included: true },
-      { text: "Multi-page funnel diagnostics", included: true },
       { text: "CRO recommendations & experiment ideas", included: true },
-      { text: "Team collaboration", included: true },
-      { text: "API access", included: true },
+      { text: "Test Copy Variant Generator", included: true },
+      { text: "Experiment Workbench", included: true },
     ],
     extras: [
       { text: "Exportable reports", included: true },
     ],
-    highlighted: false,
-    badge: null,
+    highlighted: true,
+    badge: "Most Popular",
+    cta: "subscribe",
   },
   {
     key: "agency",
@@ -106,29 +85,45 @@ const plans: PlanDef[] = [
     price: "$399",
     period: "/mo",
     bestFor: "Agencies managing multiple clients",
-    description: "White-label & client-ready output",
+    description: "Scales with how many clients you manage",
     audits: "800 page audits / month",
     includes: [
-      { text: "Web + Mobile + Comparison analysis", included: true },
-      { text: "Multi-page funnel diagnostics", included: true },
-      { text: "CRO recommendations", included: true },
-      { text: "Client reporting dashboard", included: true },
-      { text: "3 team accounts", included: true },
+      { text: "Everything in Pro", included: true },
+      { text: "10 client sites included", included: true },
+      { text: "Shared 800-audit pool across all your sites", included: true },
     ],
     extras: [
-      { text: "Exportable reports", included: true },
-      { text: "White-label reports", included: true },
+      { text: "$29/mo per additional site beyond 10", included: true },
     ],
     highlighted: false,
     badge: null,
+    cta: "subscribe",
+  },
+  {
+    key: "enterprise",
+    name: "Enterprise",
+    price: "Custom",
+    period: "",
+    bestFor: "Large agencies and platforms managing many client accounts",
+    description: "Volume pricing that scales down per account",
+    audits: "Custom audit volume",
+    includes: [
+      { text: "Everything in Agency", included: true },
+      { text: "Volume discounts at 10 / 100 / 1,000+ accounts", included: true },
+      { text: "Dedicated onboarding & support", included: true },
+    ],
+    extras: [],
+    highlighted: false,
+    badge: null,
+    cta: "contact",
   },
 ];
 
 const planIcons: Record<string, React.ReactNode> = {
-  Starter: <Zap className="h-4 w-4 text-primary" />,
-  Growth: <Rocket className="h-4 w-4 text-primary" />,
+  Free: <Gift className="h-4 w-4 text-primary" />,
   Pro: <Crown className="h-4 w-4 text-amber-500" />,
   Agency: <Building2 className="h-4 w-4 text-primary" />,
+  Enterprise: <Globe2 className="h-4 w-4 text-primary" />,
 };
 
 const Subscription = () => {
@@ -136,6 +131,7 @@ const Subscription = () => {
   const { usage } = useUsageTracking();
   const { currentPlan, loading, subscribe, refresh } = useSubscription();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const usagePercent = usage.limit > 0 ? Math.round((usage.used / usage.limit) * 100) : 0;
 
@@ -217,7 +213,7 @@ const Subscription = () => {
         {/* Pricing header */}
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-foreground font-display">
-            All features included. No hidden limitations.
+            Start free. Scale up as your team and clients grow.
           </h2>
           <p className="text-sm text-muted-foreground max-w-lg mx-auto">
             Only pay for how much you use — and how you share it. Payments processed securely via PayPal.
@@ -295,22 +291,34 @@ const Subscription = () => {
                   </div>
                 )}
 
-                <Button
-                  className="w-full"
-                  variant={plan.highlighted ? "default" : "outline"}
-                  disabled={isCurrentPlan(plan.name) || loading || !user}
-                  onClick={() => handleSubscribe(plan.key, plan.name)}
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    getButtonLabel(plan.name)
-                  )}
-                </Button>
-                {!user && (
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    Sign in to subscribe
-                  </p>
+                {plan.cta === "contact" ? (
+                  <Button className="w-full" variant="outline" onClick={() => navigate("/contact")}>
+                    Contact Sales
+                  </Button>
+                ) : plan.cta === "default" ? (
+                  <Button className="w-full" variant="outline" disabled>
+                    {isCurrentPlan(plan.name) ? "Current Plan" : "Default Plan"}
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      className="w-full"
+                      variant={plan.highlighted ? "default" : "outline"}
+                      disabled={isCurrentPlan(plan.name) || loading || !user}
+                      onClick={() => handleSubscribe(plan.key, plan.name)}
+                    >
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        getButtonLabel(plan.name)
+                      )}
+                    </Button>
+                    {!user && (
+                      <p className="text-[11px] text-muted-foreground text-center">
+                        Sign in to subscribe
+                      </p>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
