@@ -31,6 +31,7 @@ import AATestChecker from "./pages/tools/AATestChecker.tsx";
 import Workbench from "./pages/workbench/Workbench.tsx";
 import MultivariateIdeaExpander from "./pages/workbench/MultivariateIdeaExpander.tsx";
 import TestBriefWriter from "./pages/workbench/TestBriefWriter.tsx";
+import Monitoring from "./pages/Monitoring.tsx";
 import AppShell from "@/components/AppShell";
 import ComingSoon from "@/components/ComingSoon";
 
@@ -62,7 +63,7 @@ const App = () => (
             <Route path="/technical" element={<Technical />} />
             <Route path="/message-match" element={<MessageMatchChecker />} />
             <Route path="/content" element={<AppShell><ComingSoon title="Content" /></AppShell>} />
-            <Route path="/monitoring" element={<AppShell><ComingSoon title="Monitoring" /></AppShell>} />
+            <Route path="/monitoring" element={<Monitoring />} />
             <Route path="/competitor-analysis" element={<CompetitorComparison />} />
             <Route path="/free-cro-tools" element={<FreeTools />} />
             <Route path="/free-cro-tools/sample-size-calculator" element={<SampleSizeCalculator />} />

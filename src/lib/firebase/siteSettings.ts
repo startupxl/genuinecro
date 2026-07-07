@@ -8,6 +8,7 @@ export interface SiteSettings {
   averageOrderValue?: number;
   baselineConversionRate?: number;
   siteType?: SiteType;
+  monitoringEnabled?: boolean;
 }
 
 function docId(userId: string, domain: string): string {
@@ -23,6 +24,7 @@ export async function getSiteSettings(userId: string, domain: string): Promise<S
     averageOrderValue: data.averageOrderValue,
     baselineConversionRate: data.baselineConversionRate,
     siteType: data.siteType,
+    monitoringEnabled: data.monitoringEnabled,
   };
 }
 

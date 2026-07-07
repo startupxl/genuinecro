@@ -56,6 +56,15 @@ describe("getSiteSettings", () => {
     const result = await getSiteSettings("uid-1", "example.com");
     expect(result?.siteType).toBe("ecommerce");
   });
+
+  it("reads back monitoringEnabled when present", async () => {
+    getDocMock.mockResolvedValue({
+      exists: () => true,
+      data: () => ({ userId: "uid-1", domain: "example.com", monitoringEnabled: true }),
+    });
+    const result = await getSiteSettings("uid-1", "example.com");
+    expect(result?.monitoringEnabled).toBe(true);
+  });
 });
 
 describe("saveSiteSettings", () => {
@@ -78,6 +87,15 @@ describe("saveSiteSettings", () => {
     expect(setDocMock).toHaveBeenCalledWith(
       { __ref: true },
       { userId: "uid-1", domain: "example.com", siteType: "saas", updatedAt: "server-timestamp" },
+      { merge: true }
+    );
+  });
+
+  it("writes monitoringEnabled when provided", async () => {
+    await saveSiteSettings("uid-1", "example.com", { monitoringEnabled: true });
+    expect(setDocMock).toHaveBeenCalledWith(
+      { __ref: true },
+      { userId: "uid-1", domain: "example.com", monitoringEnabled: true, updatedAt: "server-timestamp" },
       { merge: true }
     );
   });
