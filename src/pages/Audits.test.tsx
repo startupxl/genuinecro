@@ -27,6 +27,10 @@ vi.mock("@/hooks/useSubscription", () => ({
   useSubscription: () => ({ currentPlan: "Free", subscription: null }),
 }));
 
+vi.mock("@/components/NewAuditModal", () => ({
+  default: ({ open }: { open: boolean }) => <div data-testid="new-audit-modal">{open ? "open" : "closed"}</div>,
+}));
+
 import Audits from "./Audits";
 
 describe("Audits", () => {
@@ -103,5 +107,23 @@ describe("Audits", () => {
     fireEvent.click(screen.getByText("Re-scan"));
 
     expect(navigateMock).toHaveBeenCalledWith("/", { state: { prefillUrl: "https://example.com" } });
+  });
+
+  it("opens the New Audit modal when the button is clicked, instead of navigating away", async () => {
+    getRecentAnalysesMock.mockResolvedValue([]);
+    render(
+      <MemoryRouter>
+        <Audits />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("new-audit-modal")).toHaveTextContent("closed");
+    });
+
+    fireEvent.click(screen.getByText("New Audit"));
+
+    expect(screen.getByTestId("new-audit-modal")).toHaveTextContent("open");
+    expect(navigateMock).not.toHaveBeenCalledWith("/");
   });
 });

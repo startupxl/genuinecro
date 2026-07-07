@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/AppShell";
 import { getRecentAnalyses, type AnalysisRecord } from "@/lib/firebase/analyses";
 import { getAllActionItems, type ActionItem } from "@/lib/firebase/actionItems";
 import { buildAuditsList } from "@/lib/dashboardMetrics";
 import AuditsTable from "@/components/AuditsTable";
+import NewAuditModal from "@/components/NewAuditModal";
 
 const Audits = () => {
   const { user } = useAuth();
@@ -13,6 +15,7 @@ const Audits = () => {
   const [records, setRecords] = useState<AnalysisRecord[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isNewAuditOpen, setIsNewAuditOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -45,7 +48,16 @@ const Audits = () => {
   return (
     <AppShell>
       <div className="p-6">
-        <h1 className="text-xl font-semibold text-foreground font-display mb-6">Audits</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl font-semibold text-foreground font-display">Audits</h1>
+          <button
+            onClick={() => setIsNewAuditOpen(true)}
+            className="flex items-center gap-1.5 h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            New Audit
+          </button>
+        </div>
 
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading audits…</p>
@@ -61,6 +73,7 @@ const Audits = () => {
           </div>
         )}
       </div>
+      <NewAuditModal open={isNewAuditOpen} onOpenChange={setIsNewAuditOpen} />
     </AppShell>
   );
 };
