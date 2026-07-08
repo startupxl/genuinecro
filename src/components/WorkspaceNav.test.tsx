@@ -23,7 +23,7 @@ describe("WorkspaceNav", () => {
     signOutMock.mockReset();
   });
 
-  it("renders all eight sections with Dashboard, Audits, Action Center, Monitoring, Reports, Message Match, Competitor Comparison, and Experiment Workbench marked real", () => {
+  it("renders all nine sections with Home, Dashboard, Audits, Action Center, Monitoring, Reports, Message Match, Competitor Comparison, and Experiment Workbench marked real", () => {
     mockUser = { uid: "uid-1", email: "user@example.com", displayName: null };
     mockProfile = { displayName: "Jane" };
     render(
@@ -32,12 +32,24 @@ describe("WorkspaceNav", () => {
       </MemoryRouter>
     );
 
-    ["Dashboard", "Audits", "Action Center", "Monitoring", "Reports", "Message Match", "Competitor Comparison", "Experiment Workbench"].forEach((label) => {
+    ["Home", "Dashboard", "Audits", "Action Center", "Monitoring", "Reports", "Message Match", "Competitor Comparison", "Experiment Workbench"].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
     ["Technical", "Content", "Conversion", "Analysis"].forEach((label) => {
       expect(screen.queryByText(label)).not.toBeInTheDocument();
     });
+  });
+
+  it("links Home to the root path", () => {
+    mockUser = { uid: "uid-1", email: "user@example.com", displayName: null };
+    mockProfile = { displayName: "Jane" };
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText("Home").closest("a")).toHaveAttribute("href", "/");
   });
 
   it("highlights the active section based on the current route", () => {
