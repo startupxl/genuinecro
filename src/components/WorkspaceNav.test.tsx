@@ -10,8 +10,9 @@ vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: mockUser, profile: mockProfile, signOut: signOutMock, loading: false }),
 }));
 
+let mockPlanStatus = "ready";
 vi.mock("@/hooks/useSubscription", () => ({
-  useSubscription: () => ({ currentPlan: "Growth", subscription: null }),
+  useSubscription: () => ({ currentPlan: "Growth", planStatus: mockPlanStatus, subscription: null }),
 }));
 
 import WorkspaceNav from "./WorkspaceNav";
@@ -20,7 +21,22 @@ describe("WorkspaceNav", () => {
   beforeEach(() => {
     mockUser = null;
     mockProfile = null;
+    mockPlanStatus = "ready";
     signOutMock.mockReset();
+  });
+
+  it("shows 'Plan unavailable' instead of a plan name when the subscription check failed", () => {
+    mockUser = { uid: "uid-1", email: "user@example.com", displayName: null };
+    mockProfile = { displayName: "Jane" };
+    mockPlanStatus = "error";
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <WorkspaceNav />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText("Plan unavailable")).toBeInTheDocument();
+    expect(screen.queryByText("Growth plan")).not.toBeInTheDocument();
   });
 
   it("renders all ten sections with Home, Dashboard, Audits, Action Center, Monitoring, Funnels, Reports, Message Match, Competitor Comparison, and Experiment Workbench marked real", () => {

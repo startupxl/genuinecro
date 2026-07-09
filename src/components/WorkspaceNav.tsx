@@ -47,7 +47,7 @@ interface WorkspaceNavProps {
 const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate, isCollapsed = false, onToggleCollapse }: WorkspaceNavProps) => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
-  const { currentPlan } = useSubscription();
+  const { currentPlan, planStatus } = useSubscription();
 
   const displayName = profile?.displayName || user?.email || "User";
   const initials = (profile?.displayName || user?.email || "U").slice(0, 2).toUpperCase();
@@ -132,7 +132,9 @@ const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate, isCol
                 </Avatar>
                 <div className="flex-1 min-w-0 text-left">
                   <p className="text-xs font-medium text-foreground truncate">{displayName}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{currentPlan} plan</p>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {planStatus === "error" ? "Plan unavailable" : `${currentPlan} plan`}
+                  </p>
                 </div>
                 <ChevronUp className="h-3 w-3 text-muted-foreground flex-shrink-0 rotate-180" />
               </button>
