@@ -67,5 +67,19 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
+    // A user-defined multi-step conversion funnel (name + ordered step URLs).
+    match /funnels/{funnelId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update: if false;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    // One completed run of a funnel: per-step scores plus the AI's
+    // sequence-level insights — immutable, owner-only.
+    match /funnelRuns/{runId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if false;
+    }
   }
 }

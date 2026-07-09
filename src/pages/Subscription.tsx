@@ -68,6 +68,7 @@ const plans: PlanDef[] = [
     audits: "250 page audits / month",
     includes: [
       { text: "Web + Mobile + Comparison analysis", included: true },
+      { text: "Multi-step funnel diagnostics", included: true },
       { text: "CRO recommendations & experiment ideas", included: true },
       { text: "Test Copy Variant Generator", included: true },
       { text: "Experiment Workbench", included: true },

@@ -31,6 +31,7 @@ import Workbench from "./pages/workbench/Workbench.tsx";
 import MultivariateIdeaExpander from "./pages/workbench/MultivariateIdeaExpander.tsx";
 import TestBriefWriter from "./pages/workbench/TestBriefWriter.tsx";
 import Monitoring from "./pages/Monitoring.tsx";
+import Funnels from "./pages/Funnels.tsx";
 import Reports from "./pages/Reports.tsx";
 import SharedReport from "./pages/SharedReport.tsx";
 
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/sites/:domain" element={<SiteDetail />} />
             <Route path="/message-match" element={<MessageMatchChecker />} />
             <Route path="/monitoring" element={<Monitoring />} />
+            <Route path="/funnels" element={<Funnels />} />
             <Route path="/competitor-analysis" element={<CompetitorComparison />} />
             <Route path="/free-cro-tools" element={<FreeTools />} />
             <Route path="/free-cro-tools/sample-size-calculator" element={<SampleSizeCalculator />} />

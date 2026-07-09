@@ -8,6 +8,7 @@ export interface PlanCapabilities {
   canComparisonAnalysis: boolean;
   canGenerateVariants: boolean;
   canExperimentWorkbench: boolean;
+  canFunnelAnalysis: boolean;
   auditLimit: number;
 }
 
@@ -19,6 +20,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canComparisonAnalysis: false,
     canGenerateVariants: false,
     canExperimentWorkbench: false,
+    canFunnelAnalysis: false,
     auditLimit: 3,
   },
   pro: {
@@ -28,6 +30,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canComparisonAnalysis: true,
     canGenerateVariants: true,
     canExperimentWorkbench: true,
+    canFunnelAnalysis: true,
     auditLimit: 250,
   },
   agency: {
@@ -37,6 +40,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canComparisonAnalysis: true,
     canGenerateVariants: true,
     canExperimentWorkbench: true,
+    canFunnelAnalysis: true,
     auditLimit: 800,
   },
 };
@@ -75,6 +79,11 @@ export function getUpgradeMessage(feature: string): { title: string; description
     workbench: {
       title: "Experiment Workbench requires Pro plan",
       description: "Upgrade to Pro ($199/mo) to expand hypotheses into multivariate test ideas and generate ready-to-share test briefs.",
+      requiredPlan: "Pro",
+    },
+    funnels: {
+      title: "Funnel diagnostics requires Pro plan",
+      description: "Upgrade to Pro ($199/mo) to audit multi-step funnels end-to-end and find where the sequence loses buyers.",
       requiredPlan: "Pro",
     },
   };

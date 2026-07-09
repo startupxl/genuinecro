@@ -18,9 +18,10 @@ describe("usePlanCapabilities", () => {
     expect(result.current.canExport).toBe(false);
     expect(result.current.canGenerateVariants).toBe(false);
     expect(result.current.canExperimentWorkbench).toBe(false);
+    expect(result.current.canFunnelAnalysis).toBe(false);
   });
 
-  it("enables mobile, comparison, export, variants, and workbench on pro and agency plans", () => {
+  it("enables mobile, comparison, export, variants, workbench, and funnels on pro and agency plans", () => {
     for (const plan of ["pro", "agency"]) {
       mockPlan = plan;
       const { result } = renderHook(() => usePlanCapabilities());
@@ -29,6 +30,7 @@ describe("usePlanCapabilities", () => {
       expect(result.current.canExport).toBe(true);
       expect(result.current.canGenerateVariants).toBe(true);
       expect(result.current.canExperimentWorkbench).toBe(true);
+      expect(result.current.canFunnelAnalysis).toBe(true);
     }
   });
 
@@ -63,5 +65,11 @@ describe("getUpgradeMessage", () => {
   it("points mobile and comparison upgrades at Pro, not the removed Growth plan", () => {
     expect(getUpgradeMessage("mobile").requiredPlan).toBe("Pro");
     expect(getUpgradeMessage("comparison").requiredPlan).toBe("Pro");
+  });
+
+  it("returns a dedicated message for the 'funnels' feature", () => {
+    const msg = getUpgradeMessage("funnels");
+    expect(msg.requiredPlan).toBe("Pro");
+    expect(msg.title.toLowerCase()).toContain("funnel");
   });
 });

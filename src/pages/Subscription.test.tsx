@@ -62,11 +62,15 @@ describe("Subscription", () => {
     expect(screen.queryByText("Growth")).not.toBeInTheDocument();
   });
 
-  it("never markets API access, team collaboration, or funnel diagnostics anywhere on the page", () => {
+  it("never markets API access or team collaboration anywhere on the page (still unbuilt)", () => {
     renderPage();
     expect(screen.queryByText(/API access/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/team collaboration/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/funnel diagnostics/i)).not.toBeInTheDocument();
+  });
+
+  it("markets funnel diagnostics on Pro now that the feature is real", () => {
+    renderPage();
+    expect(screen.getByText(/funnel diagnostics/i)).toBeInTheDocument();
   });
 
   it("shows Free at $0/mo with a 3 audit allowance and no subscribe button", () => {

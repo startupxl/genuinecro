@@ -9,6 +9,7 @@ import messageMatchRouter from "./server/routes/messageMatch.js";
 import variantCopyRouter from "./server/routes/variantCopy.js";
 import multivariateIdeaRouter from "./server/routes/multivariateIdea.js";
 import testBriefRouter from "./server/routes/testBrief.js";
+import funnelInsightsRouter from "./server/routes/funnelInsights.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -28,6 +29,7 @@ app.use("/api/message-match", messageMatchRouter);
 app.use("/api/variant-copy", variantCopyRouter);
 app.use("/api/multivariate-idea", multivariateIdeaRouter);
 app.use("/api/test-brief", testBriefRouter);
+app.use("/api/funnel-insights", funnelInsightsRouter);
 
 app.use(express.static(DIST_DIR));
 
