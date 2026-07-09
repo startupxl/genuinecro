@@ -21,7 +21,6 @@ import Audits from "./pages/Audits.tsx";
 import ScanDetail from "./pages/ScanDetail.tsx";
 import SiteDetail from "./pages/SiteDetail.tsx";
 import ActionCenter from "./pages/ActionCenter.tsx";
-import Technical from "./pages/Technical.tsx";
 import MessageMatchChecker from "./pages/MessageMatchChecker.tsx";
 import CompetitorComparison from "./pages/CompetitorComparison.tsx";
 import FreeTools from "./pages/tools/FreeTools.tsx";
@@ -34,8 +33,6 @@ import TestBriefWriter from "./pages/workbench/TestBriefWriter.tsx";
 import Monitoring from "./pages/Monitoring.tsx";
 import Reports from "./pages/Reports.tsx";
 import SharedReport from "./pages/SharedReport.tsx";
-import AppShell from "@/components/AppShell";
-import ComingSoon from "@/components/ComingSoon";
 
 const queryClient = new QueryClient();
 
@@ -62,9 +59,7 @@ const App = () => (
             <Route path="/audits" element={<Audits />} />
             <Route path="/audits/:id" element={<ScanDetail />} />
             <Route path="/sites/:domain" element={<SiteDetail />} />
-            <Route path="/technical" element={<Technical />} />
             <Route path="/message-match" element={<MessageMatchChecker />} />
-            <Route path="/content" element={<AppShell><ComingSoon title="Content" /></AppShell>} />
             <Route path="/monitoring" element={<Monitoring />} />
             <Route path="/competitor-analysis" element={<CompetitorComparison />} />
             <Route path="/free-cro-tools" element={<FreeTools />} />
