@@ -10,6 +10,7 @@ import variantCopyRouter from "./server/routes/variantCopy.js";
 import multivariateIdeaRouter from "./server/routes/multivariateIdea.js";
 import testBriefRouter from "./server/routes/testBrief.js";
 import funnelInsightsRouter from "./server/routes/funnelInsights.js";
+import ga4Router from "./server/routes/ga4.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/variant-copy", variantCopyRouter);
 app.use("/api/multivariate-idea", multivariateIdeaRouter);
 app.use("/api/test-brief", testBriefRouter);
 app.use("/api/funnel-insights", funnelInsightsRouter);
+app.use("/api/ga4", ga4Router);
 
 app.use(express.static(DIST_DIR));
 

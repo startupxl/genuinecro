@@ -19,9 +19,10 @@ describe("usePlanCapabilities", () => {
     expect(result.current.canGenerateVariants).toBe(false);
     expect(result.current.canExperimentWorkbench).toBe(false);
     expect(result.current.canFunnelAnalysis).toBe(false);
+    expect(result.current.canGA4Integration).toBe(false);
   });
 
-  it("enables mobile, comparison, export, variants, workbench, and funnels on pro and agency plans", () => {
+  it("enables mobile, comparison, export, variants, workbench, funnels, and GA4 on pro and agency plans", () => {
     for (const plan of ["pro", "agency"]) {
       mockPlan = plan;
       const { result } = renderHook(() => usePlanCapabilities());
@@ -31,6 +32,7 @@ describe("usePlanCapabilities", () => {
       expect(result.current.canGenerateVariants).toBe(true);
       expect(result.current.canExperimentWorkbench).toBe(true);
       expect(result.current.canFunnelAnalysis).toBe(true);
+      expect(result.current.canGA4Integration).toBe(true);
     }
   });
 
@@ -71,5 +73,11 @@ describe("getUpgradeMessage", () => {
     const msg = getUpgradeMessage("funnels");
     expect(msg.requiredPlan).toBe("Pro");
     expect(msg.title.toLowerCase()).toContain("funnel");
+  });
+
+  it("returns a dedicated message for the 'ga4' feature", () => {
+    const msg = getUpgradeMessage("ga4");
+    expect(msg.requiredPlan).toBe("Pro");
+    expect(msg.title.toLowerCase()).toContain("google analytics");
   });
 });

@@ -11,9 +11,12 @@ const runMergedAuditMock = vi.fn();
 const trackAnalysisMock = vi.fn();
 const createActionItemsMock = vi.fn();
 const analyzeFunnelMock = vi.fn();
+const getGA4PageMetricsMock = vi.fn();
 
-const mockUser = { uid: "uid-1" };
+const getIdTokenMock = vi.fn().mockResolvedValue("id-token-abc");
+const mockUser = { uid: "uid-1", getIdToken: getIdTokenMock };
 let mockCanFunnels = true;
+let mockCanGA4 = false;
 let mockUsage = { used: 0, limit: 250, canAnalyze: true, requiresAuth: false, requiresPaid: false, periodStart: null, periodEnd: null };
 
 vi.mock("@/hooks/useAuth", () => ({
@@ -25,12 +28,16 @@ vi.mock("@/hooks/useSubscription", () => ({
 }));
 
 vi.mock("@/hooks/usePlanCapabilities", () => ({
-  usePlanCapabilities: () => ({ canFunnelAnalysis: mockCanFunnels }),
+  usePlanCapabilities: () => ({ canFunnelAnalysis: mockCanFunnels, canGA4Integration: mockCanGA4 }),
   getUpgradeMessage: () => ({
     title: "Funnel diagnostics requires Pro plan",
     description: "Upgrade to Pro.",
     requiredPlan: "Pro",
   }),
+}));
+
+vi.mock("@/lib/api/ga4", () => ({
+  getGA4PageMetrics: (...args: unknown[]) => getGA4PageMetricsMock(...args),
 }));
 
 vi.mock("@/hooks/useUsageTracking", () => ({
@@ -105,7 +112,9 @@ describe("Funnels", () => {
     trackAnalysisMock.mockReset().mockResolvedValue("analysis-1");
     createActionItemsMock.mockReset().mockResolvedValue(undefined);
     analyzeFunnelMock.mockReset();
+    getGA4PageMetricsMock.mockReset();
     mockCanFunnels = true;
+    mockCanGA4 = false;
     mockUsage = { used: 0, limit: 250, canAnalyze: true, requiresAuth: false, requiresPaid: false, periodStart: null, periodEnd: null };
   });
 
@@ -176,6 +185,68 @@ describe("Funnels", () => {
     );
     expect(screen.getByText(/Trial promise broken at checkout/)).toBeInTheDocument();
     expect(screen.getByText(/Weakest step/i)).toBeInTheDocument();
+  });
+
+  it("fetches real GA4 behavioral data per step during a run, when the plan includes GA4 integration", async () => {
+    mockCanGA4 = true;
+    getFunnelsMock.mockResolvedValue([savedFunnel]);
+    runMergedAuditMock
+      .mockResolvedValueOnce(auditResultFor(72))
+      .mockResolvedValueOnce(auditResultFor(55));
+    getGA4PageMetricsMock
+      .mockResolvedValueOnce({
+        tagDetection: { hasGA4Tag: true, measurementId: "G-A", hasGTM: false, gtmContainerId: null },
+        connected: true,
+        propertyDisplayName: "Acme Site",
+        behavioral: { hasData: true, sessions: 200, bounceRate: 30, engagementRate: 70, avgEngagementTimeSeconds: 40, conversions: 10, pageViews: 250 },
+        conversionEventNames: ["purchase"],
+      })
+      .mockResolvedValueOnce({
+        tagDetection: { hasGA4Tag: true, measurementId: "G-A", hasGTM: false, gtmContainerId: null },
+        connected: true,
+        propertyDisplayName: "Acme Site",
+        behavioral: { hasData: true, sessions: 90, bounceRate: 65, engagementRate: 35, avgEngagementTimeSeconds: 15, conversions: 1, pageViews: 95 },
+        conversionEventNames: ["purchase"],
+      });
+    analyzeFunnelMock.mockResolvedValue({
+      weakestStepIndex: 1,
+      summary: "Checkout leaks the most buyers.",
+      transitionIssues: [],
+      recommendations: [],
+    });
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText("Signup funnel")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /Run analysis/i }));
+
+    await waitFor(() => expect(screen.getByText("Checkout leaks the most buyers.")).toBeInTheDocument());
+
+    expect(getGA4PageMetricsMock).toHaveBeenCalledWith(mockUser, "https://example.com");
+    expect(getGA4PageMetricsMock).toHaveBeenCalledWith(mockUser, "https://example.com/checkout");
+    expect(createFunnelRunMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        steps: [
+          expect.objectContaining({ ga4: { bounceRate: 30, engagementRate: 70, sessions: 200 } }),
+          expect.objectContaining({ ga4: { bounceRate: 65, engagementRate: 35, sessions: 90 } }),
+        ],
+      })
+    );
+    expect(screen.getByText(/30% bounce/)).toBeInTheDocument();
+    expect(screen.getByText(/65% bounce/)).toBeInTheDocument();
+  });
+
+  it("does not fetch GA4 data during a run when the plan lacks GA4 integration", async () => {
+    getFunnelsMock.mockResolvedValue([savedFunnel]);
+    runMergedAuditMock
+      .mockResolvedValueOnce(auditResultFor(72))
+      .mockResolvedValueOnce(auditResultFor(55));
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText("Signup funnel")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /Run analysis/i }));
+
+    await waitFor(() => expect(createFunnelRunMock).toHaveBeenCalled());
+    expect(getGA4PageMetricsMock).not.toHaveBeenCalled();
   });
 
   it("blocks a run when the remaining quota can't cover every step", async () => {

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowDownWideNarrow, Filter, X, PanelLeftOpen, ChevronDown, Download, ClipboardList, Lock, FileText } from "lucide-react";
+import { ArrowDownWideNarrow, Filter, X, PanelLeftOpen, ChevronDown, Download, ClipboardList, Lock, FileText, BarChart3, AlertTriangle } from "lucide-react";
 import type { AnalysisResult, FrictionSeverity } from "@/lib/mockData";
 import { exportCSV, copyAsJiraTickets, exportPDF } from "@/lib/exportUtils";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { getCategoryTab } from "@/lib/mergedAudit";
 import { getDomain } from "@/lib/dashboardMetrics";
 import { getSiteSettings, type SiteSettings } from "@/lib/firebase/siteSettings";
 import { createSharedReport } from "@/lib/firebase/sharedReports";
+import { getGA4PageMetrics, type GA4PageMetrics } from "@/lib/api/ga4";
 import Sidebar from "./Sidebar";
 import MetadataBar from "./MetadataBar";
 import FrictionCard from "./FrictionCard";
@@ -18,7 +19,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { usePlanCapabilities, getUpgradeMessage } from "@/hooks/usePlanCapabilities";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 type SortOption = "impact-desc" | "impact-asc" | "severity";
 
@@ -55,12 +56,23 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome, analysisId }: AnalysisV
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [revenueSettingsOpen, setRevenueSettingsOpen] = useState(false);
+  const [ga4Metrics, setGa4Metrics] = useState<GA4PageMetrics | null>(null);
   const domain = getDomain(result.url);
 
   useEffect(() => {
     if (!user) return;
     getSiteSettings(user.uid, domain).then(setSiteSettings);
   }, [user, domain]);
+
+  useEffect(() => {
+    if (!user || !capabilities.canGA4Integration) {
+      setGa4Metrics(null);
+      return;
+    }
+    getGA4PageMetrics(user, result.url)
+      .then(setGa4Metrics)
+      .catch((err) => console.error("Failed to load Google Analytics data:", err));
+  }, [user, capabilities.canGA4Integration, result.url]);
 
   const isMobile = useIsMobile();
   const [isTablet, setIsTablet] = useState(() => {
@@ -174,6 +186,56 @@ const AnalysisView = ({ result, onNewAnalysis, onGoHome, analysisId }: AnalysisV
           onToggleSidebar={!showSidebarInline ? () => setSidebarOpen(true) : undefined}
           onShare={canShare ? handleShare : undefined}
         />
+
+        {/* GA4 real user behavior */}
+        {capabilities.canGA4Integration && ga4Metrics && (
+          <div className="border-b border-border/30 px-3 md:px-4 py-2.5 flex items-start gap-2 text-xs">
+            <BarChart3 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+            {!ga4Metrics.connected && !ga4Metrics.tagDetection.hasGA4Tag && (
+              <p className="text-muted-foreground flex items-center gap-1.5">
+                <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
+                No Google Analytics 4 tag detected on this page — you're flying blind on real user behavior here.
+              </p>
+            )}
+            {!ga4Metrics.connected && ga4Metrics.tagDetection.hasGA4Tag && (
+              <p className="text-muted-foreground">
+                GA4 tag detected ({ga4Metrics.tagDetection.measurementId}).{" "}
+                <Link to="/settings" className="text-primary hover:underline">
+                  Connect it in Settings
+                </Link>{" "}
+                to pull bounce rate, engagement, and conversions into this audit.
+              </p>
+            )}
+            {ga4Metrics.connected && ga4Metrics.metricsError && (
+              <p className="text-muted-foreground">{ga4Metrics.metricsError}</p>
+            )}
+            {ga4Metrics.connected && ga4Metrics.behavioral && !ga4Metrics.metricsError && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="text-muted-foreground">
+                  Real data from <span className="text-foreground font-medium">{ga4Metrics.propertyDisplayName}</span> (last 30 days):
+                </span>
+                <span className="text-foreground">
+                  <span className="font-mono">{ga4Metrics.behavioral.sessions}</span> sessions
+                </span>
+                <span className="text-foreground">
+                  <span className="font-mono">{ga4Metrics.behavioral.bounceRate}%</span> bounce
+                </span>
+                <span className="text-foreground">
+                  <span className="font-mono">{ga4Metrics.behavioral.engagementRate}%</span> engaged
+                </span>
+                <span className="text-foreground">
+                  <span className="font-mono">{ga4Metrics.behavioral.conversions}</span> conversions
+                </span>
+                {(ga4Metrics.conversionEventNames?.length ?? 0) === 0 && (
+                  <span className="flex items-center gap-1 text-amber-500">
+                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                    No conversion events configured in GA4 — you can't measure what you don't track.
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Category tabs */}
         <div className="border-b border-border/30 px-3 md:px-4 py-2 flex items-center gap-1 overflow-x-auto">

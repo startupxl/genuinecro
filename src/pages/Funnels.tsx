@@ -12,6 +12,7 @@ import {
 import { runMergedAudit } from "@/lib/mergedAudit";
 import { createActionItems } from "@/lib/firebase/actionItems";
 import { analyzeFunnel } from "@/lib/api/funnelInsights";
+import { getGA4PageMetrics } from "@/lib/api/ga4";
 import { extractCategoryScores, detectPageType } from "@/lib/mockData";
 import { toast } from "sonner";
 
@@ -152,7 +153,24 @@ const Funnels = () => {
           .sort((a, b) => b.impactScore - a.impactScore)
           .slice(0, 3)
           .map((fp) => fp.title);
-        runSteps.push({ label: step.label, url: step.url, score: result.conversionScore, analysisId, topIssues });
+
+        let ga4: FunnelRunStep["ga4"] = null;
+        if (capabilities.canGA4Integration) {
+          try {
+            const metrics = await getGA4PageMetrics(user, step.url);
+            if (metrics.connected && metrics.behavioral) {
+              ga4 = {
+                bounceRate: metrics.behavioral.bounceRate,
+                engagementRate: metrics.behavioral.engagementRate,
+                sessions: metrics.behavioral.sessions,
+              };
+            }
+          } catch (err) {
+            console.error("GA4 metrics fetch failed for funnel step:", err);
+          }
+        }
+
+        runSteps.push({ label: step.label, url: step.url, score: result.conversionScore, analysisId, topIssues, ga4 });
       }
 
       setRunProgress("Analyzing the funnel as a sequence…");
@@ -333,6 +351,9 @@ const Funnels = () => {
                                   <p className="text-[9px] font-medium text-friction-high flex items-center gap-0.5">
                                     <AlertTriangle className="h-2.5 w-2.5" /> Weakest step
                                   </p>
+                                )}
+                                {step.ga4 && (
+                                  <p className="text-[9px] text-muted-foreground">{step.ga4.bounceRate}% bounce</p>
                                 )}
                                 {step.analysisId && (
                                   <Link to={`/audits/${step.analysisId}`} className="text-[10px] text-primary hover:underline">

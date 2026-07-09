@@ -4,19 +4,31 @@ import { MemoryRouter } from "react-router-dom";
 import { vi } from "vitest";
 import type { AnalysisResult } from "@/lib/mockData";
 
-let mockUser: { uid: string } | null = null;
+const getIdTokenMock = vi.fn().mockResolvedValue("id-token-abc");
+let mockUser: { uid: string; getIdToken: () => Promise<string> } | null = null;
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
 let mockCanExport = false;
+let mockCanGA4Integration = false;
 vi.mock("@/hooks/usePlanCapabilities", () => ({
-  usePlanCapabilities: () => ({ canExport: mockCanExport, canGenerateVariants: false, canExperimentWorkbench: false }),
+  usePlanCapabilities: () => ({
+    canExport: mockCanExport,
+    canGenerateVariants: false,
+    canExperimentWorkbench: false,
+    canGA4Integration: mockCanGA4Integration,
+  }),
   getUpgradeMessage: (feature: string) => ({ title: `${feature} requires Pro plan`, description: "Upgrade to Pro.", requiredPlan: "Pro" }),
 }));
 
 vi.mock("@/hooks/useSubscription", () => ({
   useSubscription: () => ({ currentPlan: "Pro", subscription: null }),
+}));
+
+const getGA4PageMetricsMock = vi.fn();
+vi.mock("@/lib/api/ga4", () => ({
+  getGA4PageMetrics: (...args: unknown[]) => getGA4PageMetricsMock(...args),
 }));
 
 const exportPDFMock = vi.fn();
@@ -121,8 +133,10 @@ describe("AnalysisView — PDF export and Share", () => {
   beforeEach(() => {
     mockUser = null;
     mockCanExport = false;
+    mockCanGA4Integration = false;
     exportPDFMock.mockClear();
     createSharedReportMock.mockClear();
+    getGA4PageMetricsMock.mockReset();
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
   });
 
@@ -132,7 +146,7 @@ describe("AnalysisView — PDF export and Share", () => {
   });
 
   it("shows the Share button for a signed-in user viewing a saved scan, and copies a share link when clicked", async () => {
-    mockUser = { uid: "uid-1" };
+    mockUser = { uid: "uid-1", getIdToken: getIdTokenMock };
     createSharedReportMock.mockResolvedValue("share-1");
     renderView("analysis-1");
 
@@ -162,5 +176,65 @@ describe("AnalysisView — PDF export and Share", () => {
     renderView();
     fireEvent.click(screen.getByRole("button", { name: /PDF/i }));
     expect(exportPDFMock).toHaveBeenCalledWith(result, expect.any(Array));
+  });
+});
+
+describe("AnalysisView — GA4 behavioral data", () => {
+  beforeEach(() => {
+    mockUser = { uid: "uid-1", getIdToken: getIdTokenMock };
+    mockCanGA4Integration = true;
+    getGA4PageMetricsMock.mockReset();
+  });
+
+  it("does not fetch GA4 data when the plan doesn't include GA4 integration", () => {
+    mockCanGA4Integration = false;
+    renderView();
+    expect(getGA4PageMetricsMock).not.toHaveBeenCalled();
+  });
+
+  it("warns when no GA4 tag is detected on the page", async () => {
+    getGA4PageMetricsMock.mockResolvedValue({
+      tagDetection: { hasGA4Tag: false, measurementId: null, hasGTM: false, gtmContainerId: null },
+      connected: false,
+    });
+    renderView();
+    await waitFor(() => expect(screen.getByText(/no google analytics.*tag detected/i)).toBeInTheDocument());
+  });
+
+  it("prompts to connect GA4 in Settings when a tag is present but no property is connected", async () => {
+    getGA4PageMetricsMock.mockResolvedValue({
+      tagDetection: { hasGA4Tag: true, measurementId: "G-ABC123", hasGTM: false, gtmContainerId: null },
+      connected: false,
+    });
+    renderView();
+    await waitFor(() => expect(screen.getByText(/connect.*settings/i)).toBeInTheDocument());
+  });
+
+  it("shows real bounce, engagement, session, and conversion data once connected", async () => {
+    getGA4PageMetricsMock.mockResolvedValue({
+      tagDetection: { hasGA4Tag: true, measurementId: "G-ABC123", hasGTM: false, gtmContainerId: null },
+      connected: true,
+      propertyDisplayName: "Acme Site",
+      behavioral: { hasData: true, sessions: 340, bounceRate: 42.1, engagementRate: 57.9, avgEngagementTimeSeconds: 48, conversions: 12, pageViews: 410 },
+      conversionEventNames: ["purchase"],
+    });
+    renderView();
+
+    await waitFor(() => expect(screen.getByText("340")).toBeInTheDocument());
+    expect(screen.getByText(/42\.1%/)).toBeInTheDocument();
+    expect(screen.getByText(/57\.9%/)).toBeInTheDocument();
+    expect(screen.getByText("12")).toBeInTheDocument();
+  });
+
+  it("flags when connected but no conversion events are configured in GA4", async () => {
+    getGA4PageMetricsMock.mockResolvedValue({
+      tagDetection: { hasGA4Tag: true, measurementId: "G-ABC123", hasGTM: false, gtmContainerId: null },
+      connected: true,
+      propertyDisplayName: "Acme Site",
+      behavioral: { hasData: true, sessions: 340, bounceRate: 42.1, engagementRate: 57.9, avgEngagementTimeSeconds: 48, conversions: 0, pageViews: 410 },
+      conversionEventNames: [],
+    });
+    renderView();
+    await waitFor(() => expect(screen.getByText(/no conversion events configured/i)).toBeInTheDocument());
   });
 });

@@ -9,6 +9,7 @@ export interface PlanCapabilities {
   canGenerateVariants: boolean;
   canExperimentWorkbench: boolean;
   canFunnelAnalysis: boolean;
+  canGA4Integration: boolean;
   auditLimit: number;
 }
 
@@ -21,6 +22,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canGenerateVariants: false,
     canExperimentWorkbench: false,
     canFunnelAnalysis: false,
+    canGA4Integration: false,
     auditLimit: 3,
   },
   pro: {
@@ -31,6 +33,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canGenerateVariants: true,
     canExperimentWorkbench: true,
     canFunnelAnalysis: true,
+    canGA4Integration: true,
     auditLimit: 250,
   },
   agency: {
@@ -41,6 +44,7 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
     canGenerateVariants: true,
     canExperimentWorkbench: true,
     canFunnelAnalysis: true,
+    canGA4Integration: true,
     auditLimit: 800,
   },
 };
@@ -84,6 +88,11 @@ export function getUpgradeMessage(feature: string): { title: string; description
     funnels: {
       title: "Funnel diagnostics requires Pro plan",
       description: "Upgrade to Pro ($199/mo) to audit multi-step funnels end-to-end and find where the sequence loses buyers.",
+      requiredPlan: "Pro",
+    },
+    ga4: {
+      title: "Google Analytics integration requires Pro plan",
+      description: "Upgrade to Pro ($199/mo) to pull real bounce, engagement, and conversion data from your GA4 property into every audit.",
       requiredPlan: "Pro",
     },
   };

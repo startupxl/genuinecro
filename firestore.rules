@@ -81,5 +81,18 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       allow update, delete: if false;
     }
+    // Holds a user's GA4 OAuth refresh/access tokens and selected property —
+    // contains a live credential, so (like subscriptions) only the server
+    // service-user may touch it. All reads/writes go through server/routes/ga4.js.
+    match /ga4Connections/{userId} {
+      allow read, write: if request.auth != null
+                          && request.auth.token.email == "experiments@genuinecro.com";
+    }
+    // Short-lived CSRF state for the GA4 OAuth handshake (state -> uid),
+    // deleted immediately after the callback consumes it. Server-only.
+    match /ga4OAuthStates/{state} {
+      allow read, write: if request.auth != null
+                          && request.auth.token.email == "experiments@genuinecro.com";
+    }
   }
 }

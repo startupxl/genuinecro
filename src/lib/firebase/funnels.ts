@@ -14,10 +14,17 @@ export interface Funnel {
   createdAt: string;
 }
 
+export interface FunnelRunStepGA4 {
+  bounceRate: number;
+  engagementRate: number;
+  sessions: number;
+}
+
 export interface FunnelRunStep extends FunnelStep {
   score: number;
   analysisId: string | null;
   topIssues: string[];
+  ga4?: FunnelRunStepGA4 | null;
 }
 
 export interface FunnelInsights {
