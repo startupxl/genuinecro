@@ -19,21 +19,20 @@ interface NavSection {
   label: string;
   path: string;
   icon: React.ElementType;
-  real: boolean;
 }
 
 const sections: NavSection[] = [
-  { label: "Home", path: "/", icon: Home, real: true },
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, real: true },
-  { label: "Audits", path: "/audits", icon: ClipboardList, real: true },
-  { label: "Action Center", path: "/action-center", icon: CheckSquare, real: true },
-  { label: "Monitoring", path: "/monitoring", icon: Activity, real: true },
-  { label: "Funnels", path: "/funnels", icon: GitBranch, real: true },
-  { label: "App Audit", path: "/app-audit", icon: MonitorSmartphone, real: true },
-  { label: "Reports", path: "/reports", icon: FileBarChart, real: true },
-  { label: "Message Match", path: "/message-match", icon: Target, real: true },
-  { label: "Competitor Comparison", path: "/competitor-analysis", icon: Swords, real: true },
-  { label: "Experiment Workbench", path: "/workbench", icon: FlaskConical, real: true },
+  { label: "Home", path: "/", icon: Home },
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { label: "Audits", path: "/audits", icon: ClipboardList },
+  { label: "Action Center", path: "/action-center", icon: CheckSquare },
+  { label: "Monitoring", path: "/monitoring", icon: Activity },
+  { label: "Funnels", path: "/funnels", icon: GitBranch },
+  { label: "App Audit", path: "/app-audit", icon: MonitorSmartphone },
+  { label: "Reports", path: "/reports", icon: FileBarChart },
+  { label: "Message Match", path: "/message-match", icon: Target },
+  { label: "Competitor Comparison", path: "/competitor-analysis", icon: Swords },
+  { label: "Experiment Workbench", path: "/workbench", icon: FlaskConical },
 ];
 
 interface WorkspaceNavProps {
@@ -114,9 +113,6 @@ const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate, isCol
               }`
             }
           >
-            <span
-              className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${section.real ? "bg-primary" : "bg-muted-foreground/40"}`}
-            />
             <section.icon className="h-3.5 w-3.5 flex-shrink-0" />
             {section.label}
           </NavLink>
@@ -170,7 +166,6 @@ const WorkspaceNav = ({ onLogoClick, onSignIn, isOpen = false, onNavigate, isCol
             onClick={handleSignIn}
             className="flex items-center gap-2 px-4 py-3 mt-2 border-t border-border text-sm text-foreground hover:bg-secondary/50 transition-colors w-full"
           >
-            <span className="h-1.5 w-1.5 flex-shrink-0" />
             <LogIn className="h-3.5 w-3.5 flex-shrink-0" />
             Sign in
           </button>
