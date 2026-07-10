@@ -41,6 +41,19 @@ app.use("/api/app-audit", appAuditRouter);
 // UPLOADS_DIR already ends in .../uploads/app-audits, so the mount prefix
 // must match — otherwise express.static looks for a second "app-audits"
 // segment underneath it and silently falls through to the SPA route.
+//
+// Access model: a screenshot is reachable only by its exact filename — a
+// crypto.randomUUID() (122 bits, unguessable) baked into the URL string
+// itself, never a sequential id. express.static does not list directory
+// contents by default (verified: GET /uploads/app-audits/ falls through
+// to the SPA route, not a file listing), so there is no way to enumerate
+// other users' screenshots by browsing. This does NOT check that the
+// requester is actually the uploading owner's logged-in session — an
+// <img> tag can't attach a Firebase ID token, so anyone who obtains the
+// exact URL (e.g. it leaks via a shared link) can view it. If that's not
+// tight enough, the alternative is serving screenshots through an
+// authenticated route and fetching them as a blob instead of a plain
+// <img src>, which is a larger change.
 app.use("/uploads/app-audits", express.static(UPLOADS_DIR));
 
 app.use(express.static(DIST_DIR));
