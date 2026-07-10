@@ -180,7 +180,7 @@ const Funnels = () => {
       setRunProgress("Analyzing the funnel as a sequence…");
       let insights: FunnelInsights | null = null;
       try {
-        insights = await analyzeFunnel(runSteps.map(({ label, url, score, topIssues }) => ({ label, url, score, topIssues })));
+        insights = await analyzeFunnel(runSteps.map(({ label, url, score, topIssues, ga4 }) => ({ label, url, score, topIssues, ga4 })));
       } catch (err) {
         console.error("Funnel insights failed:", err);
         toast.warning("Step audits finished, but the funnel-level analysis failed.");

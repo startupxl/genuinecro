@@ -26,4 +26,30 @@ describe("buildFunnelInsightsPrompt", () => {
     expect(prompt).toContain("\"transitionIssues\"");
     expect(prompt).toContain("\"recommendations\"");
   });
+
+  it("includes a step's real GA4 behavioral data when present", () => {
+    const stepsWithGa4 = [
+      { ...steps[0], ga4: { sessions: 450, bounceRate: 68, engagementRate: 32 } },
+      steps[1],
+    ];
+    const prompt = buildFunnelInsightsPrompt(stepsWithGa4);
+
+    expect(prompt).toContain("450 sessions");
+    expect(prompt).toContain("68% bounce rate");
+    expect(prompt).toContain("32% engagement rate");
+  });
+
+  it("omits any per-step GA4 line for steps without real data, without leaking 'undefined' into the prompt", () => {
+    const prompt = buildFunnelInsightsPrompt(steps);
+
+    expect(prompt).not.toContain("undefined");
+    expect(prompt).not.toContain("Real GA4 data");
+  });
+
+  it("instructs the model to treat real GA4 data as ground truth over the estimated score", () => {
+    const prompt = buildFunnelInsightsPrompt(steps);
+
+    expect(prompt.toLowerCase()).toContain("ground truth");
+    expect(prompt.toLowerCase()).toContain("bounce rate");
+  });
 });

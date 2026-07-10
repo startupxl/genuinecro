@@ -244,6 +244,13 @@ describe("Funnels", () => {
     );
     expect(screen.getByText(/30% bounce/)).toBeInTheDocument();
     expect(screen.getByText(/65% bounce/)).toBeInTheDocument();
+
+    // The AI insights call must also see the real GA4 numbers, not just the score/topIssues —
+    // that's what lets it ground the funnel verdict in real behavior instead of guessing.
+    expect(analyzeFunnelMock).toHaveBeenCalledWith([
+      expect.objectContaining({ label: "Landing", ga4: { bounceRate: 30, engagementRate: 70, sessions: 200 } }),
+      expect.objectContaining({ label: "Checkout", ga4: { bounceRate: 65, engagementRate: 35, sessions: 90 } }),
+    ]);
   });
 
   it("does not fetch GA4 data during a run when the plan lacks GA4 integration", async () => {

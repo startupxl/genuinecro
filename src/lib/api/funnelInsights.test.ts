@@ -35,6 +35,27 @@ describe("analyzeFunnel", () => {
     expect(result.recommendations).toEqual(["Cut form fields"]);
   });
 
+  it("passes each step's real GA4 data through to the server when present", async () => {
+    const stepsWithGa4 = [
+      { ...steps[0], ga4: { bounceRate: 68, engagementRate: 32, sessions: 450 } },
+      steps[1],
+    ];
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: { weakestStepIndex: 0, summary: "", transitionIssues: [], recommendations: [] },
+      }),
+    });
+
+    await analyzeFunnel(stepsWithGa4);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/funnel-insights/analyze",
+      expect.objectContaining({ body: JSON.stringify({ steps: stepsWithGa4 }) })
+    );
+  });
+
   it("throws with the server's error message on failure", async () => {
     (global.fetch as any).mockResolvedValue({
       ok: false,

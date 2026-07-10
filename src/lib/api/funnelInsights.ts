@@ -5,6 +5,7 @@ export interface FunnelInsightStep {
   url: string;
   score: number;
   topIssues: string[];
+  ga4?: { bounceRate: number; engagementRate: number; sessions: number } | null;
 }
 
 export async function analyzeFunnel(steps: FunnelInsightStep[]): Promise<FunnelInsights> {
