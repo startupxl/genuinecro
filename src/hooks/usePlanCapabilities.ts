@@ -11,6 +11,7 @@ export interface PlanCapabilities {
   canExperimentWorkbench: boolean;
   canFunnelAnalysis: boolean;
   canGA4Integration: boolean;
+  canAppAudit: boolean;
   auditLimit: number;
 }
 
@@ -24,6 +25,7 @@ const PLAN_CAPABILITIES: Record<string, Omit<PlanCapabilities, "isLoading">> = {
     canExperimentWorkbench: false,
     canFunnelAnalysis: false,
     canGA4Integration: false,
+    canAppAudit: false,
     auditLimit: 3,
   },
   pro: {
@@ -35,6 +37,7 @@ const PLAN_CAPABILITIES: Record<string, Omit<PlanCapabilities, "isLoading">> = {
     canExperimentWorkbench: true,
     canFunnelAnalysis: true,
     canGA4Integration: true,
+    canAppAudit: true,
     auditLimit: 250,
   },
   agency: {
@@ -46,6 +49,7 @@ const PLAN_CAPABILITIES: Record<string, Omit<PlanCapabilities, "isLoading">> = {
     canExperimentWorkbench: true,
     canFunnelAnalysis: true,
     canGA4Integration: true,
+    canAppAudit: true,
     auditLimit: 800,
   },
 };
@@ -96,6 +100,11 @@ export function getUpgradeMessage(feature: string): { title: string; description
     ga4: {
       title: "Google Analytics integration requires Pro plan",
       description: "Upgrade to Pro ($199/mo) to pull real bounce, engagement, and conversion data from your GA4 property into every audit.",
+      requiredPlan: "Pro",
+    },
+    "app-audit": {
+      title: "App / product screen audits require Pro plan",
+      description: "Upgrade to Pro ($199/mo) to audit authenticated in-app screens — onboarding, dashboards, settings — for product-experience friction.",
       requiredPlan: "Pro",
     },
   };

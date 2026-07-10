@@ -32,6 +32,7 @@ import MultivariateIdeaExpander from "./pages/workbench/MultivariateIdeaExpander
 import TestBriefWriter from "./pages/workbench/TestBriefWriter.tsx";
 import Monitoring from "./pages/Monitoring.tsx";
 import Funnels from "./pages/Funnels.tsx";
+import AppAudit from "./pages/AppAudit.tsx";
 import Reports from "./pages/Reports.tsx";
 import SharedReport from "./pages/SharedReport.tsx";
 
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/message-match" element={<MessageMatchChecker />} />
             <Route path="/monitoring" element={<Monitoring />} />
             <Route path="/funnels" element={<Funnels />} />
+            <Route path="/app-audit" element={<AppAudit />} />
             <Route path="/competitor-analysis" element={<CompetitorComparison />} />
             <Route path="/free-cro-tools" element={<FreeTools />} />
             <Route path="/free-cro-tools/sample-size-calculator" element={<SampleSizeCalculator />} />

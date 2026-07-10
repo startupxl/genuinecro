@@ -5,7 +5,7 @@ global.fetch = fetchMock;
 
 process.env.OPENAI_API_KEY = "test-openai-key";
 
-const { callOpenAI } = await import("./openai.js");
+const { callOpenAI, callOpenAIVision } = await import("./openai.js");
 
 describe("callOpenAI", () => {
   beforeEach(() => {
@@ -56,5 +56,43 @@ describe("callOpenAI", () => {
       json: async () => ({ choices: [{ message: { content: "not json at all" } }] }),
     });
     await expect(callOpenAI("some prompt")).rejects.toThrow("Failed to parse AI analysis results");
+  });
+});
+
+describe("callOpenAIVision", () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+  });
+
+  it("sends the prompt and image as a multimodal message and returns the parsed JSON", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: '{"conversionScore": 65}' } }] }),
+    });
+
+    const result = await callOpenAIVision("describe this screenshot", "data:image/png;base64,abc123");
+
+    expect(result).toEqual({ conversionScore: 65 });
+    const [, options] = fetchMock.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(body.messages[1].content).toEqual([
+      { type: "text", text: "describe this screenshot" },
+      { type: "image_url", image_url: { url: "data:image/png;base64,abc123" } },
+    ]);
+  });
+
+  it("strips markdown code fences before parsing, same as callOpenAI", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: '```json\n{"conversionScore": 40}\n```' } }] }),
+    });
+
+    const result = await callOpenAIVision("prompt", "data:image/png;base64,abc123");
+    expect(result).toEqual({ conversionScore: 40 });
+  });
+
+  it("throws when the response is not ok", async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 429, text: async () => "rate limited" });
+    await expect(callOpenAIVision("prompt", "data:image/png;base64,abc123")).rejects.toThrow();
   });
 });

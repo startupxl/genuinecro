@@ -39,7 +39,7 @@ describe("WorkspaceNav", () => {
     expect(screen.queryByText("Growth plan")).not.toBeInTheDocument();
   });
 
-  it("renders all ten sections with Home, Dashboard, Audits, Action Center, Monitoring, Funnels, Reports, Message Match, Competitor Comparison, and Experiment Workbench marked real", () => {
+  it("renders all eleven sections with Home, Dashboard, Audits, Action Center, Monitoring, Funnels, App Audit, Reports, Message Match, Competitor Comparison, and Experiment Workbench marked real", () => {
     mockUser = { uid: "uid-1", email: "user@example.com", displayName: null };
     mockProfile = { displayName: "Jane" };
     render(
@@ -48,7 +48,7 @@ describe("WorkspaceNav", () => {
       </MemoryRouter>
     );
 
-    ["Home", "Dashboard", "Audits", "Action Center", "Monitoring", "Funnels", "Reports", "Message Match", "Competitor Comparison", "Experiment Workbench"].forEach((label) => {
+    ["Home", "Dashboard", "Audits", "Action Center", "Monitoring", "Funnels", "App Audit", "Reports", "Message Match", "Competitor Comparison", "Experiment Workbench"].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
     ["Technical", "Content", "Conversion", "Analysis"].forEach((label) => {

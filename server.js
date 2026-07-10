@@ -11,13 +11,15 @@ import multivariateIdeaRouter from "./server/routes/multivariateIdea.js";
 import testBriefRouter from "./server/routes/testBrief.js";
 import funnelInsightsRouter from "./server/routes/funnelInsights.js";
 import ga4Router from "./server/routes/ga4.js";
+import appAuditRouter from "./server/routes/appAudit.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DIST_DIR = path.join(__dirname, "dist");
 
-app.use(express.json());
+// Raised from Express's 100kb default to fit a base64-encoded screenshot upload.
+app.use(express.json({ limit: "12mb" }));
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
@@ -32,6 +34,7 @@ app.use("/api/multivariate-idea", multivariateIdeaRouter);
 app.use("/api/test-brief", testBriefRouter);
 app.use("/api/funnel-insights", funnelInsightsRouter);
 app.use("/api/ga4", ga4Router);
+app.use("/api/app-audit", appAuditRouter);
 
 app.use(express.static(DIST_DIR));
 

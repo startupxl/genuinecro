@@ -41,7 +41,8 @@ export type AnalysisType =
   | "lead-form"
   | "product-page"
   | "landing-marketing"
-  | "landing-paid-media";
+  | "landing-paid-media"
+  | "app-screen";
 
 export const analysisTypeLabels: Record<AnalysisType, string> = {
   homepage: "Homepage",
@@ -51,6 +52,7 @@ export const analysisTypeLabels: Record<AnalysisType, string> = {
   "product-page": "Product Page",
   "landing-marketing": "Landing Page — Marketing",
   "landing-paid-media": "Landing Page — Paid Media",
+  "app-screen": "App Screen",
 };
 
 /** Detect page type from URL path and query params */

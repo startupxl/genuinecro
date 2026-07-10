@@ -1,7 +1,7 @@
 import { useNavigate, NavLink } from "react-router-dom";
 import {
   Home, LayoutDashboard, ClipboardList, Activity, CheckSquare, FileBarChart, GitBranch,
-  LogIn, LogOut, UserCog, CreditCard, HelpCircle, Settings, ChevronUp, X, PanelLeftClose, Target, Swords, FlaskConical,
+  LogIn, LogOut, UserCog, CreditCard, HelpCircle, Settings, ChevronUp, X, PanelLeftClose, Target, Swords, FlaskConical, MonitorSmartphone,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -29,6 +29,7 @@ const sections: NavSection[] = [
   { label: "Action Center", path: "/action-center", icon: CheckSquare, real: true },
   { label: "Monitoring", path: "/monitoring", icon: Activity, real: true },
   { label: "Funnels", path: "/funnels", icon: GitBranch, real: true },
+  { label: "App Audit", path: "/app-audit", icon: MonitorSmartphone, real: true },
   { label: "Reports", path: "/reports", icon: FileBarChart, real: true },
   { label: "Message Match", path: "/message-match", icon: Target, real: true },
   { label: "Competitor Comparison", path: "/competitor-analysis", icon: Swords, real: true },

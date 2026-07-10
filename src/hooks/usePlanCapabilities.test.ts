@@ -21,9 +21,10 @@ describe("usePlanCapabilities", () => {
     expect(result.current.canExperimentWorkbench).toBe(false);
     expect(result.current.canFunnelAnalysis).toBe(false);
     expect(result.current.canGA4Integration).toBe(false);
+    expect(result.current.canAppAudit).toBe(false);
   });
 
-  it("enables mobile, comparison, export, variants, workbench, funnels, and GA4 on pro and agency plans", () => {
+  it("enables mobile, comparison, export, variants, workbench, funnels, GA4, and app audit on pro and agency plans", () => {
     for (const plan of ["pro", "agency"]) {
       mockPlan = plan;
       const { result } = renderHook(() => usePlanCapabilities());
@@ -34,6 +35,7 @@ describe("usePlanCapabilities", () => {
       expect(result.current.canExperimentWorkbench).toBe(true);
       expect(result.current.canFunnelAnalysis).toBe(true);
       expect(result.current.canGA4Integration).toBe(true);
+      expect(result.current.canAppAudit).toBe(true);
     }
   });
 
@@ -98,5 +100,11 @@ describe("getUpgradeMessage", () => {
     const msg = getUpgradeMessage("ga4");
     expect(msg.requiredPlan).toBe("Pro");
     expect(msg.title.toLowerCase()).toContain("google analytics");
+  });
+
+  it("returns a dedicated message for the 'app-audit' feature", () => {
+    const msg = getUpgradeMessage("app-audit");
+    expect(msg.requiredPlan).toBe("Pro");
+    expect(msg.title.toLowerCase()).toContain("app");
   });
 });

@@ -131,6 +131,7 @@ const DEFAULT_GOAL_TYPE_FOR_PAGE_TYPE: Record<AnalysisType, ConversionGoalType> 
   "product-page": "purchase",
   "landing-marketing": "demo_request",
   "landing-paid-media": "lead_form",
+  "app-screen": "custom",
 };
 
 export function getDefaultGoalForPageType(pageType: AnalysisType): ConversionGoal {
