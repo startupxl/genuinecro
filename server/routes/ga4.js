@@ -4,7 +4,15 @@ import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { serverDb, ensureServerSignedIn, verifyIdToken } from "../firebaseServerAuth.js";
 import { buildAuthorizeUrl, exchangeCodeForTokens } from "../lib/googleOAuth.js";
 import { listAccountSummaries, runPageReport, listConversionEvents } from "../lib/ga4Api.js";
-import { getConnection, saveConnection, deleteConnection, getValidAccessToken } from "../lib/ga4Connections.js";
+import {
+  getConnection,
+  saveConnection,
+  deleteConnection,
+  getValidAccessToken,
+  addPropertyMapping,
+  removePropertyMapping,
+  getPropertyForDomain,
+} from "../lib/ga4Connections.js";
 import { detectGA4Tag } from "../lib/ga4TagDetection.js";
 
 const router = express.Router();
@@ -73,29 +81,16 @@ router.get("/oauth/callback", async (req, res) => {
     });
 
     const accessTokenExpiresAt = new Date(Date.now() + expiresInSeconds * 1000).toISOString();
-    const connectionData = {
+    const existing = await getConnection(uid);
+    await saveConnection(uid, {
       accessToken,
       accessTokenExpiresAt,
       connectedAt: new Date().toISOString(),
+      properties: existing?.properties || [],
       ...(refreshToken ? { refreshToken } : {}),
-    };
+    });
 
-    const properties = await listAccountSummaries(accessToken);
-
-    if (properties.length === 1) {
-      await saveConnection(uid, {
-        ...connectionData,
-        propertyId: properties[0].propertyId,
-        propertyDisplayName: properties[0].displayName,
-      });
-      return res.redirect(`${frontendUrl()}/settings?ga4=connected`);
-    }
-
-    await saveConnection(uid, { ...connectionData, propertyId: null, propertyDisplayName: null });
-    if (properties.length === 0) {
-      return res.redirect(`${frontendUrl()}/settings?ga4=no-properties`);
-    }
-    return res.redirect(`${frontendUrl()}/settings?ga4=choose-property`);
+    return res.redirect(`${frontendUrl()}/settings?ga4=connected`);
   } catch (err) {
     console.error("GA4 oauth callback error:", err);
     return res.redirect(`${frontendUrl()}/settings?ga4=error`);
@@ -108,10 +103,8 @@ router.get("/status", async (req, res) => {
     const connection = await getConnection(decoded.uid);
 
     res.json({
-      connected: !!connection?.propertyId,
-      pendingPropertySelection: !!connection && !connection.propertyId,
-      propertyId: connection?.propertyId || null,
-      propertyDisplayName: connection?.propertyDisplayName || null,
+      connected: !!connection?.accessToken,
+      properties: connection?.properties || [],
     });
   } catch (err) {
     if (handleAuthError(res, err)) return;
@@ -137,19 +130,36 @@ router.get("/properties", async (req, res) => {
   }
 });
 
-router.post("/select-property", async (req, res) => {
+router.post("/add-property", async (req, res) => {
   try {
     const decoded = await verifyIdToken(req.headers.authorization);
-    const { propertyId, displayName } = req.body;
-    if (!propertyId) {
-      return res.status(400).json({ error: "propertyId is required" });
+    const { domain, propertyId, displayName } = req.body;
+    if (!domain || !propertyId) {
+      return res.status(400).json({ error: "domain and propertyId are required" });
     }
 
-    await saveConnection(decoded.uid, { propertyId, propertyDisplayName: displayName || propertyId });
+    await addPropertyMapping(decoded.uid, domain, propertyId, displayName || propertyId);
     res.json({ success: true });
   } catch (err) {
     if (handleAuthError(res, err)) return;
-    console.error("GA4 select-property error:", err);
+    console.error("GA4 add-property error:", err);
+    res.status(500).json({ error: err.message || "Unknown error" });
+  }
+});
+
+router.post("/remove-property", async (req, res) => {
+  try {
+    const decoded = await verifyIdToken(req.headers.authorization);
+    const { domain } = req.body;
+    if (!domain) {
+      return res.status(400).json({ error: "domain is required" });
+    }
+
+    await removePropertyMapping(decoded.uid, domain);
+    res.json({ success: true });
+  } catch (err) {
+    if (handleAuthError(res, err)) return;
+    console.error("GA4 remove-property error:", err);
     res.status(500).json({ error: err.message || "Unknown error" });
   }
 });
@@ -183,8 +193,8 @@ router.post("/page-metrics", async (req, res) => {
       tagDetection = { hasGA4Tag: false, measurementId: null, hasGTM: false, gtmContainerId: null };
     }
 
-    const connection = await getConnection(decoded.uid);
-    if (!connection?.propertyId) {
+    const property = await getPropertyForDomain(decoded.uid, url);
+    if (!property) {
       return res.json({ tagDetection, connected: false });
     }
 
@@ -192,14 +202,14 @@ router.post("/page-metrics", async (req, res) => {
       const accessToken = await getValidAccessToken(decoded.uid);
       const pagePath = new URL(url).pathname || "/";
       const [behavioral, conversionEventNames] = await Promise.all([
-        runPageReport({ accessToken, propertyId: connection.propertyId, pagePath }),
-        listConversionEvents({ accessToken, propertyId: connection.propertyId }),
+        runPageReport({ accessToken, propertyId: property.propertyId, pagePath }),
+        listConversionEvents({ accessToken, propertyId: property.propertyId }),
       ]);
 
       res.json({
         tagDetection,
         connected: true,
-        propertyDisplayName: connection.propertyDisplayName,
+        propertyDisplayName: property.propertyDisplayName,
         behavioral,
         conversionEventNames,
       });
@@ -208,7 +218,7 @@ router.post("/page-metrics", async (req, res) => {
       res.json({
         tagDetection,
         connected: true,
-        propertyDisplayName: connection.propertyDisplayName,
+        propertyDisplayName: property.propertyDisplayName,
         behavioral: null,
         conversionEventNames: [],
         metricsError: "Failed to fetch Google Analytics data for this page",

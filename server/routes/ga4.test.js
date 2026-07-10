@@ -18,6 +18,9 @@ const getConnectionMock = vi.fn();
 const saveConnectionMock = vi.fn();
 const deleteConnectionMock = vi.fn();
 const getValidAccessTokenMock = vi.fn();
+const addPropertyMappingMock = vi.fn();
+const removePropertyMappingMock = vi.fn();
+const getPropertyForDomainMock = vi.fn();
 const detectGA4TagMock = vi.fn();
 
 vi.mock("../firebaseServerAuth.js", () => ({
@@ -49,6 +52,9 @@ vi.mock("../lib/ga4Connections.js", () => ({
   saveConnection: (...args) => saveConnectionMock(...args),
   deleteConnection: (...args) => deleteConnectionMock(...args),
   getValidAccessToken: (...args) => getValidAccessTokenMock(...args),
+  addPropertyMapping: (...args) => addPropertyMappingMock(...args),
+  removePropertyMapping: (...args) => removePropertyMappingMock(...args),
+  getPropertyForDomain: (...args) => getPropertyForDomainMock(...args),
 }));
 
 vi.mock("../lib/ga4TagDetection.js", () => ({
@@ -82,6 +88,9 @@ describe("GA4 Express routes", () => {
     saveConnectionMock.mockReset();
     deleteConnectionMock.mockReset();
     getValidAccessTokenMock.mockReset();
+    addPropertyMappingMock.mockReset();
+    removePropertyMappingMock.mockReset();
+    getPropertyForDomainMock.mockReset();
     detectGA4TagMock.mockReset();
     fetchMock.mockReset();
     process.env.GOOGLE_OAUTH_CLIENT_ID = "client-123";
@@ -112,16 +121,14 @@ describe("GA4 Express routes", () => {
   });
 
   describe("GET /oauth/callback", () => {
-    it("auto-selects the single property and redirects to settings?ga4=connected", async () => {
+    it("saves the OAuth tokens and redirects to settings?ga4=connected, without picking any property yet", async () => {
       getDocMock.mockResolvedValue({ exists: () => true, data: () => ({ uid: "uid-1" }) });
       exchangeCodeForTokensMock.mockResolvedValue({
         accessToken: "at",
         refreshToken: "rt",
         expiresInSeconds: 3599,
       });
-      listAccountSummariesMock.mockResolvedValue([
-        { propertyId: "123", displayName: "Acme Site", accountName: "Acme" },
-      ]);
+      getConnectionMock.mockResolvedValue(null);
 
       const res = await request(buildApp()).get("/api/ga4/oauth/callback?code=abc&state=state-1");
 
@@ -129,31 +136,26 @@ describe("GA4 Express routes", () => {
       expect(res.headers.location).toBe("https://app.example.com/settings?ga4=connected");
       expect(saveConnectionMock).toHaveBeenCalledWith(
         "uid-1",
-        expect.objectContaining({ propertyId: "123", propertyDisplayName: "Acme Site" })
+        expect.objectContaining({ accessToken: "at", refreshToken: "rt", properties: [] })
       );
+      expect(listAccountSummariesMock).not.toHaveBeenCalled();
     });
 
-    it("redirects to choose-property when multiple GA4 properties are available", async () => {
+    it("preserves any property mappings the account already had when reconnecting", async () => {
       getDocMock.mockResolvedValue({ exists: () => true, data: () => ({ uid: "uid-1" }) });
       exchangeCodeForTokensMock.mockResolvedValue({ accessToken: "at", refreshToken: "rt", expiresInSeconds: 3599 });
-      listAccountSummariesMock.mockResolvedValue([
-        { propertyId: "1", displayName: "A", accountName: "Acme" },
-        { propertyId: "2", displayName: "B", accountName: "Acme" },
-      ]);
+      getConnectionMock.mockResolvedValue({
+        properties: [{ domain: "example.com", propertyId: "123", propertyDisplayName: "Acme Site" }],
+      });
 
-      const res = await request(buildApp()).get("/api/ga4/oauth/callback?code=abc&state=state-1");
+      await request(buildApp()).get("/api/ga4/oauth/callback?code=abc&state=state-1");
 
-      expect(res.headers.location).toBe("https://app.example.com/settings?ga4=choose-property");
-    });
-
-    it("redirects to no-properties when the account has zero GA4 properties", async () => {
-      getDocMock.mockResolvedValue({ exists: () => true, data: () => ({ uid: "uid-1" }) });
-      exchangeCodeForTokensMock.mockResolvedValue({ accessToken: "at", refreshToken: "rt", expiresInSeconds: 3599 });
-      listAccountSummariesMock.mockResolvedValue([]);
-
-      const res = await request(buildApp()).get("/api/ga4/oauth/callback?code=abc&state=state-1");
-
-      expect(res.headers.location).toBe("https://app.example.com/settings?ga4=no-properties");
+      expect(saveConnectionMock).toHaveBeenCalledWith(
+        "uid-1",
+        expect.objectContaining({
+          properties: [{ domain: "example.com", propertyId: "123", propertyDisplayName: "Acme Site" }],
+        })
+      );
     });
 
     it("redirects to error when Google reports a consent denial", async () => {
@@ -169,28 +171,34 @@ describe("GA4 Express routes", () => {
   });
 
   describe("GET /status", () => {
-    it("reports connected:true only once a property has been selected", async () => {
+    it("reports connected:true once OAuth tokens exist, and lists every mapped site", async () => {
       verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
-      getConnectionMock.mockResolvedValue({ propertyId: "123", propertyDisplayName: "Acme Site" });
+      getConnectionMock.mockResolvedValue({
+        accessToken: "at",
+        properties: [
+          { domain: "example.com", propertyId: "123", propertyDisplayName: "Acme Site" },
+          { domain: "client.com", propertyId: "456", propertyDisplayName: "Client Site" },
+        ],
+      });
 
       const res = await request(buildApp()).get("/api/ga4/status").set("Authorization", "Bearer tok");
 
       expect(res.body).toEqual({
         connected: true,
-        pendingPropertySelection: false,
-        propertyId: "123",
-        propertyDisplayName: "Acme Site",
+        properties: [
+          { domain: "example.com", propertyId: "123", propertyDisplayName: "Acme Site" },
+          { domain: "client.com", propertyId: "456", propertyDisplayName: "Client Site" },
+        ],
       });
     });
 
-    it("reports pendingPropertySelection:true when tokens exist but no property was chosen yet", async () => {
+    it("reports connected:true with no properties yet right after OAuth, before any site is mapped", async () => {
       verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
-      getConnectionMock.mockResolvedValue({ propertyId: null, accessToken: "at" });
+      getConnectionMock.mockResolvedValue({ accessToken: "at", properties: [] });
 
       const res = await request(buildApp()).get("/api/ga4/status").set("Authorization", "Bearer tok");
 
-      expect(res.body.connected).toBe(false);
-      expect(res.body.pendingPropertySelection).toBe(true);
+      expect(res.body).toEqual({ connected: true, properties: [] });
     });
 
     it("reports disconnected when there's no connection at all", async () => {
@@ -199,34 +207,51 @@ describe("GA4 Express routes", () => {
 
       const res = await request(buildApp()).get("/api/ga4/status").set("Authorization", "Bearer tok");
 
-      expect(res.body).toEqual({
-        connected: false,
-        pendingPropertySelection: false,
-        propertyId: null,
-        propertyDisplayName: null,
-      });
+      expect(res.body).toEqual({ connected: false, properties: [] });
     });
   });
 
-  describe("POST /select-property", () => {
-    it("requires a propertyId", async () => {
+  describe("POST /add-property", () => {
+    it("requires a domain and a propertyId", async () => {
       verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
       const res = await request(buildApp())
-        .post("/api/ga4/select-property")
+        .post("/api/ga4/add-property")
+        .set("Authorization", "Bearer tok")
+        .send({ domain: "example.com" });
+      expect(res.status).toBe(400);
+    });
+
+    it("maps a domain to a property", async () => {
+      verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
+      const res = await request(buildApp())
+        .post("/api/ga4/add-property")
+        .set("Authorization", "Bearer tok")
+        .send({ domain: "example.com", propertyId: "123", displayName: "Acme Site" });
+
+      expect(res.body).toEqual({ success: true });
+      expect(addPropertyMappingMock).toHaveBeenCalledWith("uid-1", "example.com", "123", "Acme Site");
+    });
+  });
+
+  describe("POST /remove-property", () => {
+    it("requires a domain", async () => {
+      verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
+      const res = await request(buildApp())
+        .post("/api/ga4/remove-property")
         .set("Authorization", "Bearer tok")
         .send({});
       expect(res.status).toBe(400);
     });
 
-    it("saves the chosen property", async () => {
+    it("removes the mapping for that domain", async () => {
       verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
       const res = await request(buildApp())
-        .post("/api/ga4/select-property")
+        .post("/api/ga4/remove-property")
         .set("Authorization", "Bearer tok")
-        .send({ propertyId: "123", displayName: "Acme Site" });
+        .send({ domain: "example.com" });
 
       expect(res.body).toEqual({ success: true });
-      expect(saveConnectionMock).toHaveBeenCalledWith("uid-1", { propertyId: "123", propertyDisplayName: "Acme Site" });
+      expect(removePropertyMappingMock).toHaveBeenCalledWith("uid-1", "example.com");
     });
   });
 
@@ -240,11 +265,11 @@ describe("GA4 Express routes", () => {
   });
 
   describe("POST /page-metrics", () => {
-    it("returns tag detection only when the user hasn't connected a GA4 property", async () => {
+    it("returns tag detection only when the audited URL's domain has no mapped property", async () => {
       verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
       fetchMock.mockResolvedValue({ text: async () => "<html>no tag</html>" });
       detectGA4TagMock.mockReturnValue({ hasGA4Tag: false, measurementId: null, hasGTM: false, gtmContainerId: null });
-      getConnectionMock.mockResolvedValue(null);
+      getPropertyForDomainMock.mockResolvedValue(null);
 
       const res = await request(buildApp())
         .post("/api/ga4/page-metrics")
@@ -256,11 +281,11 @@ describe("GA4 Express routes", () => {
       expect(runPageReportMock).not.toHaveBeenCalled();
     });
 
-    it("returns behavioral data and conversion events when a property is connected", async () => {
+    it("returns behavioral data and conversion events for the property mapped to that URL's domain", async () => {
       verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
       fetchMock.mockResolvedValue({ text: async () => "<html>has tag</html>" });
       detectGA4TagMock.mockReturnValue({ hasGA4Tag: true, measurementId: "G-ABC", hasGTM: false, gtmContainerId: null });
-      getConnectionMock.mockResolvedValue({ propertyId: "123", propertyDisplayName: "Acme Site" });
+      getPropertyForDomainMock.mockResolvedValue({ domain: "example.com", propertyId: "123", propertyDisplayName: "Acme Site" });
       getValidAccessTokenMock.mockResolvedValue("access-token");
       runPageReportMock.mockResolvedValue({ hasData: true, sessions: 100, bounceRate: 40, engagementRate: 60, avgEngagementTimeSeconds: 30, conversions: 5, pageViews: 120 });
       listConversionEventsMock.mockResolvedValue(["purchase"]);
@@ -273,16 +298,35 @@ describe("GA4 Express routes", () => {
       expect(res.body.connected).toBe(true);
       expect(res.body.behavioral.sessions).toBe(100);
       expect(res.body.conversionEventNames).toEqual(["purchase"]);
+      expect(getPropertyForDomainMock).toHaveBeenCalledWith("uid-1", "https://example.com/pricing");
       expect(runPageReportMock).toHaveBeenCalledWith(
         expect.objectContaining({ accessToken: "access-token", propertyId: "123", pagePath: "/pricing" })
       );
+    });
+
+    it("uses the client site's own property, not another connected site's, when auditing a client's domain", async () => {
+      verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
+      fetchMock.mockResolvedValue({ text: async () => "<html></html>" });
+      detectGA4TagMock.mockReturnValue({ hasGA4Tag: false, measurementId: null, hasGTM: false, gtmContainerId: null });
+      getPropertyForDomainMock.mockResolvedValue({ domain: "client.com", propertyId: "456", propertyDisplayName: "Client Site" });
+      getValidAccessTokenMock.mockResolvedValue("access-token");
+      runPageReportMock.mockResolvedValue({ hasData: true, sessions: 5, bounceRate: 10, engagementRate: 90, avgEngagementTimeSeconds: 10, conversions: 0, pageViews: 5 });
+      listConversionEventsMock.mockResolvedValue([]);
+
+      const res = await request(buildApp())
+        .post("/api/ga4/page-metrics")
+        .set("Authorization", "Bearer tok")
+        .send({ url: "https://client.com/checkout" });
+
+      expect(res.body.propertyDisplayName).toBe("Client Site");
+      expect(runPageReportMock).toHaveBeenCalledWith(expect.objectContaining({ propertyId: "456" }));
     });
 
     it("returns a metricsError instead of failing the whole request when the GA4 API call errors", async () => {
       verifyIdTokenMock.mockResolvedValue({ uid: "uid-1" });
       fetchMock.mockResolvedValue({ text: async () => "<html></html>" });
       detectGA4TagMock.mockReturnValue({ hasGA4Tag: false, measurementId: null, hasGTM: false, gtmContainerId: null });
-      getConnectionMock.mockResolvedValue({ propertyId: "123", propertyDisplayName: "Acme Site" });
+      getPropertyForDomainMock.mockResolvedValue({ domain: "example.com", propertyId: "123", propertyDisplayName: "Acme Site" });
       getValidAccessTokenMock.mockRejectedValue(new Error("refresh token revoked"));
 
       const res = await request(buildApp())

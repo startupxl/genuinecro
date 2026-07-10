@@ -22,14 +22,16 @@ vi.mock("@/hooks/useSubscription", () => ({
 const getGA4StatusMock = vi.fn();
 const getGA4AuthorizeUrlMock = vi.fn();
 const getGA4PropertiesMock = vi.fn();
-const selectGA4PropertyMock = vi.fn();
+const addGA4PropertyMock = vi.fn();
+const removeGA4PropertyMock = vi.fn();
 const disconnectGA4Mock = vi.fn();
 
 vi.mock("@/lib/api/ga4", () => ({
   getGA4Status: (...args: unknown[]) => getGA4StatusMock(...args),
   getGA4AuthorizeUrl: (...args: unknown[]) => getGA4AuthorizeUrlMock(...args),
   getGA4Properties: (...args: unknown[]) => getGA4PropertiesMock(...args),
-  selectGA4Property: (...args: unknown[]) => selectGA4PropertyMock(...args),
+  addGA4Property: (...args: unknown[]) => addGA4PropertyMock(...args),
+  removeGA4Property: (...args: unknown[]) => removeGA4PropertyMock(...args),
   disconnectGA4: (...args: unknown[]) => disconnectGA4Mock(...args),
 }));
 
@@ -40,15 +42,11 @@ describe("Settings", () => {
     localStorage.clear();
     subscribeToKitMock.mockReset().mockResolvedValue(true);
     mockPlan = "Pro";
-    getGA4StatusMock.mockReset().mockResolvedValue({
-      connected: false,
-      pendingPropertySelection: false,
-      propertyId: null,
-      propertyDisplayName: null,
-    });
+    getGA4StatusMock.mockReset().mockResolvedValue({ connected: false, properties: [] });
     getGA4AuthorizeUrlMock.mockReset().mockResolvedValue("https://accounts.google.com/mock-consent");
     getGA4PropertiesMock.mockReset().mockResolvedValue([]);
-    selectGA4PropertyMock.mockReset().mockResolvedValue(undefined);
+    addGA4PropertyMock.mockReset().mockResolvedValue(undefined);
+    removeGA4PropertyMock.mockReset().mockResolvedValue(undefined);
     disconnectGA4Mock.mockReset().mockResolvedValue(undefined);
   });
 
@@ -128,12 +126,13 @@ describe("Settings", () => {
       window.location = originalLocation;
     });
 
-    it("shows the connected property and a Disconnect button once connected", async () => {
+    it("shows every mapped site's domain and property name once connected", async () => {
       getGA4StatusMock.mockResolvedValue({
         connected: true,
-        pendingPropertySelection: false,
-        propertyId: "123",
-        propertyDisplayName: "Acme Website",
+        properties: [
+          { domain: "example.com", propertyId: "123", propertyDisplayName: "Acme Website" },
+          { domain: "client.com", propertyId: "456", propertyDisplayName: "Client Website" },
+        ],
       });
 
       render(
@@ -142,72 +141,71 @@ describe("Settings", () => {
         </MemoryRouter>
       );
 
-      await waitFor(() => expect(screen.getByText("Acme Website")).toBeInTheDocument());
-      expect(screen.getByRole("button", { name: "Disconnect" })).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByText("example.com")).toBeInTheDocument());
+      expect(screen.getByText("Acme Website")).toBeInTheDocument();
+      expect(screen.getByText("client.com")).toBeInTheDocument();
+      expect(screen.getByText("Client Website")).toBeInTheDocument();
     });
 
-    it("disconnects and returns to the Connect state when Disconnect is clicked", async () => {
-      getGA4StatusMock.mockResolvedValue({
-        connected: true,
-        pendingPropertySelection: false,
-        propertyId: "123",
-        propertyDisplayName: "Acme Website",
-      });
-
-      render(
-        <MemoryRouter>
-          <Settings />
-        </MemoryRouter>
-      );
-
-      await waitFor(() => screen.getByRole("button", { name: "Disconnect" }));
-      fireEvent.click(screen.getByRole("button", { name: "Disconnect" }));
-
-      await waitFor(() => expect(disconnectGA4Mock).toHaveBeenCalledWith(mockUser));
-      await waitFor(() => expect(screen.getByRole("button", { name: "Connect Google Analytics" })).toBeInTheDocument());
-    });
-
-    it("shows a property picker when redirected back needing a property choice", async () => {
-      getGA4StatusMock.mockResolvedValue({
-        connected: false,
-        pendingPropertySelection: true,
-        propertyId: null,
-        propertyDisplayName: null,
-      });
+    it("adds a new site mapping using a domain and a property picked from the connected Google account", async () => {
+      getGA4StatusMock.mockResolvedValue({ connected: true, properties: [] });
       getGA4PropertiesMock.mockResolvedValue([
-        { propertyId: "1", displayName: "Site A", accountName: "Acme" },
-        { propertyId: "2", displayName: "Site B", accountName: "Acme" },
+        { propertyId: "123", displayName: "Acme Website", accountName: "Acme Inc" },
+        { propertyId: "456", displayName: "Client Website", accountName: "Client Inc" },
       ]);
 
       render(
-        <MemoryRouter initialEntries={["/settings?ga4=choose-property"]}>
+        <MemoryRouter>
           <Settings />
         </MemoryRouter>
       );
 
-      await waitFor(() => expect(screen.getByText("Site A")).toBeInTheDocument());
-      expect(screen.getByText("Site B")).toBeInTheDocument();
+      await waitFor(() => screen.getByPlaceholderText("example.com"));
+      fireEvent.change(screen.getByPlaceholderText("example.com"), { target: { value: "client.com" } });
+      fireEvent.change(screen.getByLabelText("GA4 property"), { target: { value: "456" } });
+      fireEvent.click(screen.getByRole("button", { name: "Add site" }));
+
+      await waitFor(() =>
+        expect(addGA4PropertyMock).toHaveBeenCalledWith(mockUser, "client.com", "456", "Client Website")
+      );
     });
 
-    it("selects a property from the picker", async () => {
+    it("removes a site mapping when Remove is clicked", async () => {
       getGA4StatusMock.mockResolvedValue({
-        connected: false,
-        pendingPropertySelection: true,
-        propertyId: null,
-        propertyDisplayName: null,
+        connected: true,
+        properties: [{ domain: "example.com", propertyId: "123", propertyDisplayName: "Acme Website" }],
       });
-      getGA4PropertiesMock.mockResolvedValue([{ propertyId: "1", displayName: "Site A", accountName: "Acme" }]);
 
       render(
-        <MemoryRouter initialEntries={["/settings?ga4=choose-property"]}>
+        <MemoryRouter>
           <Settings />
         </MemoryRouter>
       );
 
-      await waitFor(() => screen.getByText("Site A"));
-      fireEvent.click(screen.getByRole("button", { name: "Use this property" }));
+      await waitFor(() => screen.getByRole("button", { name: /Remove/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Remove/i }));
 
-      await waitFor(() => expect(selectGA4PropertyMock).toHaveBeenCalledWith(mockUser, "1", "Site A"));
+      await waitFor(() => expect(removeGA4PropertyMock).toHaveBeenCalledWith(mockUser, "example.com"));
+      await waitFor(() => expect(screen.queryByText("example.com")).not.toBeInTheDocument());
+    });
+
+    it("disconnects the whole Google account and returns to the Connect state", async () => {
+      getGA4StatusMock.mockResolvedValue({
+        connected: true,
+        properties: [{ domain: "example.com", propertyId: "123", propertyDisplayName: "Acme Website" }],
+      });
+
+      render(
+        <MemoryRouter>
+          <Settings />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => screen.getByRole("button", { name: /Disconnect Google account/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Disconnect Google account/i }));
+
+      await waitFor(() => expect(disconnectGA4Mock).toHaveBeenCalledWith(mockUser));
+      await waitFor(() => expect(screen.getByRole("button", { name: "Connect Google Analytics" })).toBeInTheDocument());
     });
   });
 });

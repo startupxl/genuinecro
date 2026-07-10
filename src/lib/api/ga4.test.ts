@@ -3,7 +3,8 @@ import {
   getGA4AuthorizeUrl,
   getGA4Status,
   getGA4Properties,
-  selectGA4Property,
+  addGA4Property,
+  removeGA4Property,
   disconnectGA4,
   getGA4PageMetrics,
 } from "./ga4";
@@ -29,8 +30,11 @@ describe("ga4 client API", () => {
     );
   });
 
-  it("getGA4Status returns the connection status", async () => {
-    const status = { connected: true, pendingPropertySelection: false, propertyId: "123", propertyDisplayName: "Acme" };
+  it("getGA4Status returns whether tokens exist and every mapped site", async () => {
+    const status = {
+      connected: true,
+      properties: [{ domain: "example.com", propertyId: "123", propertyDisplayName: "Acme" }],
+    };
     (global.fetch as any).mockResolvedValue({ ok: true, json: async () => status });
 
     expect(await getGA4Status(user)).toEqual(status);
@@ -43,14 +47,28 @@ describe("ga4 client API", () => {
     expect(await getGA4Properties(user)).toEqual(properties);
   });
 
-  it("selectGA4Property posts the chosen property", async () => {
+  it("addGA4Property posts the domain-to-property mapping", async () => {
     (global.fetch as any).mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
 
-    await selectGA4Property(user, "123", "Acme Site");
+    await addGA4Property(user, "example.com", "123", "Acme Site");
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "/api/ga4/select-property",
-      expect.objectContaining({ method: "POST", body: JSON.stringify({ propertyId: "123", displayName: "Acme Site" }) })
+      "/api/ga4/add-property",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ domain: "example.com", propertyId: "123", displayName: "Acme Site" }),
+      })
+    );
+  });
+
+  it("removeGA4Property posts the domain to unmap", async () => {
+    (global.fetch as any).mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+
+    await removeGA4Property(user, "example.com");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/ga4/remove-property",
+      expect.objectContaining({ method: "POST", body: JSON.stringify({ domain: "example.com" }) })
     );
   });
 

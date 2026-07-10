@@ -15,7 +15,8 @@ import {
   getGA4Status,
   getGA4AuthorizeUrl,
   getGA4Properties,
-  selectGA4Property,
+  addGA4Property,
+  removeGA4Property,
   disconnectGA4,
   type GA4Status,
   type GA4Property,
@@ -34,6 +35,9 @@ const Settings = () => {
   const [ga4Status, setGa4Status] = useState<GA4Status | null>(null);
   const [ga4Properties, setGa4Properties] = useState<GA4Property[]>([]);
   const [ga4Connecting, setGa4Connecting] = useState(false);
+  const [newSiteDomain, setNewSiteDomain] = useState("");
+  const [newSitePropertyId, setNewSitePropertyId] = useState("");
+  const [addingSite, setAddingSite] = useState(false);
 
   useEffect(() => {
     setSettings(getUserSettings());
@@ -44,7 +48,7 @@ const Settings = () => {
     try {
       const status = await getGA4Status(user);
       setGa4Status(status);
-      if (status.pendingPropertySelection) {
+      if (status.connected) {
         const properties = await getGA4Properties(user);
         setGa4Properties(properties);
       }
@@ -62,9 +66,8 @@ const Settings = () => {
     if (!ga4Param) return;
 
     if (ga4Param === "connected") {
-      toast.success("Google Analytics connected");
-    } else if (ga4Param === "no-properties") {
-      toast.error("No GA4 properties found on that Google account");
+      toast.success("Google Analytics connected — add your first site below");
+      refreshGa4Status();
     } else if (ga4Param === "error") {
       toast.error("Failed to connect Google Analytics. Please try again.");
     }
@@ -91,7 +94,7 @@ const Settings = () => {
     if (!user) return;
     try {
       await disconnectGA4(user);
-      setGa4Status({ connected: false, pendingPropertySelection: false, propertyId: null, propertyDisplayName: null });
+      setGa4Status({ connected: false, properties: [] });
       setGa4Properties([]);
       toast.success("Google Analytics disconnected");
     } catch (err: any) {
@@ -99,20 +102,33 @@ const Settings = () => {
     }
   };
 
-  const handleSelectGA4Property = async (property: GA4Property) => {
+  const handleAddSite = async () => {
+    if (!user || !newSiteDomain.trim() || !newSitePropertyId) return;
+    const property = ga4Properties.find((p) => p.propertyId === newSitePropertyId);
+    if (!property) return;
+
+    setAddingSite(true);
+    try {
+      await addGA4Property(user, newSiteDomain.trim(), property.propertyId, property.displayName);
+      setNewSiteDomain("");
+      setNewSitePropertyId("");
+      toast.success(`${newSiteDomain.trim()} connected to ${property.displayName}`);
+      await refreshGa4Status();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add site");
+    } finally {
+      setAddingSite(false);
+    }
+  };
+
+  const handleRemoveSite = async (domain: string) => {
     if (!user) return;
     try {
-      await selectGA4Property(user, property.propertyId, property.displayName);
-      setGa4Status({
-        connected: true,
-        pendingPropertySelection: false,
-        propertyId: property.propertyId,
-        propertyDisplayName: property.displayName,
-      });
-      setGa4Properties([]);
-      toast.success(`Connected to ${property.displayName}`);
+      await removeGA4Property(user, domain);
+      setGa4Status((prev) => (prev ? { ...prev, properties: prev.properties.filter((p) => p.domain !== domain) } : prev));
+      toast.success(`${domain} disconnected`);
     } catch (err: any) {
-      toast.error(err.message || "Failed to select Google Analytics property");
+      toast.error(err.message || "Failed to remove site");
     }
   };
 
@@ -293,34 +309,74 @@ const Settings = () => {
                   <p className="text-xs text-muted-foreground">{getUpgradeMessage("ga4").description}</p>
                 </div>
               </div>
-            ) : ga4Status?.pendingPropertySelection ? (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Choose which GA4 property to connect:</p>
-                {ga4Properties.map((property) => (
-                  <div
-                    key={property.propertyId}
-                    className="flex items-center justify-between rounded-md border border-border p-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{property.displayName}</p>
-                      <p className="text-xs text-muted-foreground">{property.accountName}</p>
-                    </div>
-                    <Button size="sm" onClick={() => handleSelectGA4Property(property)}>
-                      Use this property
+            ) : ga4Status?.connected ? (
+              <div className="space-y-4">
+                {ga4Status.properties.length > 0 && (
+                  <div className="space-y-2">
+                    {ga4Status.properties.map((property) => (
+                      <div
+                        key={property.domain}
+                        className="flex items-center justify-between rounded-md border border-border p-3"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{property.domain}</p>
+                          <p className="text-xs text-muted-foreground">{property.propertyDisplayName}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="gap-1.5 text-muted-foreground"
+                          onClick={() => handleRemoveSite(property.domain)}
+                        >
+                          <Unlink className="h-3.5 w-3.5" />
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Add a site</Label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      type="text"
+                      value={newSiteDomain}
+                      onChange={(e) => setNewSiteDomain(e.target.value)}
+                      placeholder="example.com"
+                      className="h-9 px-3 rounded-md border border-border bg-background text-sm text-foreground flex-1 min-w-[140px]"
+                      disabled={addingSite}
+                    />
+                    <select
+                      aria-label="GA4 property"
+                      value={newSitePropertyId}
+                      onChange={(e) => setNewSitePropertyId(e.target.value)}
+                      className="h-9 px-3 rounded-md border border-border bg-background text-sm text-foreground min-w-[200px]"
+                      disabled={addingSite}
+                    >
+                      <option value="">Choose GA4 property</option>
+                      {ga4Properties.map((property) => (
+                        <option key={property.propertyId} value={property.propertyId}>
+                          {property.displayName} ({property.accountName})
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      size="sm"
+                      onClick={handleAddSite}
+                      disabled={addingSite || !newSiteDomain.trim() || !newSitePropertyId}
+                    >
+                      {addingSite ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add site"}
                     </Button>
                   </div>
-                ))}
-              </div>
-            ) : ga4Status?.connected ? (
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-sm">Connected property</Label>
-                  <p className="text-xs text-muted-foreground">{ga4Status.propertyDisplayName}</p>
                 </div>
-                <Button size="sm" variant="outline" className="gap-2" onClick={handleDisconnectGA4}>
-                  <Unlink className="h-3.5 w-3.5" />
-                  Disconnect
-                </Button>
+
+                <div className="pt-2 border-t border-border/40 flex justify-end">
+                  <Button size="sm" variant="outline" className="gap-2" onClick={handleDisconnectGA4}>
+                    <Unlink className="h-3.5 w-3.5" />
+                    Disconnect Google account
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="flex items-center justify-between">

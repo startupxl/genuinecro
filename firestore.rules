@@ -81,7 +81,8 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       allow update, delete: if false;
     }
-    // Holds a user's GA4 OAuth refresh/access tokens and selected property —
+    // Holds a user's GA4 OAuth refresh/access tokens and their domain-to-property
+    // mappings (one account can serve several sites, e.g. an agency's clients) —
     // contains a live credential, so (like subscriptions) only the server
     // service-user may touch it. All reads/writes go through server/routes/ga4.js.
     match /ga4Connections/{userId} {

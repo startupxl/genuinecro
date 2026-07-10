@@ -8,11 +8,15 @@ export interface GA4Property {
   accountName: string;
 }
 
+export interface GA4PropertyMapping {
+  domain: string;
+  propertyId: string;
+  propertyDisplayName: string;
+}
+
 export interface GA4Status {
   connected: boolean;
-  pendingPropertySelection: boolean;
-  propertyId: string | null;
-  propertyDisplayName: string | null;
+  properties: GA4PropertyMapping[];
 }
 
 export interface GA4TagDetection {
@@ -66,13 +70,30 @@ export async function getGA4Properties(user: AuthorizedUser): Promise<GA4Propert
   return data.properties;
 }
 
-export async function selectGA4Property(user: AuthorizedUser, propertyId: string, displayName: string): Promise<void> {
+export async function addGA4Property(
+  user: AuthorizedUser,
+  domain: string,
+  propertyId: string,
+  displayName: string
+): Promise<void> {
   await authorizedFetch(
-    "/api/ga4/select-property",
+    "/api/ga4/add-property",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ propertyId, displayName }),
+      body: JSON.stringify({ domain, propertyId, displayName }),
+    },
+    user
+  );
+}
+
+export async function removeGA4Property(user: AuthorizedUser, domain: string): Promise<void> {
+  await authorizedFetch(
+    "/api/ga4/remove-property",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domain }),
     },
     user
   );
