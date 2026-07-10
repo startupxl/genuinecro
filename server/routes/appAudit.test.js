@@ -4,12 +4,16 @@ import request from "supertest";
 
 const buildAppAuditPromptMock = vi.fn(() => "built-prompt");
 const callOpenAIVisionMock = vi.fn();
+const saveScreenshotMock = vi.fn(() => "/uploads/app-audits/fixed-uuid.png");
 
 vi.mock("../lib/appAuditPrompt.js", () => ({
   buildAppAuditPrompt: (...args) => buildAppAuditPromptMock(...args),
 }));
 vi.mock("../lib/openai.js", () => ({
   callOpenAIVision: (...args) => callOpenAIVisionMock(...args),
+}));
+vi.mock("../lib/screenshotStorage.js", () => ({
+  saveScreenshot: (...args) => saveScreenshotMock(...args),
 }));
 
 const { default: appAuditRouter } = await import("./appAudit.js");
@@ -27,6 +31,7 @@ describe("POST /api/app-audit/analyze", () => {
   beforeEach(() => {
     buildAppAuditPromptMock.mockClear();
     callOpenAIVisionMock.mockReset();
+    saveScreenshotMock.mockReset().mockReturnValue("/uploads/app-audits/fixed-uuid.png");
   });
 
   it("returns 400 when no image is provided", async () => {
@@ -69,6 +74,7 @@ describe("POST /api/app-audit/analyze", () => {
     expect(res.status).toBe(200);
     expect(buildAppAuditPromptMock).toHaveBeenCalledWith("Dashboard", "Let a user create their first project");
     expect(callOpenAIVisionMock).toHaveBeenCalledWith("built-prompt", IMAGE_DATA_URL);
+    expect(saveScreenshotMock).toHaveBeenCalledWith(IMAGE_DATA_URL);
 
     expect(res.body.success).toBe(true);
     const data = res.body.data;
@@ -77,7 +83,9 @@ describe("POST /api/app-audit/analyze", () => {
     expect(data.conversionScore).toBe(62);
     expect(data.grade).toBe("Needs Optimization");
     expect(data.topIssues).toEqual(["Empty state doesn't guide the user"]);
-    expect(data.screenshotUrl).toBe(IMAGE_DATA_URL);
+    // The response carries the small saved-file path, never the raw data URL —
+    // that's what makes it safe to persist in a Firestore document later.
+    expect(data.screenshotUrl).toBe("/uploads/app-audits/fixed-uuid.png");
 
     expect(data.frictionPoints).toHaveLength(1);
     const fp = data.frictionPoints[0];
@@ -86,7 +94,7 @@ describe("POST /api/app-audit/analyze", () => {
     expect(fp.severity).toBe("high");
     expect(fp.selector).toBe("main content area");
     expect(fp.impactScore).toBe(85);
-    expect(fp.screenshotUrl).toBe(IMAGE_DATA_URL);
+    expect(fp.screenshotUrl).toBe("/uploads/app-audits/fixed-uuid.png");
     expect(fp.benchmark).toEqual({ industryAvg: 50, topPerformers: 80, label: "Score" });
   });
 

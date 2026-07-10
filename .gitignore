@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Runtime-uploaded files (App Audit screenshots) — local disk storage, not
+# committed to git; must persist across deploys on whatever host serves this.
+uploads/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -81,7 +81,7 @@ function auditResult() {
         selector: "main content area",
         fix: "f",
         impactScore: 85,
-        screenshotUrl: "data:image/png;base64,abc123",
+        screenshotUrl: "/uploads/app-audits/fixed-uuid.png",
         benchmark: { industryAvg: 50, topPerformers: 80, label: "Score" },
         abTest: { testName: "", hypothesis: "", control: "", variant: "", metric: "", duration: "" },
       },
@@ -126,7 +126,7 @@ describe("AppAudit", () => {
     return waitFor(() => expect(runButton).not.toBeDisabled());
   });
 
-  it("runs the audit, strips the screenshot before persisting, and shows the result", async () => {
+  it("runs the audit, persists the saved-file screenshot path, and shows the result", async () => {
     analyzeAppScreenMock.mockResolvedValue(auditResult());
     renderPage();
 
@@ -147,7 +147,7 @@ describe("AppAudit", () => {
 
     await waitFor(() => expect(createActionItemsMock).toHaveBeenCalled());
     const persistedPoints = createActionItemsMock.mock.calls[0][3];
-    expect(persistedPoints[0].screenshotUrl).toBeUndefined();
+    expect(persistedPoints[0].screenshotUrl).toBe("/uploads/app-audits/fixed-uuid.png");
     expect(persistedPoints[0].title).toBe("Empty dashboard gives no next step");
 
     await waitFor(() =>

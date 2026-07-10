@@ -91,11 +91,9 @@ const AppAudit = () => {
         extractCategoryScores(auditResult.benchmark)
       );
 
-      // The screenshot itself is never persisted — a data URL can be several
-      // MB, and Firestore documents are capped at 1MiB. Every friction point
-      // would otherwise try to store its own copy of the same image.
-      const pointsToPersist = auditResult.frictionPoints.map(({ screenshotUrl, ...rest }) => rest);
-      await createActionItems(user.uid, label, "app-screen", pointsToPersist);
+      // screenshotUrl here is a small saved-file path (server/lib/screenshotStorage.js),
+      // not the raw upload — safe to persist directly, unlike the original data URL.
+      await createActionItems(user.uid, label, "app-screen", auditResult.frictionPoints);
 
       setResult(auditResult);
       setAnalysisId(id ?? undefined);

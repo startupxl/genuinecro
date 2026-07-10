@@ -1,6 +1,7 @@
 import express from "express";
 import { buildAppAuditPrompt } from "../lib/appAuditPrompt.js";
 import { callOpenAIVision } from "../lib/openai.js";
+import { saveScreenshot } from "../lib/screenshotStorage.js";
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ router.post("/analyze", async (req, res) => {
 
     const prompt = buildAppAuditPrompt(screenLabel || "", context || "");
     const aiData = await callOpenAIVision(prompt, imageDataUrl);
+    const screenshotUrl = saveScreenshot(imageDataUrl);
 
     const frictionPoints = (aiData.frictionPoints || []).map((fp, i) => ({
       id: `fp-${i + 1}`,
@@ -27,7 +29,7 @@ router.post("/analyze", async (req, res) => {
       roiEstimate: fp.roiEstimate || "",
       insightCluster: "",
       sourceCitation: null,
-      screenshotUrl: imageDataUrl,
+      screenshotUrl,
       benchmark: { industryAvg: 50, topPerformers: 80, label: "Score" },
       abTest: { testName: "", hypothesis: "", control: "", variant: "", metric: "", duration: "", durationRationale: "" },
     }));
@@ -37,7 +39,7 @@ router.post("/analyze", async (req, res) => {
       timestamp: new Date().toISOString(),
       device: "desktop",
       analysisType: "app-screen",
-      screenshotUrl: imageDataUrl,
+      screenshotUrl,
       conversionScore: aiData.conversionScore ?? 50,
       grade: aiData.grade || "Needs Optimization",
       topIssues: aiData.topIssues || [],

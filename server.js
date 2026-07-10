@@ -12,6 +12,7 @@ import testBriefRouter from "./server/routes/testBrief.js";
 import funnelInsightsRouter from "./server/routes/funnelInsights.js";
 import ga4Router from "./server/routes/ga4.js";
 import appAuditRouter from "./server/routes/appAudit.js";
+import { UPLOADS_DIR } from "./server/lib/screenshotStorage.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -35,6 +36,12 @@ app.use("/api/test-brief", testBriefRouter);
 app.use("/api/funnel-insights", funnelInsightsRouter);
 app.use("/api/ga4", ga4Router);
 app.use("/api/app-audit", appAuditRouter);
+
+// Screenshots saved by App Audit — local disk, not Firebase Storage.
+// UPLOADS_DIR already ends in .../uploads/app-audits, so the mount prefix
+// must match — otherwise express.static looks for a second "app-audits"
+// segment underneath it and silently falls through to the SPA route.
+app.use("/uploads/app-audits", express.static(UPLOADS_DIR));
 
 app.use(express.static(DIST_DIR));
 
