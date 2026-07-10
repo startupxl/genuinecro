@@ -17,6 +17,7 @@ const getIdTokenMock = vi.fn().mockResolvedValue("id-token-abc");
 const mockUser = { uid: "uid-1", getIdToken: getIdTokenMock };
 let mockCanFunnels = true;
 let mockCanGA4 = false;
+let mockCapabilitiesLoading = false;
 let mockUsage = { used: 0, limit: 250, canAnalyze: true, requiresAuth: false, requiresPaid: false, periodStart: null, periodEnd: null };
 
 vi.mock("@/hooks/useAuth", () => ({
@@ -28,7 +29,7 @@ vi.mock("@/hooks/useSubscription", () => ({
 }));
 
 vi.mock("@/hooks/usePlanCapabilities", () => ({
-  usePlanCapabilities: () => ({ canFunnelAnalysis: mockCanFunnels, canGA4Integration: mockCanGA4 }),
+  usePlanCapabilities: () => ({ canFunnelAnalysis: mockCanFunnels, canGA4Integration: mockCanGA4, isLoading: mockCapabilitiesLoading }),
   getUpgradeMessage: () => ({
     title: "Funnel diagnostics requires Pro plan",
     description: "Upgrade to Pro.",
@@ -115,6 +116,7 @@ describe("Funnels", () => {
     getGA4PageMetricsMock.mockReset();
     mockCanFunnels = true;
     mockCanGA4 = false;
+    mockCapabilitiesLoading = false;
     mockUsage = { used: 0, limit: 250, canAnalyze: true, requiresAuth: false, requiresPaid: false, periodStart: null, periodEnd: null };
   });
 
@@ -123,6 +125,15 @@ describe("Funnels", () => {
     renderPage();
 
     expect(screen.getByText(/Funnel diagnostics requires Pro plan/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /New Funnel/i })).not.toBeInTheDocument();
+  });
+
+  it("does not flash the upgrade message while the real plan is still loading", async () => {
+    mockCanFunnels = false;
+    mockCapabilitiesLoading = true;
+    renderPage();
+
+    expect(screen.queryByText(/Funnel diagnostics requires Pro plan/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /New Funnel/i })).not.toBeInTheDocument();
   });
 

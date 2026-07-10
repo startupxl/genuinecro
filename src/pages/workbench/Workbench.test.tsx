@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 let mockPlan = "Free";
+let mockPlanStatus = "ready";
 const mockUser: { uid: string } | null = { uid: "uid-1" };
 
 vi.mock("@/hooks/useAuth", () => ({
@@ -10,7 +11,7 @@ vi.mock("@/hooks/useAuth", () => ({
 }));
 
 vi.mock("@/hooks/useSubscription", () => ({
-  useSubscription: () => ({ currentPlan: mockPlan, subscription: null }),
+  useSubscription: () => ({ currentPlan: mockPlan, subscription: null, planStatus: mockPlanStatus }),
 }));
 
 import Workbench from "./Workbench";
@@ -26,11 +27,19 @@ function renderPage() {
 describe("Workbench", () => {
   beforeEach(() => {
     mockPlan = "Free";
+    mockPlanStatus = "ready";
   });
 
   it("shows an upgrade message instead of the tool list on a plan without workbench access", () => {
     renderPage();
     expect(screen.getByText(/Experiment Workbench requires Pro plan/i)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Multivariate Idea Expander/i })).not.toBeInTheDocument();
+  });
+
+  it("does not flash the upgrade message while the real plan is still loading", () => {
+    mockPlanStatus = "loading";
+    renderPage();
+    expect(screen.queryByText(/Experiment Workbench requires Pro plan/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Multivariate Idea Expander/i })).not.toBeInTheDocument();
   });
 

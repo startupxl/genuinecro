@@ -79,6 +79,10 @@ const Funnels = () => {
     );
   }
 
+  if (capabilities.isLoading) {
+    return <AppShell><div className="p-6" /></AppShell>;
+  }
+
   if (!capabilities.canFunnelAnalysis) {
     return (
       <AppShell>

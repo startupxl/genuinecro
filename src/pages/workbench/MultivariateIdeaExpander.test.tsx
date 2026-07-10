@@ -8,11 +8,12 @@ vi.mock("@/lib/api/multivariateIdea", () => ({
 }));
 
 let mockPlan = "Pro";
+let mockPlanStatus = "ready";
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: { uid: "uid-1" } }),
 }));
 vi.mock("@/hooks/useSubscription", () => ({
-  useSubscription: () => ({ currentPlan: mockPlan, subscription: null }),
+  useSubscription: () => ({ currentPlan: mockPlan, subscription: null, planStatus: mockPlanStatus }),
 }));
 
 import MultivariateIdeaExpander from "./MultivariateIdeaExpander";
@@ -28,6 +29,7 @@ function renderPage() {
 describe("MultivariateIdeaExpander", () => {
   beforeEach(() => {
     mockPlan = "Pro";
+    mockPlanStatus = "ready";
     expandMultivariateIdeaMock.mockReset();
   });
 
@@ -36,6 +38,13 @@ describe("MultivariateIdeaExpander", () => {
     renderPage();
     expect(screen.getByText(/Experiment Workbench requires Pro plan/i)).toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/Make the CTA button more prominent/i)).not.toBeInTheDocument();
+  });
+
+  it("does not flash the upgrade message while the real plan is still loading", () => {
+    mockPlan = "Free";
+    mockPlanStatus = "loading";
+    renderPage();
+    expect(screen.queryByText(/Experiment Workbench requires Pro plan/i)).not.toBeInTheDocument();
   });
 
   it("disables Expand Idea until all three fields are filled", () => {

@@ -2,8 +2,9 @@ import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 
 let mockPlan = "free";
+let mockPlanStatus = "ready";
 vi.mock("./useSubscription", () => ({
-  useSubscription: () => ({ currentPlan: mockPlan, subscription: null }),
+  useSubscription: () => ({ currentPlan: mockPlan, subscription: null, planStatus: mockPlanStatus }),
 }));
 
 import { usePlanCapabilities, getUpgradeMessage } from "./usePlanCapabilities";
@@ -48,6 +49,24 @@ describe("usePlanCapabilities", () => {
     mockPlan = "enterprise";
     const { result } = renderHook(() => usePlanCapabilities());
     expect(result.current.planKey).toBe("free");
+  });
+
+  it("reports isLoading:true while the real plan is still being fetched", () => {
+    mockPlan = "free";
+    mockPlanStatus = "loading";
+    const { result } = renderHook(() => usePlanCapabilities());
+    expect(result.current.isLoading).toBe(true);
+    mockPlanStatus = "ready";
+  });
+
+  it("reports isLoading:false once the plan check has resolved (ready or error)", () => {
+    mockPlan = "pro";
+    mockPlanStatus = "ready";
+    expect(renderHook(() => usePlanCapabilities()).result.current.isLoading).toBe(false);
+
+    mockPlanStatus = "error";
+    expect(renderHook(() => usePlanCapabilities()).result.current.isLoading).toBe(false);
+    mockPlanStatus = "ready";
   });
 });
 

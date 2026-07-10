@@ -30,7 +30,7 @@ const Workbench = () => {
           The audit tells you what's broken. The Workbench helps you plan and write up the tests that fix it.
         </p>
 
-        {capabilities.canExperimentWorkbench ? (
+        {capabilities.isLoading ? null : capabilities.canExperimentWorkbench ? (
           <div className="space-y-3 max-w-md">
             {TOOLS.map((tool) => (
               <Link

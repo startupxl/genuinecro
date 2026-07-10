@@ -37,6 +37,10 @@ const TestBriefWriter = () => {
     }
   };
 
+  if (capabilities.isLoading) {
+    return <AppShell><div className="p-6" /></AppShell>;
+  }
+
   if (!capabilities.canExperimentWorkbench) {
     return (
       <AppShell>

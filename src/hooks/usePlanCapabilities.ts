@@ -3,6 +3,7 @@ import { useSubscription } from "./useSubscription";
 
 export interface PlanCapabilities {
   planKey: string;
+  isLoading: boolean;
   canExport: boolean;
   canMobileAnalysis: boolean;
   canComparisonAnalysis: boolean;
@@ -13,7 +14,7 @@ export interface PlanCapabilities {
   auditLimit: number;
 }
 
-const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
+const PLAN_CAPABILITIES: Record<string, Omit<PlanCapabilities, "isLoading">> = {
   free: {
     planKey: "free",
     canExport: false,
@@ -50,12 +51,14 @@ const PLAN_CAPABILITIES: Record<string, PlanCapabilities> = {
 };
 
 export function usePlanCapabilities(): PlanCapabilities {
-  const { currentPlan } = useSubscription();
+  const { currentPlan, planStatus } = useSubscription();
+  const isLoading = planStatus === "loading";
 
   return useMemo(() => {
     const key = currentPlan.toLowerCase();
-    return PLAN_CAPABILITIES[key] ?? PLAN_CAPABILITIES.free;
-  }, [currentPlan]);
+    const capabilities = PLAN_CAPABILITIES[key] ?? PLAN_CAPABILITIES.free;
+    return { ...capabilities, isLoading };
+  }, [currentPlan, isLoading]);
 }
 
 export function getUpgradeMessage(feature: string): { title: string; description: string; requiredPlan: string } {
