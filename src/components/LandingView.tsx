@@ -156,7 +156,7 @@ const LandingView = ({ onAnalyze, usage, user, onSignIn, initialUrl }: LandingVi
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
         >
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold text-foreground tracking-tight leading-[1.05] mb-4">
+          <h1 className="font-display text-5xl sm:text-6xl font-normal text-foreground tracking-normal leading-[1.05] mb-4">
             Conversion Friction Checker
           </h1>
           <p className="text-body text-muted-foreground mb-8">

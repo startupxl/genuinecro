@@ -6,24 +6,25 @@ const css = readFileSync(resolve(__dirname, "./index.css"), "utf-8");
 
 describe("index.css design tokens", () => {
   it("uses the GenuineCRO evidence-on-paper palette (shared with genuinecro.com)", () => {
-    expect(css).toContain("--background: 45 44% 96%;");
-    expect(css).toContain("--foreground: 53 23% 8%;");
+    expect(css).toContain("--background: 150 12% 97%;");
+    expect(css).toContain("--foreground: 160 30% 8%;");
     expect(css).toContain("--primary: 160 59% 30%;");
-    expect(css).toContain("--muted-foreground: 51 10% 38%;");
-    expect(css).toContain("--border: 44 25% 85%;");
+    expect(css).toContain("--muted-foreground: 152 6% 38%;");
+    expect(css).toContain("--border: 146 12% 89%;");
     expect(css).toContain("--destructive: 9 61% 45%;");
   });
 
-  it("imports Fraunces and the correctly-named Geist family", () => {
-    expect(css).toMatch(/@import url\('https:\/\/fonts\.googleapis\.com\/css2\?family=Fraunces[^']*'\)/);
-    expect(css).toContain("family=Geist:");
+  it("self-hosts Instrument Serif and Hanken Grotesk (no third-party font CDN)", () => {
+    expect(css).not.toContain("fonts.googleapis.com");
+    expect(css).toMatch(/@font-face\s*{[^}]*font-family:\s*'Instrument Serif'/);
+    expect(css).toMatch(/@font-face\s*{[^}]*font-family:\s*'Hanken Grotesk'/);
   });
 
-  it("sets the body font-family to the correctly-named Geist family (not 'Geist Sans')", () => {
-    expect(css).toContain("font-family: 'Geist', -apple-system");
+  it("sets the body font-family to Hanken Grotesk", () => {
+    expect(css).toContain("font-family: 'Hanken Grotesk', -apple-system");
   });
 
-  it("defines a font-display utility using Fraunces", () => {
-    expect(css).toMatch(/\.font-display\s*{[^}]*font-family:\s*'Fraunces'/);
+  it("defines a font-display utility using Instrument Serif", () => {
+    expect(css).toMatch(/\.font-display\s*{[^}]*font-family:\s*'Instrument Serif'/);
   });
 });

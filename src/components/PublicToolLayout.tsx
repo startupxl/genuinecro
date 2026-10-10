@@ -15,7 +15,7 @@ const PublicToolLayout = ({ title, description, children }: PublicToolLayoutProp
       <header className="border-b border-border px-4 py-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link to="/" aria-label="GenuineCRO">
-            <img src={logoImg} alt="GenuineCRO" className="h-8 object-contain" />
+            <img src={logoImg} alt="GenuineCRO" className="h-9 object-contain" />
           </Link>
           <Link
             to="/"
