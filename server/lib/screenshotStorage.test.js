@@ -17,7 +17,13 @@ vi.mock("crypto", () => ({
   randomUUID: () => "fixed-uuid",
 }));
 
-const { saveScreenshot } = await import("./screenshotStorage.js");
+const { saveScreenshot, InvalidImageError, MAX_SCREENSHOT_BYTES } = await import("./screenshotStorage.js");
+
+const b64 = (bytes) => Buffer.from(bytes).toString("base64");
+const PNG = b64([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+const JPG = b64([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0]);
+const WEBP = b64([...Buffer.from("RIFF"), 0, 0, 0, 0, ...Buffer.from("WEBP"), 0, 0]);
+const GIF = b64([...Buffer.from("GIF89a"), 0, 0]);
 
 describe("saveScreenshot", () => {
   beforeEach(() => {
@@ -26,26 +32,38 @@ describe("saveScreenshot", () => {
   });
 
   it("decodes a PNG data URL, writes it to disk, and returns a small relative URL path", () => {
-    const url = saveScreenshot("data:image/png;base64,aGVsbG8=");
+    const url = saveScreenshot(`data:image/png;base64,${PNG}`);
 
     expect(url).toBe("/uploads/app-audits/fixed-uuid.png");
     expect(mkdirSyncMock).toHaveBeenCalledWith(expect.stringContaining("uploads"), { recursive: true });
     const [writtenPath, writtenBuffer] = writeFileSyncMock.mock.calls[0];
     expect(writtenPath).toContain("fixed-uuid.png");
     expect(Buffer.isBuffer(writtenBuffer)).toBe(true);
-    expect(writtenBuffer.toString()).toBe("hello");
+    expect(writtenBuffer[1]).toBe(0x50);
   });
 
-  it("maps image/jpeg to a .jpg extension", () => {
-    expect(saveScreenshot("data:image/jpeg;base64,aGVsbG8=")).toBe("/uploads/app-audits/fixed-uuid.jpg");
+  it.each([
+    ["image/jpeg", JPG, "jpg"],
+    ["image/webp", WEBP, "webp"],
+    ["image/gif", GIF, "gif"],
+  ])("maps %s to a .%s extension", (mime, data, ext) => {
+    expect(saveScreenshot(`data:${mime};base64,${data}`)).toBe(`/uploads/app-audits/fixed-uuid.${ext}`);
   });
 
-  it("maps image/webp to a .webp extension", () => {
-    expect(saveScreenshot("data:image/webp;base64,aGVsbG8=")).toBe("/uploads/app-audits/fixed-uuid.webp");
+  it("rejects bytes that don't match the declared image type (no disk write)", () => {
+    expect(() => saveScreenshot(`data:image/png;base64,${b64(Buffer.from("<script>alert(1)</script>"))}`)).toThrow(InvalidImageError);
+    expect(() => saveScreenshot(`data:image/png;base64,${JPG}`)).toThrow("isn't a valid image");
+    expect(writeFileSyncMock).not.toHaveBeenCalled();
   });
 
-  it("defaults to .png for an unrecognized (but valid) image mime type", () => {
-    expect(saveScreenshot("data:image/bmp;base64,aGVsbG8=")).toBe("/uploads/app-audits/fixed-uuid.png");
+  it("rejects SVG and other unsupported image types", () => {
+    expect(() => saveScreenshot(`data:image/svg+xml;base64,${b64(Buffer.from("<svg/>"))}`)).toThrow("Unsupported image type");
+    expect(() => saveScreenshot(`data:image/bmp;base64,${PNG}`)).toThrow("Unsupported image type");
+  });
+
+  it("rejects an image over the size cap", () => {
+    const big = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(MAX_SCREENSHOT_BYTES)]);
+    expect(() => saveScreenshot(`data:image/png;base64,${big.toString("base64")}`)).toThrow(/too large/);
   });
 
   it("throws for input that isn't a data URL", () => {

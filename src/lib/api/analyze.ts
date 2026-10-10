@@ -1,5 +1,6 @@
 import type { AnalysisResult, AnalysisType } from '@/lib/mockData';
 import type { SiteType } from '@/lib/firebase/siteSettings';
+import { apiFetch } from "./apiFetch";
 
 export async function analyzeUrl(
   url: string,
@@ -7,7 +8,7 @@ export async function analyzeUrl(
   device: "desktop" | "mobile" = "desktop",
   siteType?: SiteType
 ): Promise<AnalysisResult> {
-  const response = await fetch('/api/analyze/analyze-url', {
+  const response = await apiFetch('/api/analyze/analyze-url', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url, analysisType, device, siteType }),

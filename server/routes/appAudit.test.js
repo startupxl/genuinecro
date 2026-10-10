@@ -12,8 +12,12 @@ vi.mock("../lib/appAuditPrompt.js", () => ({
 vi.mock("../lib/openai.js", () => ({
   callOpenAIVision: (...args) => callOpenAIVisionMock(...args),
 }));
+const parseImageDataUrlMock = vi.fn();
+class InvalidImageError extends Error {}
 vi.mock("../lib/screenshotStorage.js", () => ({
   saveScreenshot: (...args) => saveScreenshotMock(...args),
+  parseImageDataUrl: (...args) => parseImageDataUrlMock(...args),
+  InvalidImageError,
 }));
 
 const { default: appAuditRouter } = await import("./appAudit.js");
@@ -32,6 +36,20 @@ describe("POST /api/app-audit/analyze", () => {
     buildAppAuditPromptMock.mockClear();
     callOpenAIVisionMock.mockReset();
     saveScreenshotMock.mockReset().mockReturnValue("/uploads/app-audits/fixed-uuid.png");
+    parseImageDataUrlMock.mockReset().mockReturnValue({ ext: "png", buffer: Buffer.alloc(0) });
+  });
+
+  it("returns 400 and never calls the AI when the image fails validation", async () => {
+    parseImageDataUrlMock.mockImplementation(() => {
+      throw new InvalidImageError("That file isn't a valid image");
+    });
+
+    const res = await request(buildApp()).post("/api/app-audit/analyze").send({ imageDataUrl: IMAGE_DATA_URL });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, error: "That file isn't a valid image" });
+    expect(callOpenAIVisionMock).not.toHaveBeenCalled();
+    expect(saveScreenshotMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 when no image is provided", async () => {

@@ -1,6 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { extractCanonical, extractIndexability, extractLinks, checkRobotsTxt, checkSitemap, checkLinks } from "./technicalChecks.js";
 
+vi.mock("./ssrf.js", () => ({
+  // Tests exercise route/check logic with a mocked global fetch; the SSRF guard
+  // itself is covered in ssrf.test.js (no real DNS in unit tests).
+  UnsafeUrlError: class UnsafeUrlError extends Error {},
+  assertPublicUrl: async (u) => new URL(u),
+  safeFetch: (...args) => global.fetch(...args),
+  readTextCapped: (res) => res.text(),
+}));
+
+
 describe("extractCanonical", () => {
   it("finds a canonical link tag", () => {
     const html = `<html><head><link rel="canonical" href="https://example.com/page"></head></html>`;

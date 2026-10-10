@@ -14,6 +14,7 @@ import {
   getPropertyForDomain,
 } from "../lib/ga4Connections.js";
 import { detectGA4Tag } from "../lib/ga4TagDetection.js";
+import { safeFetch, readTextCapped } from "../lib/ssrf.js";
 
 const router = express.Router();
 
@@ -186,8 +187,8 @@ router.post("/page-metrics", async (req, res) => {
 
     let tagDetection;
     try {
-      const pageRes = await fetch(url);
-      const html = await pageRes.text();
+      const pageRes = await safeFetch(url);
+      const html = await readTextCapped(pageRes, 2_000_000);
       tagDetection = detectGA4Tag(html);
     } catch {
       tagDetection = { hasGA4Tag: false, measurementId: null, hasGTM: false, gtmContainerId: null };

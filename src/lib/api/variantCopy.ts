@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiFetch";
 export interface VariantCopyRequest {
   category: string;
   title: string;
@@ -16,7 +17,7 @@ export interface VariantCopyResult {
 }
 
 export async function generateVariantCopy(input: VariantCopyRequest): Promise<VariantCopyResult> {
-  const response = await fetch("/api/variant-copy/generate", {
+  const response = await apiFetch("/api/variant-copy/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),

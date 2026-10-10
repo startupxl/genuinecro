@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiFetch";
 export interface TestBriefRequest {
   hypothesis: string;
   page: string;
@@ -22,7 +23,7 @@ export interface TestBriefResult {
 }
 
 export async function generateTestBrief(input: TestBriefRequest): Promise<TestBriefResult> {
-  const response = await fetch("/api/test-brief/generate", {
+  const response = await apiFetch("/api/test-brief/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),

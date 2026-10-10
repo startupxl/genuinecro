@@ -1,7 +1,7 @@
 import express from "express";
 import { buildAppAuditPrompt } from "../lib/appAuditPrompt.js";
 import { callOpenAIVision } from "../lib/openai.js";
-import { saveScreenshot } from "../lib/screenshotStorage.js";
+import { saveScreenshot, parseImageDataUrl, InvalidImageError } from "../lib/screenshotStorage.js";
 
 const router = express.Router();
 
@@ -13,7 +13,17 @@ router.post("/analyze", async (req, res) => {
       return res.status(400).json({ success: false, error: "A screenshot image is required" });
     }
 
-    const prompt = buildAppAuditPrompt(screenLabel || "", context || "");
+    // Validate the image BEFORE paying for a vision call on it.
+    try {
+      parseImageDataUrl(imageDataUrl);
+    } catch (err) {
+      if (err instanceof InvalidImageError) {
+        return res.status(400).json({ success: false, error: err.message });
+      }
+      throw err;
+    }
+
+    const prompt = buildAppAuditPrompt(String(screenLabel || "").slice(0, 200), String(context || "").slice(0, 2000));
     const aiData = await callOpenAIVision(prompt, imageDataUrl);
     const screenshotUrl = saveScreenshot(imageDataUrl);
 

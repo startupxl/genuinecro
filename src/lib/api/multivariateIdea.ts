@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiFetch";
 export interface MultivariateIdeaRequest {
   baseIdea: string;
   pageContext: string;
@@ -22,7 +23,7 @@ export interface MultivariateIdeaResult {
 }
 
 export async function expandMultivariateIdea(input: MultivariateIdeaRequest): Promise<MultivariateIdeaResult> {
-  const response = await fetch("/api/multivariate-idea/expand", {
+  const response = await apiFetch("/api/multivariate-idea/expand", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),

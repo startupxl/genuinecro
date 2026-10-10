@@ -1,6 +1,7 @@
 import express from "express";
 import { extractCanonical, extractIndexability, extractLinks, checkRobotsTxt, checkSitemap, checkLinks } from "../lib/technicalChecks.js";
 import { computeTechnicalScore } from "../lib/technicalScoring.js";
+import { safeFetch, readTextCapped, UnsafeUrlError } from "../lib/ssrf.js";
 
 const router = express.Router();
 
@@ -11,6 +12,10 @@ router.post("/audit", async (req, res) => {
       return res.status(400).json({ success: false, error: "URL is required" });
     }
 
+    if (typeof url !== "string") {
+      return res.status(400).json({ success: false, error: "URL is required" });
+    }
+
     let formattedUrl = url.trim();
     if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
       formattedUrl = `https://${formattedUrl}`;
@@ -18,8 +23,11 @@ router.post("/audit", async (req, res) => {
 
     let pageRes;
     try {
-      pageRes = await fetch(formattedUrl, { headers: { "User-Agent": "GenuineCRO-TechnicalAudit/1.0" } });
-    } catch {
+      pageRes = await safeFetch(formattedUrl, { headers: { "User-Agent": "GenuineCRO-TechnicalAudit/1.0" } });
+    } catch (err) {
+      if (err instanceof UnsafeUrlError) {
+        return res.status(400).json({ success: false, error: "That URL can't be audited. Use a public http(s) address." });
+      }
       return res.status(502).json({ success: false, error: "Could not fetch the page" });
     }
 
@@ -27,7 +35,12 @@ router.post("/audit", async (req, res) => {
       return res.status(502).json({ success: false, error: `Could not fetch the page (${pageRes.status})` });
     }
 
-    const html = await pageRes.text();
+    let html;
+    try {
+      html = await readTextCapped(pageRes, 2_000_000);
+    } catch {
+      return res.status(502).json({ success: false, error: "The page is too large to audit" });
+    }
     const origin = new URL(formattedUrl).origin;
 
     const canonical = extractCanonical(html);
