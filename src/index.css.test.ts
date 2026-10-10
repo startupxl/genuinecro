@@ -5,13 +5,13 @@ import { resolve } from "path";
 const css = readFileSync(resolve(__dirname, "./index.css"), "utf-8");
 
 describe("index.css design tokens", () => {
-  it("uses the Emerald Signal palette values", () => {
-    expect(css).toContain("--background: 60 20% 98%;");
-    expect(css).toContain("--foreground: 0 0% 9%;");
-    expect(css).toContain("--primary: 161 58% 32%;");
-    expect(css).toContain("--muted-foreground: 60 8% 45%;");
-    expect(css).toContain("--border: 60 8% 90%;");
-    expect(css).toContain("--destructive: 0 84% 60%;");
+  it("uses the GenuineCRO evidence-on-paper palette (shared with genuinecro.com)", () => {
+    expect(css).toContain("--background: 45 44% 96%;");
+    expect(css).toContain("--foreground: 53 23% 8%;");
+    expect(css).toContain("--primary: 160 59% 30%;");
+    expect(css).toContain("--muted-foreground: 51 10% 38%;");
+    expect(css).toContain("--border: 44 25% 85%;");
+    expect(css).toContain("--destructive: 9 61% 45%;");
   });
 
   it("imports Fraunces and the correctly-named Geist family", () => {

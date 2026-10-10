@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import logoImg from "@/assets/logo.png";
+import logoImg from "@/assets/logo.svg";
 
 interface NavSection {
   label: string;
