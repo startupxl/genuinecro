@@ -6,54 +6,54 @@
 
 @layer base {
   :root {
-    --background: 60 20% 98%;
-    --foreground: 0 0% 9%;
+    --background: 45 44% 96%;
+    --foreground: 53 23% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    --card-foreground: 53 23% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 53 23% 8%;
 
-    --primary: 161 58% 32%;
+    --primary: 160 59% 30%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 60 10% 95%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary: 46 35% 93%;
+    --secondary-foreground: 53 23% 8%;
 
-    --muted: 60 10% 95%;
-    --muted-foreground: 60 8% 45%;
+    --muted: 46 35% 93%;
+    --muted-foreground: 51 10% 38%;
 
-    --accent: 60 10% 95%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 153 28% 92%;
+    --accent-foreground: 53 23% 8%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 9 61% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 60 8% 90%;
-    --input: 60 8% 90%;
-    --ring: 161 58% 32%;
+    --border: 44 25% 85%;
+    --input: 44 25% 85%;
+    --ring: 160 59% 30%;
 
     --radius: 0.5rem;
 
-    --friction-high: 0 84% 60%;
-    --friction-med: 38 92% 50%;
-    --friction-low: 161 58% 32%;
+    --friction-high: 9 61% 45%;
+    --friction-med: 34 88% 36%;
+    --friction-low: 160 59% 30%;
 
     --surface: 0 0% 100%;
 
-    --shadow-card: 0 0 0 1px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.02);
-    --shadow-card-hover: 0 0 0 1px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05);
+    --shadow-card: 0 0 0 1px rgba(24,23,15,0.06), 0 2px 4px rgba(24,23,15,0.03);
+    --shadow-card-hover: 0 0 0 1px rgba(24,23,15,0.12), 0 4px 12px rgba(24,23,15,0.06);
     --shadow-input: inset 0 1px 2px rgba(0,0,0,0.05);
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 161 58% 32%;
+    --sidebar-foreground: 53 23% 8%;
+    --sidebar-primary: 160 59% 30%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 60 10% 95%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 60 8% 90%;
-    --sidebar-ring: 161 58% 32%;
+    --sidebar-accent: 153 28% 92%;
+    --sidebar-accent-foreground: 53 23% 8%;
+    --sidebar-border: 44 25% 85%;
+    --sidebar-ring: 160 59% 30%;
   }
 }
 
@@ -65,6 +65,11 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 
   code, .font-mono {

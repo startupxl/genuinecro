@@ -97,12 +97,10 @@ describe("Subscription", () => {
     expect(subscribeMock).not.toHaveBeenCalled();
   });
 
-  it("attempts to subscribe to Pro via PayPal when Get Pro is clicked (blocked today since the PayPal plan ID isn't configured yet)", () => {
+  it("subscribes to Pro via PayPal with the live plan ID when Get Pro is clicked", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /Get Pro/i }));
-    // PAYPAL_PLAN_IDS still holds placeholder strings until real PayPal plans
-    // are created — this is a pre-existing gap, not something this test masks.
-    expect(subscribeMock).not.toHaveBeenCalled();
+    expect(subscribeMock).toHaveBeenCalledWith("P-90R88089GU5681249NLFFYZQ", "pro");
   });
 
   it("shows Current Plan and disables the button for the user's active paid plan", () => {
