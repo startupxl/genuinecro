@@ -3,9 +3,9 @@ import { doc, getDoc, setDoc, collection, query, where, limit, getDocs, updateDo
 import { serverDb, ensureServerSignedIn, verifyIdToken } from "../firebaseServerAuth.js";
 
 const router = express.Router();
-// Defaults to the SANDBOX. Set PAYPAL_ENV=live (with live credentials, plan IDs
-// and webhook ID) to take real payments.
-const PAYPAL_BASE = process.env.PAYPAL_ENV === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+// Defaults to LIVE (real payments). Set PAYPAL_ENV=sandbox only for testing, and
+// then use sandbox credentials, plan IDs and webhook ID. Live needs live ones.
+const PAYPAL_BASE = process.env.PAYPAL_ENV === "sandbox" ? "https://api-m.sandbox.paypal.com" : "https://api-m.paypal.com";
 
 // The plan a user gets is decided HERE, from the PayPal plan ID, never from a
 // name the browser sends. Set PAYPAL_PLAN_ID_PRO / PAYPAL_PLAN_ID_AGENCY to the

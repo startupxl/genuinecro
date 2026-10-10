@@ -13,8 +13,8 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const PAYPAL_PLAN_IDS: Record<string, string> = {
-  pro: "P-90R88089GU5681249NLFFYZQ",
-  agency: "P-39D93710RK8282457NLFFZYI",
+  pro: "PAYPAL_PRO_PLAN_ID",
+  agency: "PAYPAL_AGENCY_PLAN_ID",
 };
 
 interface PlanFeature {
