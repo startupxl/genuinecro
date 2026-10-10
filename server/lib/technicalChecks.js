@@ -1,4 +1,6 @@
 import * as cheerio from "cheerio";
+import { assertPublicUrl, safeFetch, readTextCapped } from "./ssrf.js";
+import { MAX_AUDIT_LINKS } from "../config/limits.js";
 
 export function extractCanonical(html) {
   const $ = cheerio.load(html);
@@ -32,11 +34,11 @@ const AUDIT_USER_AGENT = "GenuineCRO-TechnicalAudit/1.0";
 
 export async function checkRobotsTxt(origin) {
   try {
-    const res = await fetch(`${origin}/robots.txt`, { headers: { "User-Agent": AUDIT_USER_AGENT } });
+    const res = await safeFetch(`${origin}/robots.txt`, { headers: { "User-Agent": AUDIT_USER_AGENT } });
     if (!res.ok) {
       return { exists: false, valid: false, issue: `robots.txt returned ${res.status}` };
     }
-    const text = await res.text();
+    const text = await readTextCapped(res, 500_000);
     const valid = text.trim().length > 0;
     return { exists: true, valid, issue: valid ? null : "robots.txt is empty" };
   } catch {
@@ -46,11 +48,11 @@ export async function checkRobotsTxt(origin) {
 
 export async function checkSitemap(origin) {
   try {
-    const res = await fetch(`${origin}/sitemap.xml`, { headers: { "User-Agent": AUDIT_USER_AGENT } });
+    const res = await safeFetch(`${origin}/sitemap.xml`, { headers: { "User-Agent": AUDIT_USER_AGENT } });
     if (!res.ok) {
       return { exists: false, valid: false, issue: `sitemap.xml returned ${res.status}` };
     }
-    const text = await res.text();
+    const text = await readTextCapped(res, 5_000_000);
     const valid = /<url(set)?[\s>]/i.test(text) || /<sitemap[\s>]/i.test(text);
     return { exists: true, valid, issue: valid ? null : "sitemap.xml does not contain any <url> or <sitemap> entries" };
   } catch {
@@ -68,6 +70,7 @@ async function checkOneLink(url) {
 
   try {
     while (hops <= MAX_REDIRECT_HOPS) {
+      await assertPublicUrl(currentUrl); // throws -> caught below -> reported as broken
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), LINK_TIMEOUT_MS);
       let res;
@@ -104,7 +107,10 @@ async function checkOneLink(url) {
   }
 }
 
-export async function checkLinks(links) {
+export async function checkLinks(allLinks) {
+  // A page can contain thousands of links; unbounded, one audit request becomes
+  // thousands of outbound requests. Check the first MAX_AUDIT_LINKS only.
+  const links = allLinks.slice(0, MAX_AUDIT_LINKS);
   const results = [];
   let index = 0;
 

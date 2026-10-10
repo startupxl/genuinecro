@@ -22,6 +22,15 @@ vi.mock("../lib/technicalScoring.js", () => ({
   computeTechnicalScore: (...args) => computeTechnicalScoreMock(...args),
 }));
 
+vi.mock("../lib/ssrf.js", () => ({
+  // Tests exercise route/check logic with a mocked global fetch; the SSRF guard
+  // itself is covered in ssrf.test.js (no real DNS in unit tests).
+  UnsafeUrlError: class UnsafeUrlError extends Error {},
+  assertPublicUrl: async (u) => new URL(u),
+  safeFetch: (...args) => global.fetch(...args),
+  readTextCapped: (res) => res.text(),
+}));
+
 const fetchMock = vi.fn();
 global.fetch = fetchMock;
 

@@ -1,4 +1,5 @@
 import type { AnalysisResult } from "@/lib/mockData";
+import { apiFetch } from "./apiFetch";
 
 export interface AppAuditInput {
   imageDataUrl: string;
@@ -7,7 +8,7 @@ export interface AppAuditInput {
 }
 
 export async function analyzeAppScreen(input: AppAuditInput): Promise<AnalysisResult> {
-  const response = await fetch("/api/app-audit/analyze", {
+  const response = await apiFetch("/api/app-audit/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),

@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiFetch";
 export interface MessageMatchResult {
   url: string;
   sourceMessage: string;
@@ -10,7 +11,7 @@ export interface MessageMatchResult {
 }
 
 export async function checkMessageMatch(url: string, sourceMessage: string): Promise<MessageMatchResult> {
-  const response = await fetch("/api/message-match/check", {
+  const response = await apiFetch("/api/message-match/check", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url, sourceMessage }),

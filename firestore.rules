@@ -6,9 +6,18 @@ service cloud.firestore {
     }
     match /analyses/{analysisId} {
       allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if (request.auth != null && request.auth.uid == request.resource.data.userId)
-                    || (request.auth == null && request.resource.data.userId == null);
+      // Signed-in owners only. (Anonymous creates used to be allowed; nothing in
+      // the client writes them — anonymous usage is tracked in localStorage — and
+      // leaving them open let anyone fill the collection.)
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       allow update, delete: if false;
+    }
+    // Server-side audit quota counter (one doc per user: { windowStart, count }).
+    // Written only by the server service-user from server/middleware/quota.js so a
+    // user can't reset or skip their own count.
+    match /usage/{uid} {
+      allow read, write: if request.auth != null
+                          && request.auth.token.email == "experiments@genuinecro.com";
     }
     // Only the dedicated server service-user (see server/firebaseServerAuth.js)
     // may read/write subscriptions — update this email if you change
@@ -59,10 +68,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     // A snapshot of one audit report, made public on-demand via a "Share"
-    // action. Publicly readable by design (the doc ID is the unguessable
-    // share link) — only the owner may create or revoke (delete) one.
+    // action. Publicly readable BY ID (the doc ID is the unguessable share link)
+    // — but NOT listable: "allow read" would also allow a list query, letting
+    // anyone enumerate every shared report. Owners may list their own (the
+    // Reports page queries where userId == uid). Only the owner may create or
+    // revoke (delete) one.
     match /sharedReports/{shareId} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       allow update: if false;
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;

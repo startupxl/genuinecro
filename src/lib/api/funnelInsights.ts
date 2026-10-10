@@ -1,4 +1,5 @@
 import type { FunnelInsights } from "@/lib/firebase/funnels";
+import { apiFetch } from "./apiFetch";
 
 export interface FunnelInsightStep {
   label: string;
@@ -9,7 +10,7 @@ export interface FunnelInsightStep {
 }
 
 export async function analyzeFunnel(steps: FunnelInsightStep[]): Promise<FunnelInsights> {
-  const response = await fetch("/api/funnel-insights/analyze", {
+  const response = await apiFetch("/api/funnel-insights/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ steps }),

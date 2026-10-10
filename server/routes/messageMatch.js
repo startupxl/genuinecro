@@ -2,6 +2,7 @@ import express from "express";
 import { buildMessageMatchPrompt } from "../lib/messageMatchPrompt.js";
 import { generateHeuristicMessageMatch } from "../lib/heuristicMessageMatch.js";
 import { callOpenAI } from "../lib/openai.js";
+import { validateTargetUrl, UnsafeUrlError } from "../lib/ssrf.js";
 
 const router = express.Router();
 
@@ -16,6 +17,10 @@ router.post("/check", async (req, res) => {
       return res.status(400).json({ success: false, error: "Source message is required" });
     }
 
+    if (typeof url !== "string") {
+      return res.status(400).json({ success: false, error: "URL is required" });
+    }
+
     const firecrawlKey = process.env.FIRECRAWL_API_KEY;
     if (!firecrawlKey) {
       return res.status(500).json({ success: false, error: "Firecrawl connector not configured" });
@@ -24,6 +29,14 @@ router.post("/check", async (req, res) => {
     let formattedUrl = url.trim();
     if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
       formattedUrl = `https://${formattedUrl}`;
+    }
+    try {
+      validateTargetUrl(formattedUrl);
+    } catch (err) {
+      if (err instanceof UnsafeUrlError) {
+        return res.status(400).json({ success: false, error: "That URL can't be scanned. Use a public http(s) address." });
+      }
+      throw err;
     }
 
     const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {

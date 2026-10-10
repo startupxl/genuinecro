@@ -1,3 +1,4 @@
+import { apiFetch } from "./apiFetch";
 export interface TechnicalIssue {
   category: string;
   severity: "high" | "med" | "low";
@@ -21,7 +22,7 @@ export interface TechnicalAuditResult {
 }
 
 export async function runTechnicalAudit(url: string): Promise<TechnicalAuditResult> {
-  const response = await fetch("/api/technical/audit", {
+  const response = await apiFetch("/api/technical/audit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
